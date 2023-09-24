@@ -2,7 +2,7 @@
   <PropertyGroup>
     <RootNamespace>Project-Obsidian</RootNamespace>
     <AssemblyName>Project-Obsidian</AssemblyName>
-    <TargetFramework>net462</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
     <LangVersion>11</LangVersion>
     <Copyright>Copyright ©  2023</Copyright>
     <Product>Project-Obsidian</Product>
@@ -20,5 +20,9 @@
     <Reference Include="FrooxEngine">
       <HintPath>$(ResonitePath)Resonite_Data/Managed/FrooxEngine.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Components\" />
+    <Folder Include="ProtoFlux\" />
   </ItemGroup>
 </Project>
