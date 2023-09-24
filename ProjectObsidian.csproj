@@ -6,8 +6,6 @@
     <LangVersion>11</LangVersion>
     <Copyright>Copyright ©  2023</Copyright>
     <Product>Project-Obsidian</Product>
-    <!-- SET THIS BOOL TO TRUE TO COPY TO PLUGINS       V -->
-    <CopyToPlugins Condition="'$(CopyToPlugins)'==''">false</CopyToPlugins>
   </PropertyGroup>
   <PropertyGroup>
     <ResonitePath>$(MSBuildThisFileDirectory)ResoniteVR\</ResonitePath>
