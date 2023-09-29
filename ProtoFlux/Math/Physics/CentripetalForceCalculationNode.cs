@@ -1,9 +1,6 @@
 ﻿using System;
 using Elements.Core;
-using FrooxEngine;
 using ProtoFlux.Core;
-using ProtoFlux.Runtimes.Execution;
-using System;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics
 {
@@ -18,16 +15,16 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics
         {
             try
             {
-                float m = Mass.ReadValue<float>(context);
-                float v = Velocity.ReadValue<float>(context);
-                float r = Radius.ReadValue<float>(context);
+                var m = Mass.ReadValue(context);
+                var v = Velocity.ReadValue(context);
+                var r = Radius.ReadValue(context);
 
                 // Debugging statements
                 UniLog.Log($"Mass: {m}");
                 UniLog.Log($"Velocity: {v}");
                 UniLog.Log($"Radius: {r}");
 
-                float result = (m * v * v) / r;
+                var result = (m * v * v) / r;
 
                 // Debugging the result
                 UniLog.Log($"Result: {result}");

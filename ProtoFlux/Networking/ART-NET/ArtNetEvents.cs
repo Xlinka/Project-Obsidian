@@ -1,5 +1,4 @@
-﻿using FrooxEngine;
-using FrooxEngine.ProtoFlux;
+﻿using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
@@ -12,25 +11,23 @@ public abstract class ArtNetEvents : VoidNode<FrooxEngineContext>
 
     private void OnClientChanged(ArtNetClient client, FrooxEngineContext context)
     {
-        ArtNetClient artNetClient = _current.Read(context);
-        if (client != artNetClient)
+        var artNetClient = _current.Read(context);
+        if (client == artNetClient) return;
+        if (artNetClient != null)
         {
-            if (artNetClient != null)
-            {
-                Unregister(artNetClient, context);
-            }
-            if (client != null)
-            {
-                NodeContextPath path = context.CaptureContextPath();
-                context.GetEventDispatcher(out var eventDispatcher);
-                Register(client, path, eventDispatcher, context);
-                _current.Write(client, context);
-            }
-            else
-            {
-                _current.Clear(context);
-                Clear(context);
-            }
+            Unregister(artNetClient, context);
+        }
+        if (client != null)
+        {
+            var path = context.CaptureContextPath();
+            context.GetEventDispatcher(out var eventDispatcher);
+            Register(client, path, eventDispatcher, context);
+            _current.Write(client, context);
+        }
+        else
+        {
+            _current.Clear(context);
+            Clear(context);
         }
     }
 
@@ -40,8 +37,5 @@ public abstract class ArtNetEvents : VoidNode<FrooxEngineContext>
 
     protected abstract void Clear(FrooxEngineContext context);
 
-    protected ArtNetEvents()
-    {
-        Client = new GlobalRef<ArtNetClient>(this, 0);
-    }
+    protected ArtNetEvents() => Client = new GlobalRef<ArtNetClient>(this, 0);
 }
