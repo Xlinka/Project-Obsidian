@@ -20,9 +20,20 @@
     <Reference Include="FrooxEngine">
       <HintPath>$(ResonitePath)Resonite_Data/Managed/FrooxEngine.dll</HintPath>
     </Reference>
+    <Reference Include="ProtoFlux.Core">
+      <HintPath>$(ResonitePath)Resonite_Data/Managed/ProtoFlux.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="ProtoFlux.Nodes.Core">
+      <HintPath>$(ResonitePath)Resonite_Data/Managed/ProtoFlux.Nodes.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="ProtoFlux.Nodes.FrooxEngine">
+      <HintPath>$(ResonitePath)Resonite_Data/Managed/ProtoFlux.Nodes.FrooxEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="ProtoFluxBindings">
+      <HintPath>$(ResonitePath)Resonite_Data/Managed/ProtoFluxBindings.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Components\" />
-    <Folder Include="ProtoFlux\" />
+    <Folder Include="ProtoFlux\Bindings\Networking\ART-NET\" />
   </ItemGroup>
 </Project>
