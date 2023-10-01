@@ -1,45 +1,34 @@
-﻿using System;
-using Elements.Core;
+﻿using Elements.Core;
 using FrooxEngine;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
+using ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics;
 using System;
 
-namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics
+public class CentripetalForceCalculationNode : ValueFunctionNode<ExecutionContext, float>
 {
-    [NodeCategory("Obsidian/Math/Physics")]
-    public class CentripetalForceCalculationNode : ValueFunctionNode<ExecutionContext, float>
+    public ValueInput<float> Mass;
+    public ValueInput<float> Velocity;
+    public ValueInput<float> Radius;
+
+    protected override float Compute(ExecutionContext context)
     {
-        public ValueArgument<float> Mass;           // Mass of the object
-        public ValueArgument<float> Velocity;       // Tangential velocity of the object
-        public ValueArgument<float> Radius;         // Radius of the circular path
+        float result = 0f;
 
-        protected override float Compute(ExecutionContext context)
+        try
         {
-            try
-            {
-                float m = Mass.ReadValue<float>(context);
-                float v = Velocity.ReadValue<float>(context);
-                float r = Radius.ReadValue<float>(context);
+            float m = Mass.Evaluate(context);
+            float v = Velocity.Evaluate(context);
+            float r = Radius.Evaluate(context);
 
-                // Debugging statements
-                UniLog.Log($"Mass: {m}");
-                UniLog.Log($"Velocity: {v}");
-                UniLog.Log($"Radius: {r}");
-
-                float result = (m * v * v) / r;
-
-                // Debugging the result
-                UniLog.Log($"Result: {result}");
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                // Log any exceptions
-                UniLog.Log($"Error in CentripetalForceCalculationNode.Compute: {ex.Message}");
-                throw;
-            }
+            result = (m * v * v) / r;
         }
+        catch (Exception ex)
+        {
+            // Log any exceptions without throwing them
+            UniLog.Log($"Error in CentripetalForceCalculationNode.Compute: {ex.Message}");
+        }
+
+        return result;
     }
 }

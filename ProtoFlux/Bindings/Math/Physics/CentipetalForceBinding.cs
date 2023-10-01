@@ -1,21 +1,20 @@
-﻿using Elements.Core;
+﻿using System;
+using Elements.Core;
 using FrooxEngine;
 using FrooxEngine.ProtoFlux;
-using FrooxEngine.ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics;
-using System;
 
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Math/Physics" })]
-public class CentripetalForceCalculation : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, floatQ>
+public class CentripetalForceCalculation : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, float>
 {
     public readonly SyncRef<INodeValueOutput<float>> Mass;
     public readonly SyncRef<INodeValueOutput<float>> Velocity;
     public readonly SyncRef<INodeValueOutput<float>> Radius;
 
-    // Use the correct NodeType and NodeInstance properties
     public override Type NodeType => typeof(CentripetalForceCalculationNode);
+
     public CentripetalForceCalculationNode TypedNodeInstance { get; private set; }
 
     public override INode NodeInstance => TypedNodeInstance;
