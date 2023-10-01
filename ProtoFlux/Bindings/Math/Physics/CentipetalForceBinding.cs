@@ -6,8 +6,13 @@ using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics;
 
+<<<<<<< HEAD
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Math/Physics" })]
 public class CentripetalForceCalculation : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, float>
+=======
+[Category("ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Math/Physics")]
+public class CentripetalForceCalculation : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, floatQ>
+>>>>>>> 1f3689c5903a431368bec8a85948d2884a1ffc17
 {
     public readonly SyncRef<INodeValueOutput<float>> Mass;
     public readonly SyncRef<INodeValueOutput<float>> Velocity;
@@ -21,34 +26,26 @@ public class CentripetalForceCalculation : FrooxEngine.ProtoFlux.Runtimes.Execut
 
     public override int NodeInputCount => base.NodeInputCount + 3;
 
-    public override N Instantiate<N>()
+    public override TN Instantiate<TN>()
     {
         if (TypedNodeInstance != null)
-        {
             throw new InvalidOperationException("Node has already been instantiated");
-        }
-        CentripetalForceCalculationNode instance = (TypedNodeInstance = new CentripetalForceCalculationNode());
-        return instance as N;
+        var instance = (TypedNodeInstance = new CentripetalForceCalculationNode());
+        return instance as TN;
     }
 
     protected override void AssociateInstanceInternal(INode node)
     {
-        if (node is CentripetalForceCalculationNode typedNodeInstance)
-        {
-            TypedNodeInstance = typedNodeInstance;
-            return;
-        }
-        throw new ArgumentException("Node instance is not of type " + typeof(CentripetalForceCalculationNode));
+        if (node is not CentripetalForceCalculationNode typedNodeInstance)
+            throw new ArgumentException("Node instance is not of type " + typeof(CentripetalForceCalculationNode));
+        TypedNodeInstance = typedNodeInstance;
     }
 
-    public override void ClearInstance()
-    {
-        TypedNodeInstance = null;
-    }
+    public override void ClearInstance() => TypedNodeInstance = null;
 
     protected override ISyncRef GetInputInternal(ref int index)
     {
-        ISyncRef inputInternal = base.GetInputInternal(ref index);
+        var inputInternal = base.GetInputInternal(ref index);
         if (inputInternal != null)
         {
             return inputInternal;
