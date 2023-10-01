@@ -6,19 +6,14 @@ using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics;
 
-<<<<<<< HEAD
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Math/Physics" })]
 public class CentripetalForceCalculation : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, float>
-=======
-[Category("ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Math/Physics")]
-public class CentripetalForceCalculation : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, floatQ>
->>>>>>> 1f3689c5903a431368bec8a85948d2884a1ffc17
 {
     public readonly SyncRef<INodeValueOutput<float>> Mass;
     public readonly SyncRef<INodeValueOutput<float>> Velocity;
     public readonly SyncRef<INodeValueOutput<float>> Radius;
 
-    public override Type NodeType => typeof(CentripetalForceCalculationNode);
+    public override Type NodeType => typeof(CentripetalForceCalculation);
 
     public CentripetalForceCalculationNode TypedNodeInstance { get; private set; }
 
