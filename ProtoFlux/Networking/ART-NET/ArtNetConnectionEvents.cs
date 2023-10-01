@@ -1,8 +1,6 @@
 ﻿using System;
-using FrooxEngine;
 using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
-using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Networking.ArtNet
 {
@@ -17,24 +15,14 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Networking.ArtNet
 
         protected override void Register(ArtNetClient client, NodeContextPath path, ExecutionEventDispatcher<FrooxEngineContext> dispatcher, FrooxEngineContext context)
         {
-            Action<ArtNetClient> value = delegate
-            {
-                dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
-                {
-                    Connected(c);
-                });
-            };
-            Action<ArtNetClient> value2 = delegate
-            {
-                dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
-                {
-                    Disconnected(c);
-                });
-            };
-            client.Connected += value;
-            client.Closed += value2;
-            _connected.Write(value, context);
-            _disconnected.Write(value2, context);
+            void Value(ArtNetClient obj) => dispatcher.ScheduleEvent(path, Connected);
+
+            void Value2(ArtNetClient obj) => dispatcher.ScheduleEvent(path, Disconnected);
+
+            client.Connected += Value;
+            client.Closed += Value2;
+            _connected.Write(Value, context);
+            _disconnected.Write(Value2, context);
         }
 
         protected override void Unregister(ArtNetClient client, FrooxEngineContext context)

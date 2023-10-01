@@ -6,7 +6,7 @@ using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics;
 
-[Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Math/Physics" })]
+[Category("ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Math/Physics")]
 public class DragCalculation : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, float3>
 {
     public readonly SyncRef<INodeValueOutput<float>> FluidDensity;
@@ -22,16 +22,14 @@ public class DragCalculation : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFun
 
     public override int NodeInputCount => base.NodeInputCount + 4;
 
-    public override N Instantiate<N>()
+    public override TN Instantiate<TN>()
     {
         try
         {
             if (TypedNodeInstance != null)
-            {
                 throw new InvalidOperationException("Node has already been instantiated");
-            }
-            DragCalculationNode dragCalculationInstance = (TypedNodeInstance = new DragCalculationNode());
-            return dragCalculationInstance as N;
+            var dragCalculationInstance = (TypedNodeInstance = new DragCalculationNode());
+            return dragCalculationInstance as TN;
         }
         catch (Exception ex)
         {
@@ -44,12 +42,9 @@ public class DragCalculation : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFun
     {
         try
         {
-            if (node is DragCalculationNode typedNodeInstance)
-            {
-                TypedNodeInstance = typedNodeInstance;
-                return;
-            }
-            throw new ArgumentException("Node instance is not of type " + typeof(DragCalculationNode));
+            if (node is not DragCalculationNode typedNodeInstance)
+                throw new ArgumentException("Node instance is not of type " + typeof(DragCalculationNode));
+            TypedNodeInstance = typedNodeInstance;
         }
         catch (Exception ex)
         {
@@ -58,14 +53,12 @@ public class DragCalculation : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFun
         }
     }
 
-    public override void ClearInstance()
-    {
-        TypedNodeInstance = null;
-    }
+    public override void ClearInstance() => TypedNodeInstance = null;
+
     //without this it crashes i hate it
     protected override ISyncRef GetInputInternal(ref int index)
     {
-        ISyncRef inputInternal = base.GetInputInternal(ref index);
+        var inputInternal = base.GetInputInternal(ref index);
         if (inputInternal != null)
         {
             return inputInternal;

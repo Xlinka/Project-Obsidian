@@ -1,9 +1,6 @@
 ﻿using System;
-using FrooxEngine;
 using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
-using ProtoFlux.Runtimes.Execution;
-
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Networking.ArtNet
 {
@@ -24,41 +21,29 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Networking.ArtNet
 
         protected override void Register(ArtNetClient client, NodeContextPath path, ExecutionEventDispatcher<FrooxEngineContext> dispatcher, FrooxEngineContext context)
         {
-            if (_callback == null)
-            {
-                _callback = Receive;
-            }
-            Action<ArtNetClient, byte[]> value = delegate (ArtNetClient c, byte[] d)
-            {
-                dispatcher.ScheduleEvent(path, _callback, d);
-            };
-            client.PacketReceived += value;
-            _handler.Write(value, context);
+            _callback ??= Receive;
+
+            void Value(ArtNetClient c, byte[] d) => dispatcher.ScheduleEvent(path, _callback, d);
+
+            client.PacketReceived += Value;
+            _handler.Write(Value, context);
         }
 
-        protected override void Unregister(ArtNetClient client, FrooxEngineContext context)
-        {
-            client.PacketReceived -= _handler.Read(context);
-        }
+        protected override void Unregister(ArtNetClient client, FrooxEngineContext context) => client.PacketReceived -= _handler.Read(context);
 
-        protected override void Clear(FrooxEngineContext context)
-        {
-            _handler.Clear(context);
-        }
+        protected override void Clear(FrooxEngineContext context) => _handler.Clear(context);
 
         private void Receive(FrooxEngineContext context, object data)
         {
-            byte[] receivedData = data as byte[];
-            int channel = Channel.Evaluate(context);
-            int startIndex = StartIndex.Evaluate(context);
+            var receivedData = data as byte[];
+            var channel = Channel.Evaluate(context);
+            var startIndex = StartIndex.Evaluate(context);
 
-            if (receivedData != null && receivedData.Length > startIndex + channel - 1)
-            {
-                byte extractedValue = receivedData[startIndex + channel - 1];
+            if (receivedData == null || receivedData.Length <= startIndex + channel - 1) return;
+            var extractedValue = receivedData[startIndex + channel - 1];
 
-                // Triggering the OnEvaluationComplete call with the extracted value
-                OnEvaluationComplete.Execute(context);
-            }
+            // Triggering the OnEvaluationComplete call with the extracted value
+            OnEvaluationComplete.Execute(context);
         }
     }
 }

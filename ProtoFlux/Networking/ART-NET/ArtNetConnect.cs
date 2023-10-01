@@ -2,8 +2,6 @@
 using FrooxEngine;
 using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
-using ProtoFlux.Runtimes.Execution;
-
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Networking.ArtNet
 {
@@ -16,16 +14,11 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Networking.ArtNet
 
         protected override bool Do(FrooxEngineContext context)
         {
-            ArtNetClient artNetClient = Client.Evaluate(context);
+            var artNetClient = Client.Evaluate(context);
             if (artNetClient == null)
-            {
                 return false;
-            }
-            Uri uri = URL.Evaluate(context);
-            if (uri != null)
-            {
-                artNetClient.URL.Value = uri;
-            }
+            var uri = URL.Evaluate(context);
+            if (uri != null) artNetClient.URL.Value = uri;
             artNetClient.HandlingUser.Target = HandlingUser.Evaluate(context, context.LocalUser);
             return true;
         }
