@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  STEAMCMD_PATH: C:\SteamCMD
+  GAME_ID: 2519830
+  SOLUTION_FILE_PATH: ProjectObsidian.sln
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    # Download and install SteamCMD
+    - name: Install SteamCMD
+      run: |
+        $steamCmdPath = "${{env.STEAMCMD_PATH}}"
+        New-Item -Type Directory -Path $steamCmdPath -Force
+        Invoke-WebRequest -Uri "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip" -OutFile "$steamCmdPath\steamcmd.zip"
+        Expand-Archive -Path "$steamCmdPath\steamcmd.zip" -DestinationPath $steamCmdPath -Force
+        Remove-Item "$steamCmdPath\steamcmd.zip"
+
+    # Download Resonite using SteamCMD
+    - name: Download Resonite
+      shell: pwsh
+      run: |
+        $steamCmdPath = "${{env.STEAMCMD_PATH}}"
+        $gameId = "${{env.GAME_ID}}"
+        
+        cd $steamCmdPath
+        .\steamcmd.exe +@sSteamCmdForcePlatformType windows +login anonymous +force_install_dir "$steamCmdPath\Resonite" +app_update $gameId validate +quit
+
+    # Extract the Resonite files
+    - name: Extract Resonite
+      shell: pwsh
+      run: |
+        $resoniteInstallPath = "C:\Resonite"
+        $steamCmdPath = "${{env.STEAMCMD_PATH}}"
+        
+        New-Item -Type Directory -Path $resoniteInstallPath -Force
+        cd $resoniteInstallPath
+        
+        $resoniteGamePath = "$steamCmdPath\Resonite\steamapps\common\Resonite"
+        
+        Copy-Item -Path $resoniteGamePath\* -Destination $resoniteInstallPath -Recurse
+
+    # Build the Visual Studio solution
+    - name: Build Solution
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: msbuild /m /p:Configuration=Release ${{env.SOLUTION_FILE_PATH}}
