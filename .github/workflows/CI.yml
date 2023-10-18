@@ -35,7 +35,7 @@ jobs:
         $gameId = "${{env.GAME_ID}}"
         
         cd $steamCmdPath
-        .\steamcmd.exe +@sSteamCmdForcePlatformType windows +login anonymous +force_install_dir "$steamCmdPath\Resonite" +app_update $gameId validate +quit
+        .\steamcmd.exe +@sSteamCmdForcePlatformType windows +force_install_dir "$steamCmdPath\Resonite" +login anonymous +app_update $gameId validate +quit
 
     # Extract the Resonite files
     - name: Extract Resonite
