@@ -13,7 +13,7 @@ public class RefractionCalculation : FrooxEngine.ProtoFlux.Runtimes.Execution.Va
     public readonly SyncRef<INodeValueOutput<float>> AngleOfIncidence;
 
     public override Type NodeType => typeof(RefractionNode);
-
+    
     public RefractionNode TypedNodeInstance { get; private set; }
 
     public override INode NodeInstance => TypedNodeInstance;
