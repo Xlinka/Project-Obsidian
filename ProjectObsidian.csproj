@@ -37,5 +37,8 @@
     <Reference Include="ProtoFluxBindings">
       <HintPath>$(ResonitePath)Resonite_Data/Managed/ProtoFluxBindings.dll</HintPath>
     </Reference>
+	  <Reference Include="Elements.Assets">
+		  <HintPath>$(ResonitePath)Resonite_Data/Managed/Elements.Assets.dll</HintPath>
+	  </Reference>  
   </ItemGroup>
 </Project>
