@@ -41,7 +41,7 @@
 		  <HintPath>$(ResonitePath)Resonite_Data/Managed/Elements.Assets.dll</HintPath>
 	  </Reference>
 	  <Reference Include="SteamVR">
-	    <HintPath>Resonite_Data/Managed/SteamVR.dll</HintPath>
+	    <HintPath>$(ResonitePath)/Managed/SteamVR.dll</HintPath>
 	  </Reference>
 	  <Reference Include="System.Net.Http" />  
   </ItemGroup>
