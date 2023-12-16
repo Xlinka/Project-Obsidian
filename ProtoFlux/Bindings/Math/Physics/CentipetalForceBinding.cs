@@ -13,34 +13,42 @@ public class CentripetalForceCalculation : FrooxEngine.ProtoFlux.Runtimes.Execut
     public readonly SyncRef<INodeValueOutput<float>> Velocity;
     public readonly SyncRef<INodeValueOutput<float>> Radius;
 
-    public override Type NodeType => typeof(CentripetalForceCalculation);
+    public override Type NodeType => typeof(ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics.CentripetalForceCalculationNode);
 
-    public CentripetalForceCalculationNode TypedNodeInstance { get; private set; }
+    public ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics.CentripetalForceCalculationNode TypedNodeInstance { get; private set; }
 
     public override INode NodeInstance => TypedNodeInstance;
 
     public override int NodeInputCount => base.NodeInputCount + 3;
 
-    public override TN Instantiate<TN>()
+    public override N Instantiate<N>()
     {
         if (TypedNodeInstance != null)
+        {
             throw new InvalidOperationException("Node has already been instantiated");
-        var instance = (TypedNodeInstance = new CentripetalForceCalculationNode());
-        return instance as TN;
+        }
+        ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics.CentripetalForceCalculationNode centripetalForceCalculationNode2 = (TypedNodeInstance = new ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics.CentripetalForceCalculationNode());
+        return centripetalForceCalculationNode2 as N;
     }
 
     protected override void AssociateInstanceInternal(INode node)
     {
-        if (node is not CentripetalForceCalculationNode typedNodeInstance)
-            throw new ArgumentException("Node instance is not of type " + typeof(CentripetalForceCalculationNode));
-        TypedNodeInstance = typedNodeInstance;
+        if (node is ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics.CentripetalForceCalculationNode typedNodeInstance)
+        {
+            TypedNodeInstance = typedNodeInstance;
+            return;
+        }
+        throw new ArgumentException("Node instance is not of type " + typeof(ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics.CentripetalForceCalculationNode));
     }
 
-    public override void ClearInstance() => TypedNodeInstance = null;
+    public override void ClearInstance()
+    {
+        TypedNodeInstance = null;
+    }
 
     protected override ISyncRef GetInputInternal(ref int index)
     {
-        var inputInternal = base.GetInputInternal(ref index);
+        ISyncRef inputInternal = base.GetInputInternal(ref index);
         if (inputInternal != null)
         {
             return inputInternal;

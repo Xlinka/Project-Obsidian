@@ -6,8 +6,8 @@ using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics;
 
-[Category("ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Math/Physics")]
-public class DragCalculation : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, float3>
+[Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Math/Physics" })]
+public class DragCalculationNodeBinding : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, float3>
 {
     public readonly SyncRef<INodeValueOutput<float>> FluidDensity;
     public readonly SyncRef<INodeValueOutput<float3>> ObjectVelocity;
@@ -20,64 +20,37 @@ public class DragCalculation : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFun
 
     public override INode NodeInstance => TypedNodeInstance;
 
-    public override int NodeInputCount => base.NodeInputCount + 4;
+    public override int NodeInputCount => 4;
 
-    public override TN Instantiate<TN>()
+    public override N Instantiate<N>()
     {
-        try
+        if (TypedNodeInstance != null)
         {
-            if (TypedNodeInstance != null)
-                throw new InvalidOperationException("Node has already been instantiated");
-            var dragCalculationInstance = (TypedNodeInstance = new DragCalculationNode());
-            return dragCalculationInstance as TN;
+            throw new InvalidOperationException("Node has already been instantiated");
         }
-        catch (Exception ex)
-        {
-            UniLog.Log($"Error in DragCalculationBinding.Instantiate: {ex.Message}");
-            throw;
-        }
+        TypedNodeInstance = new DragCalculationNode();
+        return TypedNodeInstance as N;
     }
 
     protected override void AssociateInstanceInternal(INode node)
     {
-        try
-        {
-            if (node is not DragCalculationNode typedNodeInstance)
-                throw new ArgumentException("Node instance is not of type " + typeof(DragCalculationNode));
-            TypedNodeInstance = typedNodeInstance;
-        }
-        catch (Exception ex)
-        {
-            UniLog.Log($"Error in DragCalculationBinding.AssociateInstanceInternal: {ex.Message}");
-            throw;
-        }
+        TypedNodeInstance = node as DragCalculationNode ?? throw new ArgumentException("Node instance is not of type DragCalculationNode");
     }
 
-    public override void ClearInstance() => TypedNodeInstance = null;
+    public override void ClearInstance()
+    {
+        TypedNodeInstance = null;
+    }
 
-    //without this it crashes i hate it
     protected override ISyncRef GetInputInternal(ref int index)
     {
-        var inputInternal = base.GetInputInternal(ref index);
-        if (inputInternal != null)
-        {
-            return inputInternal;
-        }
         switch (index)
         {
-            case 0:
-                return FluidDensity;
-            case 1:
-                return ObjectVelocity;
-            case 2:
-                return DragCoefficient;
-            case 3:
-                return CrossSectionalArea;
-            default:
-                index -= 4;
-                return null;
+            case 0: return FluidDensity;
+            case 1: return ObjectVelocity;
+            case 2: return DragCoefficient;
+            case 3: return CrossSectionalArea;
+            default: index -= 4; return null;
         }
     }
-
-
 }
