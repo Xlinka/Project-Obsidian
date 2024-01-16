@@ -1,0 +1,44 @@
+using Elements.Core;
+using FrooxEngine;
+using ProtoFlux.Core;
+using ProtoFlux.Runtimes.Execution;
+using System;
+// this is not tested not working this is just random code at work will sort it when home - linka
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Utility
+{
+    public enum LogSeverity
+    {
+        Log,
+        Warning,
+        Error
+    }
+    
+    [NodeCategory("Obsidian/Utility/WriteToLog")]
+    public class WriteToLogNode : ValueFunctionNode<ExecutionContext, string>
+    {
+        public readonly ValueInput<string> Value;
+        public readonly ValueInput<LogSeverity> Severity;
+        public readonly ValueInput<string> Tag;
+        public readonly ValueInput<User> HandlingUser;
+
+        public void Write()
+        {
+            User user = HandlingUser.Evaluate(base.LocalUser);
+            if (user != null)
+            {
+                switch (Severity.Evaluate())
+                {
+                    case LogSeverity.Log:
+                        UniLog.Log(Tag.EvaluateRaw() + Value.EvaluateRaw()?.ToString());
+                        break;
+                    case LogSeverity.Warning:
+                        UniLog.Warning(Tag.EvaluateRaw() + Value.EvaluateRaw()?.ToString());
+                        break;
+                    case LogSeverity.Error:
+                        UniLog.Error(Tag.EvaluateRaw() + Value.EvaluateRaw()?.ToString());
+                        break;
+                }
+            }
+        }
+    }
+}
