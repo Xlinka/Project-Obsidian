@@ -3,7 +3,9 @@ using FrooxEngine;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using System;
-// this is not tested not working this is just random code at work will sort it when home - linka
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Utility
 {
     public enum LogSeverity
@@ -12,33 +14,39 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Utility
         Warning,
         Error
     }
-    
+
     [NodeCategory("Obsidian/Utility/WriteToLog")]
-    public class WriteToLogNode : ValueFunctionNode<ExecutionContext, string>
+    public class WriteToLogNode : AsyncActionNode<ExecutionContext>
     {
         public readonly ValueInput<string> Value;
         public readonly ValueInput<LogSeverity> Severity;
         public readonly ValueInput<string> Tag;
         public readonly ValueInput<User> HandlingUser;
 
-        public void Write()
+        public AsyncCall OnWriteStart;
+        public Continuation OnWriteComplete;
+
+        protected override async Task<IOperation> RunAsync(ExecutionContext context)
         {
-            User user = HandlingUser.Evaluate(base.LocalUser);
+            User user = HandlingUser.Evaluate(context, context.LocalUser);
             if (user != null)
             {
-                switch (Severity.Evaluate())
+                await OnWriteStart.ExecuteAsync(context);
+                switch (Severity.Evaluate(context))
                 {
                     case LogSeverity.Log:
-                        UniLog.Log(Tag.EvaluateRaw() + Value.EvaluateRaw()?.ToString());
+                        UniLog.Log(Tag.EvaluateRaw(context) + Value.EvaluateRaw(context)?.ToString());
                         break;
                     case LogSeverity.Warning:
-                        UniLog.Warning(Tag.EvaluateRaw() + Value.EvaluateRaw()?.ToString());
+                        UniLog.Warning(Tag.EvaluateRaw(context) + Value.EvaluateRaw(context)?.ToString());
                         break;
                     case LogSeverity.Error:
-                        UniLog.Error(Tag.EvaluateRaw() + Value.EvaluateRaw()?.ToString());
+                        UniLog.Error(Tag.EvaluateRaw(context) + Value.EvaluateRaw(context)?.ToString());
                         break;
                 }
+                return OnWriteComplete.Target;
             }
+            return null;
         }
     }
 }
