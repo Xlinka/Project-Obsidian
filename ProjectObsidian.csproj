@@ -40,9 +40,6 @@
 	  <Reference Include="Elements.Assets">
 		  <HintPath>$(ResonitePath)Resonite_Data/Managed/Elements.Assets.dll</HintPath>
 	  </Reference>
-	  <Reference Include="SteamVR">
-	    <HintPath>$(ResonitePath)/Managed/SteamVR.dll</HintPath>
-	  </Reference>
 	  <Reference Include="System.Net.Http" />  
   </ItemGroup>
 </Project>
