@@ -9,7 +9,7 @@ using FrooxEngine.ProtoFlux;
 
 
     [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Json" })]
-    public class JsonGetFromArrayBinding<T> : FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<ExecutionContext, T>
+    public class JsonGetFromArray<T> : FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<ExecutionContext, T>
     {
         public readonly SyncRef<INodeObjectOutput<JArray>> Input;
         public readonly SyncRef<INodeObjectOutput<int>> Index;

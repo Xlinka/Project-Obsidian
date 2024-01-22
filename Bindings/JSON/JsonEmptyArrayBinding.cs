@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 using ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json;
 
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Json" })]
-    public class JsonEmptyArrayBinding : FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<ExecutionContext, JArray>
+    public class JsonEmptyArray : FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<ExecutionContext, JArray>
     {
         public override Type NodeType => typeof(JsonEmptyArrayNode);
 

@@ -8,7 +8,7 @@ using Newtonsoft.Json.Linq;
 using FrooxEngine.ProtoFlux;
 
     [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Json" })]
-    public class JsonCountArrayChildrenBinding : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, int>
+    public class JsonCountArrayChildren : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, int>
     {
         public readonly SyncRef<INodeObjectOutput<JArray>> Input;
 

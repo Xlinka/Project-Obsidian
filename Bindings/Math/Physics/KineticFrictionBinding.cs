@@ -7,7 +7,7 @@ using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics;
 
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Math/Physics" })]
-public class KineticFrictionNodeBinding : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, float3>
+public class KineticFriction : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, float3>
 {
     public readonly SyncRef<INodeValueOutput<float3>> NormalForce;
     public readonly SyncRef<INodeValueOutput<float>> KineticFrictionCoefficient;

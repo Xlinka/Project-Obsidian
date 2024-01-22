@@ -7,7 +7,7 @@ using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics;
 
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Math/Physics" })]
-public class RefractionNodeBinding : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, float>
+public class Refraction : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, float>
 {
     public readonly SyncRef<INodeValueOutput<float>> RefractiveIndex1;
     public readonly SyncRef<INodeValueOutput<float>> RefractiveIndex2;

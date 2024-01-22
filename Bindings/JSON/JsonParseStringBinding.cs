@@ -9,7 +9,7 @@ using FrooxEngine.ProtoFlux;
 
 
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Json" })]
-public class JsonParseStringBinding : FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<ExecutionContext, JArray>
+public class JsonParseString : FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<ExecutionContext, JArray>
 {
     public readonly SyncRef<INodeObjectOutput<string>> Input;
 

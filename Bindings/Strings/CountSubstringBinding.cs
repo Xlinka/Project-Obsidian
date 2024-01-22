@@ -7,7 +7,7 @@ using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Strings;
 
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/String" })]
-public class CountSubstringBinding : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, int>
+public class CountSubstring : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, int>
 {
     public readonly SyncRef<INodeObjectOutput<string>> String;
     public readonly SyncRef<INodeObjectOutput<string>> Pattern;
