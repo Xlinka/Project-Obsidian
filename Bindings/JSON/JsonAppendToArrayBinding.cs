@@ -8,14 +8,14 @@ using Newtonsoft.Json.Linq;
 using FrooxEngine.ProtoFlux;
 
     [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Json" })]
-    public class JsonAppendToArrayBinding<T> : FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<ExecutionContext, JArray>
+    public class JsonAppendToArray<T> : FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<ExecutionContext, JArray>
     {
         public readonly SyncRef<INodeObjectOutput<JArray>> Array;
         public readonly SyncRef<INodeObjectOutput<T>> Object;
 
-        public override Type NodeType => typeof(JsonAppendToArray<T>);
+        public override Type NodeType => typeof(JsonAppendToArrayNode<T>);
 
-        public JsonAppendToArray<T> TypedNodeInstance { get; private set; }
+        public JsonAppendToArrayNode<T> TypedNodeInstance { get; private set; }
 
         public override INode NodeInstance => TypedNodeInstance;
 
@@ -27,18 +27,18 @@ using FrooxEngine.ProtoFlux;
             {
                 throw new InvalidOperationException("Node has already been instantiated");
             }
-            JsonAppendToArray<T> jsonAppendToArrayInstance = (TypedNodeInstance = new JsonAppendToArray<T>());
+        JsonAppendToArrayNode<T> jsonAppendToArrayInstance = (TypedNodeInstance = new JsonAppendToArrayNode<T>());
             return jsonAppendToArrayInstance as N;
         }
 
         protected override void AssociateInstanceInternal(INode node)
         {
-            if (node is JsonAppendToArray<T> typedNodeInstance)
+            if (node is JsonAppendToArrayNode<T> typedNodeInstance)
             {
                 TypedNodeInstance = typedNodeInstance;
                 return;
             }
-            throw new ArgumentException("Node instance is not of type " + typeof(JsonAppendToArray<T>));
+            throw new ArgumentException("Node instance is not of type " + typeof(JsonAppendToArrayNode<T>));
         }
 
         public override void ClearInstance()

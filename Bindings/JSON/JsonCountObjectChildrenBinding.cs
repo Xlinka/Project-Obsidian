@@ -9,7 +9,7 @@ using FrooxEngine.ProtoFlux;
 
 
     [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Json" })]
-    public class JsonCountObjectChildrenBinding : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, int>
+    public class JsonCountObjectChildren : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, int>
     {
         public readonly SyncRef<INodeObjectOutput<JObject>> Input;
 

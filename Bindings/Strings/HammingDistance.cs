@@ -7,7 +7,7 @@ using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Strings;
 
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/String" })]
-public class HammingDistanceBinding : FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<FrooxEngineContext, int?>
+public class HammingDistance : FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<FrooxEngineContext, int?>
 {
     public readonly SyncRef<INodeObjectOutput<string>> String1;
     public readonly SyncRef<INodeObjectOutput<string>> String2;

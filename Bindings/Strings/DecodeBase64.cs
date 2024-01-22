@@ -7,7 +7,7 @@ using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Strings;
 
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/String" })]
-public class DecodeBase64Binding : FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<ExecutionContext, string>
+public class DecodeBase64 : FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<ExecutionContext, string>
 {
     public readonly SyncRef<INodeObjectOutput<string>> Input;
 

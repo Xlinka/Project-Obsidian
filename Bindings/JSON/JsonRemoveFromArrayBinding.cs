@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 
 
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Json" })]
-public class JsonRemoveFromArrayBinding : FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<FrooxEngineContext, JObject>
+public class JsonRemoveFromArray : FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<FrooxEngineContext, JObject>
 {
     public readonly SyncRef<INodeObjectOutput<JArray>> Array;
     public readonly SyncRef<INodeObjectOutput<int>> Index;

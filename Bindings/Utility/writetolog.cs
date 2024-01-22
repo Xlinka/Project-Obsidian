@@ -7,7 +7,7 @@ using ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Utility;
 
 
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Utility" })]
-public class WriteToLogBinding : AsyncActionNode<FrooxEngineContext>
+public class WriteToLog : AsyncActionNode<FrooxEngineContext>
 {
     public readonly SyncRef<INodeObjectOutput<string>> Value;
     public readonly SyncRef<INodeValueOutput<LogSeverity>> Severity;
