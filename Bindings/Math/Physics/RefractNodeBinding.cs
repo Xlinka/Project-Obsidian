@@ -7,18 +7,19 @@ using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics;
 
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Math/Physics" })]
-public class KineticFrictionNodeBinding : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, float3>
+public class Refraction : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, float>
 {
-    public readonly SyncRef<INodeValueOutput<float3>> NormalForce;
-    public readonly SyncRef<INodeValueOutput<float>> KineticFrictionCoefficient;
+    public readonly SyncRef<INodeValueOutput<float>> RefractiveIndex1;
+    public readonly SyncRef<INodeValueOutput<float>> RefractiveIndex2;
+    public readonly SyncRef<INodeValueOutput<float>> AngleOfIncidence;
 
-    public override Type NodeType => typeof(KineticFrictionNode);
+    public override Type NodeType => typeof(RefractionNode);
 
-    public KineticFrictionNode TypedNodeInstance { get; private set; }
+    public RefractionNode TypedNodeInstance { get; private set; }
 
     public override INode NodeInstance => TypedNodeInstance;
 
-    public override int NodeInputCount => 2;
+    public override int NodeInputCount => 3;
 
     public override N Instantiate<N>()
     {
@@ -26,13 +27,13 @@ public class KineticFrictionNodeBinding : FrooxEngine.ProtoFlux.Runtimes.Executi
         {
             throw new InvalidOperationException("Node has already been instantiated");
         }
-        TypedNodeInstance = new KineticFrictionNode();
+        TypedNodeInstance = new RefractionNode();
         return TypedNodeInstance as N;
     }
 
     protected override void AssociateInstanceInternal(INode node)
     {
-        TypedNodeInstance = node as KineticFrictionNode ?? throw new ArgumentException("Node instance is not of type KineticFrictionNode");
+        TypedNodeInstance = node as RefractionNode ?? throw new ArgumentException("Node instance is not of type RefractionNode");
     }
 
     public override void ClearInstance()
@@ -44,9 +45,10 @@ public class KineticFrictionNodeBinding : FrooxEngine.ProtoFlux.Runtimes.Executi
     {
         switch (index)
         {
-            case 0: return NormalForce;
-            case 1: return KineticFrictionCoefficient;
-            default: index -= 2; return null;
+            case 0: return RefractiveIndex1;
+            case 1: return RefractiveIndex2;
+            case 2: return AngleOfIncidence;
+            default: index -= 3; return null;
         }
     }
 }
