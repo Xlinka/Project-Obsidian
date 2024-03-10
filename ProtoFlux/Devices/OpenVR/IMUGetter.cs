@@ -88,7 +88,6 @@ namespace OpenvrDataGetter
             {
                 // Simulated reading process
                 Task.Delay(10).Wait(); // Replace with actual data reading and handling
-                // Simulate data output and triggers
                 FSampleTime.Write(0.0, context);
                 VAccel.Write(new double3(0, 0, 0), context);
                 VGyro.Write(new double3(0, 0, 0), context);

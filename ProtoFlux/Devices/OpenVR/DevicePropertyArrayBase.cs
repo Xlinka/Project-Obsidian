@@ -1,13 +1,14 @@
-﻿using FrooxEngine.LogiX;
+﻿using ProtoFlux.Core;
 using Valve.VR;
 using System;
 using System.Runtime.InteropServices;
+using FrooxEngine;
 
 namespace OpenvrDataGetter
 {
     public abstract class DevicePropertyArrayBase<T, P, R> : DeviceProperty<R, P> where T : unmanaged where P : Enum
     {
-        public readonly Input<uint> ArrIndex;
+        public readonly ValueInput<uint> ArrIndex;
         static protected P DefaultValue = (P)Enum.GetValues(typeof(P)).GetValue(0);
         int structSize = Marshal.SizeOf<T>();
         static protected uint trueIndexFactor = 1;
