@@ -7,7 +7,7 @@ using Valve.VR;
 namespace OpenvrDataGetter.ProtoFlux
 {
     [NodeName("IndexOfRole")]
-    [Category("ProtoFlux/OpenVR/DataGetter")]
+    [Category("ProtoFlux/OpenVR")]
     public class IndexOfRole : ValueFunctionNode<FrooxEngineContext, uint>
     {
         public readonly ValueInput<ETrackedControllerRole> Role;
