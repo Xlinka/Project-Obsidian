@@ -1,11 +1,13 @@
-﻿using FrooxEngine.LogiX;
-using FrooxEngine;
+﻿using FrooxEngine.ProtoFlux;
+using FrooxEngine.ProtoFlux.Runtimes.Execution;
+using ProtoFlux.Core;
 
 namespace OpenvrDataGetter
 {
-    [Category(new string[] { "LogiX/Add-Ons/OpenvrDataGetter" })]
-    public abstract class TrackedDeviceData<T> : LogixOperator<T>
+    [NodeCategory("OpenvrDataGetter")]
+    public abstract class TrackedDeviceData<T> : ObjectFunctionNode<FrooxEngineContext, T>
     {
-        public readonly Input<uint> Index;
+        public readonly ValueInput<uint> Index;
+
     }
 }

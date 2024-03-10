@@ -1,6 +1,6 @@
 ﻿using System.Text;
+using ProtoFlux.Runtimes.Execution;
 using Valve.VR;
-
 namespace OpenvrDataGetter
 {
     public class DevicePropertyString : DeviceProperty<string, StringDeviceProperty>
@@ -9,8 +9,8 @@ namespace OpenvrDataGetter
         {
             get
             {
-                uint index = Index.Evaluate();
-                ETrackedDeviceProperty property = (ETrackedDeviceProperty)Prop.Evaluate();
+                uint index = Index.Evaluate(context);
+                ETrackedDeviceProperty property = (ETrackedDeviceProperty)prop.Evaluate();
                 ETrackedPropertyError pError = ETrackedPropertyError.TrackedProp_Success;
                 StringBuilder stringBuilder = new StringBuilder(64);
                 uint stringTrackedDeviceProperty = OpenVR.System.GetStringTrackedDeviceProperty(index, property, null, 0u, ref pError);

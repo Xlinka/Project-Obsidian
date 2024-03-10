@@ -22,7 +22,7 @@ namespace OpenvrDataGetter
                 var memsize = length * structSize;
                 if (memsize >= uint.MaxValue) return default(R);
                 var devindex = Index.Evaluate();
-                var prop = (ETrackedDeviceProperty)(object)Prop.Evaluate(DefaultValue);
+                var prop = (ETrackedDeviceProperty)(object)base.prop.Evaluate(DefaultValue);
                 ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
 
                 var arr = new T[length];

@@ -1,10 +1,10 @@
-﻿using FrooxEngine.LogiX;
-using System;
+﻿using System;
+using ProtoFlux.Core;
 
 namespace OpenvrDataGetter
 {
     public abstract class DeviceProperty<T, P> : TrackedDeviceData<T> where P : Enum
     {
-        public readonly Input<P> Prop;
+        public readonly ObjectInput<P> prop;
     }
 }

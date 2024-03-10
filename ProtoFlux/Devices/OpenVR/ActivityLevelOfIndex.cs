@@ -1,9 +1,16 @@
-﻿using Valve.VR;
+﻿using ProtoFlux.Core;
+using ProtoFlux.Runtimes.Execution;
+using Valve.VR;
 
 namespace OpenvrDataGetter
 {
-    class ActivityLevelOfIndex : TrackedDeviceData<EDeviceActivityLevel>
+    public class ActivityLevelOfIndex : ValueFunctionNode<ExecutionContext, EDeviceActivityLevel>
     {
-        public override EDeviceActivityLevel Content => OpenVR.System.GetTrackedDeviceActivityLevel(Index.Evaluate());
+        public ValueInput<uint> Index;
+
+        protected override EDeviceActivityLevel Compute(ExecutionContext context)
+        {
+            return OpenVR.System.GetTrackedDeviceActivityLevel(Index.Evaluate(context));
+        }
     }
 }

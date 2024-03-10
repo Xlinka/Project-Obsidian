@@ -1,9 +1,16 @@
-﻿using Valve.VR;
+﻿using ProtoFlux.Core;
+using ProtoFlux.Runtimes.Execution;
+using Valve.VR;
 
 namespace OpenvrDataGetter
 {
-    class ClassOfIndex : TrackedDeviceData<ETrackedDeviceClass>
+    public class ClassOfIndex : ValueFunctionNode<ExecutionContext, ETrackedDeviceClass>
     {
-        public override ETrackedDeviceClass Content => OpenVR.System.GetTrackedDeviceClass(Index.Evaluate());
+        public ValueInput<uint> Index;
+
+        protected override ETrackedDeviceClass Compute(ExecutionContext context)
+        {
+            return OpenVR.System.GetTrackedDeviceClass(Index.Evaluate(context));
+        }
     }
 }

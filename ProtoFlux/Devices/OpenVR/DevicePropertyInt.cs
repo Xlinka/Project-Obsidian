@@ -9,7 +9,7 @@ namespace OpenvrDataGetter
             get
             {
                 ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
-                return OpenVR.System.GetInt32TrackedDeviceProperty(Index.Evaluate(), (ETrackedDeviceProperty)Prop.Evaluate(), ref error);
+                return OpenVR.System.GetInt32TrackedDeviceProperty(Index.Evaluate(), (ETrackedDeviceProperty)prop.Evaluate(), ref error);
             }
         }
     }

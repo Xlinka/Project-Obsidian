@@ -10,7 +10,7 @@ namespace OpenvrDataGetter
             get
             {
                 ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
-                return Converter.HmdMatrix34ToFloat4x4(OpenVR.System.GetMatrix34TrackedDeviceProperty(Index.Evaluate(), (ETrackedDeviceProperty)Prop.Evaluate(), ref error));
+                return Converter.HmdMatrix34ToFloat4x4(OpenVR.System.GetMatrix34TrackedDeviceProperty(Index.Evaluate(), (ETrackedDeviceProperty)prop.Evaluate(), ref error));
             }
         }
     }

@@ -16,7 +16,7 @@ namespace OpenvrDataGetter
                 {
                     fixed (float3* pFloat3 = Float3)
                     {
-                        OpenVR.System.GetArrayTrackedDeviceProperty(Index.Evaluate(), (ETrackedDeviceProperty)Prop.Evaluate(), 0, (IntPtr)pFloat3, (uint)sizeof(float3), ref error);
+                        OpenVR.System.GetArrayTrackedDeviceProperty(Index.Evaluate(), (ETrackedDeviceProperty)prop.Evaluate(), 0, (IntPtr)pFloat3, (uint)sizeof(float3), ref error);
                     }
                 }
                 return Float3[0];
