@@ -1,19 +1,21 @@
-﻿using BaseX;
+﻿using Elements.Core;
+using ProtoFlux.Core;
+using ProtoFlux.Runtimes.Execution;
 using Valve.VR;
 
 namespace OpenvrDataGetter
 {
     public class DevicePropertyMatrix3x4 : DeviceProperty<float4x4, Matrix3x4DeviceProperty>
     {
-        public override float4x4 Content
+        public DevicePropertyMatrix3x4() { }
+
+        protected  float4x4 Compute(ExecutionContext context)
         {
-            get
-            {
-                ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
-                return Converter.HmdMatrix34ToFloat4x4(OpenVR.System.GetMatrix34TrackedDeviceProperty(Index.Evaluate(), (ETrackedDeviceProperty)prop.Evaluate(), ref error));
-            }
+            ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
+            return Converter.HmdMatrix34ToFloat4x4(OpenVR.System.GetMatrix34TrackedDeviceProperty(Index.Evaluate(context), (ETrackedDeviceProperty)prop.Evaluate(context), ref error));
         }
     }
+
     public enum Matrix3x4DeviceProperty
     {
         Prop_StatusDisplayTransform = ETrackedDeviceProperty.Prop_StatusDisplayTransform_Matrix34,

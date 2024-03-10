@@ -7,7 +7,7 @@ using ProtoFlux.Runtimes.Execution;
 
 namespace OpenvrDataGetter
 {
-    public abstract class DevicePropertyArrayBase<T, P, R, C> : DeviceProperty<R, P> where T : unmanaged where P : Enum where C : ExecutionContext
+    public abstract class DevicePropertyArrayBase<T, P, R, C> : DeviceProperty<R, P> where T : unmanaged where P : Enum
     {
         public readonly ValueInput<uint> ArrIndex;
         protected static P DefaultValue = (P)Enum.GetValues(typeof(P)).GetValue(0);
@@ -16,7 +16,7 @@ namespace OpenvrDataGetter
 
         protected abstract R Reader(T[] apiVal, uint arrindex);
 
-        public R Content(C context)
+        public R Content(ExecutionContext context)
         {
             var arrindex = ArrIndex.Evaluate(context);
             if (arrindex == uint.MaxValue) return default(R);

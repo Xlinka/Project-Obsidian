@@ -1,18 +1,23 @@
-﻿using Valve.VR;
+﻿using ProtoFlux.Core;
+using FrooxEngine;
+using Valve.VR;
+using FrooxEngine.ProtoFlux;
+using ProtoFlux.Runtimes.Execution;
 
 namespace OpenvrDataGetter
 {
-    public class DevicePropertyUlong : DeviceProperty<ulong, UlongDeviceProperty>
+    public class DevicePropertyUlong : ValueFunctionNode<FrooxEngineContext, ulong>
     {
-        public override ulong Content
+        public ValueInput<uint> Index;
+        public ValueInput<UlongDeviceProperty> prop;
+
+        protected override ulong Compute(FrooxEngineContext context)
         {
-            get
-            {
-                ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
-                return OpenVR.System.GetUint64TrackedDeviceProperty(Index.Evaluate(), (ETrackedDeviceProperty)prop.Evaluate(), ref error);
-            }
+            ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
+            return OpenVR.System.GetUint64TrackedDeviceProperty(Index.Evaluate(context), (ETrackedDeviceProperty)prop.Evaluate(context), ref error);
         }
     }
+
     public enum UlongDeviceProperty
     {
         Prop_HardwareRevision = ETrackedDeviceProperty.Prop_HardwareRevision_Uint64,
