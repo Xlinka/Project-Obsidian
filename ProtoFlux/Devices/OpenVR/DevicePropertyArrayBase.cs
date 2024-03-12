@@ -1,42 +1,46 @@
 ﻿using ProtoFlux.Core;
-using Valve.VR;
+using ProtoFlux.Runtimes.Execution;
 using System;
 using System.Runtime.InteropServices;
-using FrooxEngine.ProtoFlux;
-using ProtoFlux.Runtimes.Execution;
+using Valve.VR;
 
-namespace OpenvrDataGetter
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.VR;
+
+public abstract class DevicePropertyArrayNode<T, P, R> : ValueFunctionNode<ExecutionContext, R> where R : unmanaged where T : unmanaged where P : Enum
 {
-    public abstract class DevicePropertyArrayBase<T, P, R, C> : DeviceProperty<R, P> where T : unmanaged where P : Enum
+    public ValueInput<uint> DeviceIndex;
+    public ValueInput<uint> ArrayIndex;
+    protected static readonly P DefaultValue = (P)Enum.GetValues(typeof(P)).GetValue(0);
+    protected static readonly int StructSize = Marshal.SizeOf<T>();
+    protected static uint TrueIndexFactor = 1;
+
+    // Generic reader method, to be overridden by concrete implementations
+    protected virtual R Reader(T[] apiVal, uint arrindex) => (R)(object)apiVal[arrindex];
+
+    protected override R Compute(ExecutionContext context)
     {
-        public readonly ValueInput<uint> ArrIndex;
-        protected static P DefaultValue = (P)Enum.GetValues(typeof(P)).GetValue(0);
-        protected int structSize = Marshal.SizeOf<T>();
-        protected static uint trueIndexFactor = 1;
+        var deviceIndex = DeviceIndex.Evaluate(context);
+        var arrIndex = ArrayIndex.Evaluate(context);
 
-        protected abstract R Reader(T[] apiVal, uint arrindex);
+        if (arrIndex == uint.MaxValue) return default;
 
-        public R Content(ExecutionContext context)
+        var length = (arrIndex / TrueIndexFactor) + 1;
+        var memSize = length * StructSize;
+
+        if (memSize >= uint.MaxValue) return default;
+
+        ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
+
+        var arr = new T[length];
+
+        unsafe
         {
-            var arrindex = ArrIndex.Evaluate(context);
-            if (arrindex == uint.MaxValue) return default(R);
-            var length = (arrindex / trueIndexFactor) + 1;
-            var memsize = length * structSize;
-            if (memsize >= uint.MaxValue) return default(R);
-
-            var devindex = Index.Evaluate(context);
-            var prop = (ETrackedDeviceProperty)(object)base.prop.Evaluate(context, DefaultValue);
-            ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
-
-            var arr = new T[length];
-            unsafe
+            fixed (T* ptr = arr)
             {
-                fixed (T* ptr = arr)
-                {
-                    OpenVR.System.GetArrayTrackedDeviceProperty(devindex, prop, 0, (IntPtr)ptr, (uint)memsize, ref error);
-                }
+                OpenVR.System?.GetArrayTrackedDeviceProperty(deviceIndex, (ETrackedDeviceProperty)(object)DefaultValue, 0, (IntPtr)ptr, (uint)memSize, ref error);
             }
-            return Reader(arr, arrindex);
         }
+
+        return Reader(arr, arrIndex);
     }
 }

@@ -7,11 +7,11 @@ namespace OpenvrDataGetter.ProtoFlux
 {
     [NodeName("TrackedDeviceIndex")]
     [Category("ProtoFlux/OpenVR")]
-    public class TrackedDeviceIndex : ValueFunctionNode<FrooxEngineContext, uint>
+    public class TrackedDeviceIndex : ValueFunctionNode<ExecutionContext, uint>
     {
         public readonly ValueInput<uint> Index;
 
-        protected override uint Compute(FrooxEngineContext context)
+        protected override uint Compute(ExecutionContext context)
         {
             return Index.Evaluate(context); 
         }

@@ -1,6 +1,7 @@
-﻿using Valve.VR;
+﻿using OpenvrDataGetter.Nodes;
+using Valve.VR;
 
-namespace OpenvrDataGetter
+namespace OpenvrDataGetter.Nodes
 {
     public class DevicePropertyArrayInt : DevicePropertyArray<int, IntArrayDeviceProperty>
     {

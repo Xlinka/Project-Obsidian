@@ -1,28 +1,37 @@
 ﻿using Elements.Core;
-using Valve.VR;
+using FrooxEngine;
+using ProtoFlux.Runtimes.Execution;
 using System;
+using Valve.VR;
 
-namespace OpenvrDataGetter
-{ 
+namespace OpenvrDataGetter.Nodes
+{
     public class DevicePropertyFloat3 : DeviceProperty<float3, Float3DeviceProperty>
     {
-        public override float3 Content
+        protected override float3 Compute(ExecutionContext context)
         {
-            get
+            ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
+            var Float3 = new float3[1];
+            uint deviceIndex = Index.Evaluate(context); 
+            Float3DeviceProperty prop = Prop.Evaluate(context); 
+
+            unsafe
             {
-                ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success; //its not clear the proper way to read vec3 props. this spits out reasonable data
-                var Float3 = new float3[1];
-                unsafe
+                fixed (float3* pFloat3 = Float3)
                 {
-                    fixed (float3* pFloat3 = Float3)
-                    {
-                        OpenVR.System.GetArrayTrackedDeviceProperty(Index.Evaluate(), (ETrackedDeviceProperty)prop.Evaluate(), 0, (IntPtr)pFloat3, (uint)sizeof(float3), ref error);
-                    }
+                    OpenVR.System.GetArrayTrackedDeviceProperty(deviceIndex, (ETrackedDeviceProperty)prop, 0, (IntPtr)pFloat3, (uint)sizeof(float3), ref error);
                 }
-                return Float3[0];
             }
+
+            if (error != ETrackedPropertyError.TrackedProp_Success)
+            {
+                throw new InvalidOperationException($"Failed to get float3 device property. Error: {error}");
+            }
+
+            return Float3[0]; 
         }
     }
+
     public enum Float3DeviceProperty
     {
         Prop_ImuFactoryGyroBias = ETrackedDeviceProperty.Prop_ImuFactoryGyroBias_Vector3,
