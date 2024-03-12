@@ -1,28 +1,30 @@
 ﻿using System.Text;
 using ProtoFlux.Runtimes.Execution;
 using Valve.VR;
-namespace OpenvrDataGetter
+
+namespace OpenvrDataGetter.Nodes
 {
     public class DevicePropertyString : DeviceProperty<string, StringDeviceProperty>
     {
-        public override string Content
+        protected override string Compute(ExecutionContext context)
         {
-            get
+            uint index = Index.Evaluate(context);
+            ETrackedDeviceProperty property = (ETrackedDeviceProperty)Prop.Evaluate(context);
+            ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
+            StringBuilder stringBuilder = new StringBuilder(64);
+            uint requiredSize = OpenVR.System.GetStringTrackedDeviceProperty(index, property, null, 0, ref error);
+
+            if (requiredSize > 1)
             {
-                uint index = Index.Evaluate(context);
-                ETrackedDeviceProperty property = (ETrackedDeviceProperty)prop.Evaluate();
-                ETrackedPropertyError pError = ETrackedPropertyError.TrackedProp_Success;
-                StringBuilder stringBuilder = new StringBuilder(64);
-                uint stringTrackedDeviceProperty = OpenVR.System.GetStringTrackedDeviceProperty(index, property, null, 0u, ref pError);
-                if (stringTrackedDeviceProperty > 1)
-                {
-                    stringBuilder = new StringBuilder((int)stringTrackedDeviceProperty);
-                    OpenVR.System.GetStringTrackedDeviceProperty(index, property, stringBuilder, stringTrackedDeviceProperty, ref pError);
-                }
-                return stringBuilder.ToString();
+                stringBuilder.EnsureCapacity((int)requiredSize);
+                OpenVR.System.GetStringTrackedDeviceProperty(index, property, stringBuilder, requiredSize, ref error);
             }
+
+            return stringBuilder.ToString();
         }
     }
+
+
     public enum StringDeviceProperty
     {
         Prop_TrackingSystemName = ETrackedDeviceProperty.Prop_TrackingSystemName_String,

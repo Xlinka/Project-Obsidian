@@ -1,9 +1,18 @@
-﻿using Valve.VR;
+﻿using OpenvrDataGetter.Nodes;
+using Valve.VR;
+using ProtoFlux.Runtimes.Execution;
 
 namespace OpenvrDataGetter
 {
-    class RoleOfIndex : TrackedDeviceData<ETrackedControllerRole>
+    public class RoleOfIndex : TrackedDeviceData<ETrackedControllerRole>
     {
-        public override ETrackedControllerRole Content => OpenVR.System.GetControllerRoleForTrackedDeviceIndex(Index.Evaluate());
+        protected override ETrackedControllerRole Compute(ExecutionContext context)
+        {
+            uint deviceIndex = Index.Evaluate(context);
+
+            ETrackedControllerRole role = OpenVR.System.GetControllerRoleForTrackedDeviceIndex(deviceIndex);
+
+            return role;
+        }
     }
 }

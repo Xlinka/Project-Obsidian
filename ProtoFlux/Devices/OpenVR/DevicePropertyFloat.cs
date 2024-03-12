@@ -6,9 +6,8 @@ namespace OpenvrDataGetter
 {
     public class DevicePropertyFloat : DeviceProperty<float, FloatDeviceProperty>
     {
-        public override int compute(ExecutionContext context)
+        protected override float Compute(ExecutionContext context)
         {
-            get
             {
                 ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
                 return OpenVR.System.GetFloatTrackedDeviceProperty(Index.Evaluate(context), (ETrackedDeviceProperty)Prop.Evaluate(context), ref error);

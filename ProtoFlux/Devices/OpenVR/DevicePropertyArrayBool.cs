@@ -5,7 +5,7 @@ using Valve.VR;
 
 namespace OpenvrDataGetter
 {
-    public class DevicePropertyArrayBool : DevicePropertyArrayNode<byte, BoolArrayDeviceProperty, bool>
+    public class DevicePropertyArrayBool : DevicePropertyArrayBase<byte, BoolArrayDeviceProperty, bool>
     {
         protected override bool Reader(byte[] apiVal, uint arrindex)
         {
