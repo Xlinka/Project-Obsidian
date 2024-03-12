@@ -1,16 +1,17 @@
-﻿using ProtoFlux.Runtimes.Execution;
+﻿using OpenvrDataGetter.Nodes;
+using ProtoFlux.Runtimes.Execution;
 using Valve.VR;
 
 namespace OpenvrDataGetter
 {
     public class DevicePropertyBool : DeviceProperty<bool, BoolDeviceProperty>
     {
-        public override bool content
+
+        protected override bool Compute(ExecutionContext context)
         {
-            get
             {
                 ETrackedPropertyError error = ETrackedPropertyError.TrackedProp_Success;
-                return OpenVR.System.GetBoolTrackedDeviceProperty(Index.Evaluate(context), (ETrackedDeviceProperty)prop.Evaluate(), ref error);
+                return OpenVR.System.GetBoolTrackedDeviceProperty(Index.Evaluate(context), (ETrackedDeviceProperty)Prop.Evaluate(context), ref error);
             }
         }
     }
