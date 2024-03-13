@@ -16,8 +16,8 @@ namespace FrooxEngine.OpenvrDataGetter.Nodes
 {
     
     [GenericTypes(GenericTypesAttribute.Group.EnginePrimitivesAndEnums)]
-    
-    [Category("ProtoFlux/Runtimes/Execution/Nodes/OpenvrDataGetter")]
+
+    [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/OpenvrDataGetter" })]
     public abstract partial class DevicePropertyArrayBase<T, P, R> : global::FrooxEngine.OpenvrDataGetter.Nodes.DeviceProperty<R, P>
         
          where T : unmanaged where P : global::System.Enum where R : unmanaged

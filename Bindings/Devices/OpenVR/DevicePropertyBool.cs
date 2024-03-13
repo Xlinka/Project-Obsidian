@@ -14,11 +14,11 @@ using OpenvrDataGetter;
 
 namespace FrooxEngine.OpenvrDataGetter
 {
-    
-    
-    
-    [Category("ProtoFlux/Runtimes/Execution/Nodes/OpenvrDataGetter")]
-    public  partial class DevicePropertyBool : global::FrooxEngine.OpenvrDataGetter.Nodes.DeviceProperty<global::System.Boolean, global::OpenvrDataGetter.BoolDeviceProperty>
+
+
+
+    [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/OpenvrDataGetter" })]
+    public partial class DevicePropertyBool : global::FrooxEngine.OpenvrDataGetter.Nodes.DeviceProperty<global::System.Boolean, global::OpenvrDataGetter.BoolDeviceProperty>
         
         
     {

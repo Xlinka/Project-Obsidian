@@ -14,10 +14,10 @@ using OpenvrDataGetter.Nodes;
 
 namespace FrooxEngine.OpenvrDataGetter.Nodes
 {
-    
-    
-    
-    [Category("ProtoFlux/Runtimes/Execution/Nodes/OpenvrDataGetter")]
+
+
+
+    [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/OpenvrDataGetter" })]
     public abstract partial class DeviceProperty<T, P> : global::FrooxEngine.OpenvrDataGetter.Nodes.TrackedDeviceData<T>
         
          where P : global::System.Enum
