@@ -17,7 +17,7 @@ namespace FrooxEngine.OpenvrDataGetter.Nodes
     
     
     
-    [Category("ProtoFlux/Runtimes/Execution/Nodes/OpenvrDataGetter")]
+    [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/OpenvrDataGetter" })]
     public abstract partial class TrackedDeviceData<T> : global::FrooxEngine.ProtoFlux.Runtimes.Execution.ObjectFunctionNode<global::ProtoFlux.Runtimes.Execution.ExecutionContext, T>
         
         

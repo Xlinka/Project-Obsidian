@@ -17,7 +17,7 @@ namespace FrooxEngine.OpenvrDataGetter.Nodes
     
     
     
-    [Category("ProtoFlux/Runtimes/Execution/Nodes/OpenvrDataGetter")]
+    [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/OpenvrDataGetter" })]
     public  partial class DevicePropertyFloat3 : global::FrooxEngine.OpenvrDataGetter.Nodes.DeviceProperty<global::Elements.Core.float3, global::OpenvrDataGetter.Nodes.Float3DeviceProperty>
         
         

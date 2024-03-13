@@ -8,12 +8,11 @@ using static OpenvrDataGetter.ImuReader;
 using Valve.VR;
 using ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Utility;
 
-// Adjust the namespace as necessary to fit your project's structure
 namespace OpenvrDataGetter.ProtoFluxBindings
 {
     [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/OpenvrDataGetter" })]
 
-    public class ImuReaderBinding : FrooxEngine.ProtoFlux.Runtimes.Execution.AsyncActionNode<ExecutionContext>
+    public class IMUDATA : FrooxEngine.ProtoFlux.Runtimes.Execution.AsyncActionNode<ExecutionContext>
     {
         public readonly SyncRef<INodeObjectOutput<string>> DevicePath;
 

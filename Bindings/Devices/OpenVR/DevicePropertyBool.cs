@@ -18,7 +18,7 @@ namespace FrooxEngine.OpenvrDataGetter
 
 
     [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/OpenvrDataGetter" })]
-    public partial class DevicePropertyBool : global::FrooxEngine.OpenvrDataGetter.Nodes.DeviceProperty<global::System.Boolean, global::OpenvrDataGetter.BoolDeviceProperty>
+    public partial class DevicePropertyBool : global::FrooxEngine.OpenvrDataGetter.Nodes.DeviceProperty<bool, BoolDeviceProperty>
         
         
     {

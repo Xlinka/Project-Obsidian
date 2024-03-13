@@ -5,7 +5,7 @@ using FrooxEngine.ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Core;
 
 
-[Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Devices" })]
+[Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Devices" })]
 public class ViveTrackerBattery : VoidNode<FrooxEngineContext>
 {
     public readonly SyncRef<INodeObjectOutput<User>> User;

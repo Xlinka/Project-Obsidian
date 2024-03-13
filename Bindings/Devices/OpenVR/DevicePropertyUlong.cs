@@ -17,7 +17,7 @@ namespace FrooxEngine.OpenvrDataGetter
     
     
     
-    [Category("ProtoFlux/OpenvrDataGetter")]
+    [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/OpenvrDataGetter" })]
     public  partial class DevicePropertyUlong : global::FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<global::FrooxEngine.ProtoFlux.FrooxEngineContext, global::System.UInt64>
         
         

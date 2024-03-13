@@ -17,7 +17,7 @@ namespace FrooxEngine.OpenvrDataGetter.ProtoFlux
     
     
     
-    [Category("ProtoFlux/OpenvrDataGetter/ProtoFlux")]
+    [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/OpenvrDataGetter" })]
     public  partial class TrackedDeviceIndex : global::FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<global::ProtoFlux.Runtimes.Execution.ExecutionContext, global::System.UInt32>
         
         
