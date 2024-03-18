@@ -37,76 +37,69 @@ namespace OpenvrDataGetter
             string path = DevicePath.Evaluate(context);
             if (string.IsNullOrEmpty(path))
             {
-                Fail(ErrorCode.PathIsNullOrEmpty, context);
-                return null;
+                IsOpened.Write(false, context);
+                FailReason.Write(ErrorCode.PathIsNullOrEmpty, context);
+                return OnFail.Target;
             }
+
             if (pulBuffer == 0)
             {
-                try
+                EIOBufferError errorcode;
+                unsafe
                 {
-                    EIOBufferError errorcode;
-                    unsafe
-                    {
-                        errorcode = OpenVR.IOBuffer.Open(path, EIOBufferMode.Read, (uint)sizeof(ImuSample_t), 0, ref pulBuffer);
-                    }
-                    if (errorcode != EIOBufferError.IOBuffer_Success)
-                    {
-                        Fail((ErrorCode)errorcode, context);
-                        return null;
-                    }
+                    errorcode = OpenVR.IOBuffer.Open(path, EIOBufferMode.Read, (uint)sizeof(ImuSample_t), 0, ref pulBuffer);
+                }
+
+                if (errorcode == EIOBufferError.IOBuffer_Success)
+                {
+                    IsOpened.Write(true, context);
                     thread = new Thread(() => ReadLoop(context));
                     thread.Start();
+                    return OnOpened.Target;
                 }
-                catch (Exception e)
+                else
                 {
-                    UniLog.Log(e);
-                    Fail(ErrorCode.UnknownException, context);
-                    return null;
+                    IsOpened.Write(false, context);
+                    FailReason.Write((ErrorCode)errorcode, context);
+                    return OnFail.Target;
                 }
-                return OnOpened.Target;
             }
             else
             {
-                Fail(ErrorCode.AlreadyOpened, context);
+                IsOpened.Write(false, context);
+                FailReason.Write(ErrorCode.AlreadyOpened, context);
+                return OnFail.Target;
             }
-       
-
-
-            return null;
         }
 
         public IOperation Close(FrooxEngineContext context)
         {
             if (pulBuffer == 0)
             {
-                Fail(ErrorCode.AlreadyClosed, context);
-                return null;
+                FailReason.Write(ErrorCode.AlreadyClosed, context);
+                return OnFail.Target;
             }
+
             var error = OpenVR.IOBuffer.Close(pulBuffer);
-            if (error != EIOBufferError.IOBuffer_Success)
+            if (error == EIOBufferError.IOBuffer_Success)
             {
-                Fail((ErrorCode)error, context);
-                return null;
+                IsOpened.Write(false, context);
+                pulBuffer = 0;
+                if (thread != null)
+                {
+                    thread.Abort();
+                    thread = null;
+                }
+                return OnClosed.Target;
             }
-            try
+            else
             {
-                thread.Abort();
+                FailReason.Write((ErrorCode)error, context);
+                return OnFail.Target;
             }
-            catch (Exception e)
-            {
-                UniLog.Log(e);
-                Fail(ErrorCode.UnknownException, context);
-                return null;
-            }
-            thread = null;
-            pulBuffer = 0;
-            
-            return OnClosed.Target;
         }
 
-
-
-        void Dispose()
+        private void Dispose()
         {
             if (thread != null)
             {
@@ -116,6 +109,7 @@ namespace OpenvrDataGetter
             if (pulBuffer != 0)
             {
                 OpenVR.IOBuffer.Close(pulBuffer);
+                pulBuffer = 0;
             }
         }
 
@@ -159,19 +153,20 @@ namespace OpenvrDataGetter
 
             }
             catch (Exception e)
-                {
-                    UniLog.Log(e);
+            {
+                UniLog.Log(e);
 
-                    thread = null;
+                thread = null;
                 context.World.RunSynchronously(() =>
-                    {
+                {
                     IsOpened.Equals(false);
-                        Fail(failReason == EIOBufferError.IOBuffer_Success ? ErrorCode.UnknownException : (ErrorCode)failReason, context);
-                    });
-                    OpenVR.IOBuffer.Close(pulBuffer);
-                    pulBuffer = 0;
-                }
+                    Fail(failReason == EIOBufferError.IOBuffer_Success ? ErrorCode.UnknownException : (ErrorCode)failReason, context);
+                });
+                OpenVR.IOBuffer.Close(pulBuffer);
+                pulBuffer = 0;
             }
+        }
+
         public ImuReader()
         {
             IsOpened = new ValueOutput<bool>(this);
@@ -181,29 +176,28 @@ namespace OpenvrDataGetter
             VGyro = new ValueOutput<double3>(this);
             UnOffScaleFlags = new ValueOutput<Imu_OffScaleFlags>(this);
         }
+
         private void Fail(ErrorCode error, FrooxEngineContext context)
         {
-            {
-                FailReason.Write(error, context);
-                OnFail.Execute(context);
-                FailReason.Equals(ErrorCode.None);
-            }
+            IsOpened.Write(false, context);
+            FailReason.Write(error, context);
+            OnFail.Execute(context);
         }
-        
-        public enum ErrorCode
-        {
-            None = 0,
-            AlreadyOpened,
-            AlreadyClosed,
-            UnknownException,
-            PathIsNullOrEmpty,
-            IOBuffer_OperationFailed = 100,
-            IOBuffer_InvalidHandle = 101,
-            IOBuffer_InvalidArgument = 102,
-            IOBuffer_PathExists = 103,
-            IOBuffer_PathDoesNotExist = 104,
-            IOBuffer_Permission = 105
-        }
-     
+    }
+
+         public enum ErrorCode
+    {
+        None = 0,
+        AlreadyOpened,
+        AlreadyClosed,
+        UnknownException,
+        PathIsNullOrEmpty,
+        IOBuffer_OperationFailed = 100,
+        IOBuffer_InvalidHandle = 101,
+        IOBuffer_InvalidArgument = 102,
+        IOBuffer_PathExists = 103,
+        IOBuffer_PathDoesNotExist = 104,
+        IOBuffer_Permission = 105
     }
 }
+
