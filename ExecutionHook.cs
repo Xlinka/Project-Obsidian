@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using BaseX;
+using Elements.Core;
 using FrooxEngine;
-using FrooxEngine.LogiX.Data;
 using Obsidian.Shaders;
 using Obsidian.Hardware;
+using ProtoFlux.Runtimes.Execution.Nodes.FrooxEngine.Variables;
 
 namespace Obsidian
 {
@@ -60,10 +60,10 @@ namespace Obsidian
     internal static class AttributeInjector
     {
         private static FieldInfo typeInfo =
-            typeof(GenericTypes).GetField("types", BindingFlags.NonPublic | BindingFlags.Instance);
+            typeof(GenericTypesAttribute).GetField("types", BindingFlags.NonPublic | BindingFlags.Instance);
         public static void Inject()
         {
-            var attribute = typeof(ReadDynamicVariable<>).GetCustomAttribute<GenericTypes>(false, false);
+            var attribute = typeof(ReadDynamicVariable<>).GetCustomAttribute<GenericTypesAttribute>(false, false);
             var typesObject = (Type[]) typeInfo.GetValue(attribute);
             var list = typesObject.ToList();
             list.Add(typeof(SyncFieldList<>));
