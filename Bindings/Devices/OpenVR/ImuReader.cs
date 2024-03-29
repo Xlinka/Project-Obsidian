@@ -4,9 +4,9 @@ using FrooxEngine;
 using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
-using static OpenvrDataGetter.ImuReader;
 using Valve.VR;
-using ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Utility;
+using ProtoFlux.Runtimes.Execution.Nodes.Obsidian;
+using static ProtoFlux.Runtimes.Execution.Nodes.Obsidian.ImuReader;
 
 namespace OpenvrDataGetter.ProtoFluxBindings
 {

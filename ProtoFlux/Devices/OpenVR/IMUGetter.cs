@@ -1,16 +1,14 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Elements.Core;
-using FrooxEngine;
 using FrooxEngine.ProtoFlux;
+using OpenvrDataGetter;
 using ProtoFlux.Core;
-using Valve.VR;
-using System.Threading;
 using ProtoFlux.Runtimes.Execution;
-using System.Runtime.InteropServices;
-using System.Runtime.Remoting.Contexts;
+using Valve.VR;
 
-namespace OpenvrDataGetter
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian
 {
     [NodeCategory("OpenvrDataGetter")]
     public class ImuReader : AsyncActionNode<FrooxEngineContext>
@@ -18,58 +16,73 @@ namespace OpenvrDataGetter
         public ObjectInput<string> DevicePath;
 
         public AsyncCall OnOpened;
+
         public Continuation OnClosed;
+
         public Continuation OnFail;
-        public Continuation OnData;
+
+        public AsyncCall OnData;
 
         public readonly ValueOutput<bool> IsOpened;
+
         public readonly ValueOutput<ErrorCode> FailReason;
+
+        [ContinuouslyChanging]
         public readonly ValueOutput<double> FSampleTime;
+
+        [ContinuouslyChanging]
         public readonly ValueOutput<double3> VAccel;
+
+        [ContinuouslyChanging]
         public readonly ValueOutput<double3> VGyro;
+
+        [ContinuouslyChanging]
         public readonly ValueOutput<Imu_OffScaleFlags> UnOffScaleFlags;
 
-        ulong pulBuffer = 0;
-        Thread thread = null;
+        private ulong pulBuffer = 0uL;
 
-        protected override async Task<IOperation> RunAsync(FrooxEngineContext context)
+        private Thread thread = null;
+        public enum ErrorCode
         {
+            None = 0,
+            AlreadyOpened = 1,
+            AlreadyClosed = 2,
+            UnknownException = 3,
+            PathIsNullOrEmpty = 4,
+            IOBuffer_OperationFailed = 100,
+            IOBuffer_InvalidHandle = 101,
+            IOBuffer_InvalidArgument = 102,
+            IOBuffer_PathExists = 103,
+            IOBuffer_PathDoesNotExist = 104,
+            IOBuffer_Permission = 105
+        }
+        protected unsafe override async Task<IOperation> RunAsync(FrooxEngineContext context)
+        {
+            UniLog.Log("RunAsync: Starting");
             string path = DevicePath.Evaluate(context);
             if (string.IsNullOrEmpty(path))
             {
-                IsOpened.Write(false, context);
+                UniLog.Log("RunAsync: Path is null or empty.");
                 FailReason.Write(ErrorCode.PathIsNullOrEmpty, context);
                 return OnFail.Target;
             }
-
-            if (pulBuffer == 0)
+            EIOBufferError errorcode = OpenVR.IOBuffer.Open(path, EIOBufferMode.Read, (uint)sizeof(ImuSample_t), 0u, ref pulBuffer);
+            if (errorcode == EIOBufferError.IOBuffer_Success)
             {
-                EIOBufferError errorcode;
-                unsafe
+                UniLog.Log("RunAsync: OpenVR.IOBuffer.Open succeeded.");
+                OnOpened.ExecuteAsync(context);
+                thread = new Thread((ThreadStart)delegate
                 {
-                    errorcode = OpenVR.IOBuffer.Open(path, EIOBufferMode.Read, (uint)sizeof(ImuSample_t), 0, ref pulBuffer);
-                }
-
-                if (errorcode == EIOBufferError.IOBuffer_Success)
-                {
-                    IsOpened.Write(true, context);
-                    thread = new Thread(() => ReadLoop(context));
-                    thread.Start();
-                    return OnOpened.Target;
-                }
-                else
-                {
-                    IsOpened.Write(false, context);
-                    FailReason.Write((ErrorCode)errorcode, context);
-                    return OnFail.Target;
-                }
+                    ReadLoopAsync(context);
+                });
+                thread.Start();
+                IsOpened.Write(value: true, context);
+                return OnOpened.Target;
             }
-            else
-            {
-                IsOpened.Write(false, context);
-                FailReason.Write(ErrorCode.AlreadyOpened, context);
-                return OnFail.Target;
-            }
+            UniLog.Log($"RunAsync: OpenVR.IOBuffer.Open failed with error code {errorcode}.");
+            IsOpened.Write(value: false, context);
+            FailReason.Write((ErrorCode)errorcode, context);
+            return OnFail.Target;
         }
 
         public IOperation Close(FrooxEngineContext context)
@@ -79,12 +92,11 @@ namespace OpenvrDataGetter
                 FailReason.Write(ErrorCode.AlreadyClosed, context);
                 return OnFail.Target;
             }
-
-            var error = OpenVR.IOBuffer.Close(pulBuffer);
-            if (error == EIOBufferError.IOBuffer_Success)
+            EIOBufferError eIOBufferError = OpenVR.IOBuffer.Close(pulBuffer);
+            if (eIOBufferError == EIOBufferError.IOBuffer_Success)
             {
-                IsOpened.Write(false, context);
-                pulBuffer = 0;
+                IsOpened.Write(value: false, context);
+                pulBuffer = 0uL;
                 if (thread != null)
                 {
                     thread.Abort();
@@ -92,14 +104,11 @@ namespace OpenvrDataGetter
                 }
                 return OnClosed.Target;
             }
-            else
-            {
-                FailReason.Write((ErrorCode)error, context);
-                return OnFail.Target;
-            }
+            FailReason.Write((ErrorCode)eIOBufferError, context);
+            return OnFail.Target;
         }
 
-        private void Dispose()
+        private new void Dispose()
         {
             if (thread != null)
             {
@@ -109,62 +118,58 @@ namespace OpenvrDataGetter
             if (pulBuffer != 0)
             {
                 OpenVR.IOBuffer.Close(pulBuffer);
-                pulBuffer = 0;
+                pulBuffer = 0uL;
             }
         }
 
-        private unsafe void ReadLoop(FrooxEngineContext context)
+        private unsafe Task<IOperation> ReadLoopAsync(FrooxEngineContext context)
         {
-            EIOBufferError failReason = EIOBufferError.IOBuffer_Success;
-            const uint arraySize = 10;
-            ImuSample_t[] samples = new ImuSample_t[arraySize];
-            try
+            return (Task<IOperation>)Task.Run(delegate
             {
                 while (true)
                 {
-                    uint punRead = new();
-                    unsafe
+                    uint punRead = 0u;
+                    ImuSample_t imuSample_t = default(ImuSample_t);
+                    try
                     {
-                        fixed (ImuSample_t* pSamples = samples)
+                        if (OpenVR.IOBuffer.Read(pulBuffer, (IntPtr)(&imuSample_t), (uint)sizeof(ImuSample_t), ref punRead) == EIOBufferError.IOBuffer_Success && punRead == sizeof(ImuSample_t))
                         {
-                            failReason = OpenVR.IOBuffer.Read(pulBuffer, (IntPtr)pSamples, (uint)sizeof(ImuSample_t) * arraySize, ref punRead);
+                            double fSampleTime = imuSample_t.fSampleTime;
+                            double3 vAccel = new double3(imuSample_t.vAccel.v0, imuSample_t.vAccel.v1, imuSample_t.vAccel.v2);
+                            double3 vGyro = new double3(imuSample_t.vGyro.v0, imuSample_t.vGyro.v1, imuSample_t.vGyro.v2);
+                            Imu_OffScaleFlags flags = (Imu_OffScaleFlags)imuSample_t.unOffScaleFlags;
+                            OnData.ExecuteAsync(context);
+                            context.World.RunSynchronously(delegate
+                            {
+                                FSampleTime.Write(fSampleTime, context);
+                                VAccel.Write(vAccel, context);
+                                VGyro.Write(vGyro, context);
+                                UnOffScaleFlags.Write(flags, context);
+                                UniLog.Log($"ImuReader: Successfully read IMU data. Time: {fSampleTime}, Accel: {vAccel}, Gyro: {vGyro}, Flags: {flags}");
+                            });
+                        }
+                        else
+                        {
+                            Thread.Sleep(10);
                         }
                     }
-                    if (failReason != EIOBufferError.IOBuffer_Success)
+                    catch (Exception ex)
                     {
-                        throw new Exception("read retuned: " + failReason.ToString());
+                        UniLog.Log("ImuReader: Exception in ReadLoop: " + ex.Message);
+                        break;
                     }
-                    int unreadSize = (int)punRead / sizeof(ImuSample_t);
-                    for (int i = 0; i < unreadSize; i++)
-                    {
-                        var sample = samples[i];
-                        context.World.RunSynchronously(() =>
-                        {
-                            FSampleTime.Write(sample.fSampleTime, context);
-                            VAccel.Write(new double3(sample.vAccel.v0, sample.vAccel.v1, sample.vAccel.v2), context);
-                            VGyro.Write(new double3(sample.vGyro.v0, sample.vGyro.v1, sample.vGyro.v2), context);
-                            UnOffScaleFlags.Write((Imu_OffScaleFlags)sample.unOffScaleFlags, context);
-                            OnData.Execute(context);
-                        });
-                    }
-
-                    if (unreadSize == 0) Thread.Sleep(10);
                 }
-
-            }
-            catch (Exception e)
-            {
-                UniLog.Log(e);
-
-                thread = null;
-                context.World.RunSynchronously(() =>
+                if (pulBuffer != 0)
                 {
-                    IsOpened.Equals(false);
-                    Fail(failReason == EIOBufferError.IOBuffer_Success ? ErrorCode.UnknownException : (ErrorCode)failReason, context);
+                    OpenVR.IOBuffer.Close(pulBuffer);
+                    pulBuffer = 0uL;
+                }
+                context.World.RunSynchronously(delegate
+                {
+                    IsOpened.Write(value: false, context);
+                    FailReason.Write(ErrorCode.UnknownException, context);
                 });
-                OpenVR.IOBuffer.Close(pulBuffer);
-                pulBuffer = 0;
-            }
+            });
         }
 
         public ImuReader()
@@ -177,27 +182,14 @@ namespace OpenvrDataGetter
             UnOffScaleFlags = new ValueOutput<Imu_OffScaleFlags>(this);
         }
 
-        private void Fail(ErrorCode error, FrooxEngineContext context)
+
+        private IOperation Fail(ErrorCode error, FrooxEngineContext context)
         {
-            IsOpened.Write(false, context);
+            IsOpened.Write(value: false, context);
             FailReason.Write(error, context);
-            OnFail.Execute(context);
+            return OnFail.Target;
         }
     }
 
-         public enum ErrorCode
-    {
-        None = 0,
-        AlreadyOpened,
-        AlreadyClosed,
-        UnknownException,
-        PathIsNullOrEmpty,
-        IOBuffer_OperationFailed = 100,
-        IOBuffer_InvalidHandle = 101,
-        IOBuffer_InvalidArgument = 102,
-        IOBuffer_PathExists = 103,
-        IOBuffer_PathDoesNotExist = 104,
-        IOBuffer_Permission = 105
-    }
 }
 
