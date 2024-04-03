@@ -7,7 +7,7 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux.Locomotion;
 
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Locomotion" })]
-public class IsUserInSeatedMode : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, bool>
+public class IsUserInSeatedModeBinding : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, bool>
 {
     public readonly SyncRef<INodeObjectOutput<User>> User;
 
