@@ -2,10 +2,10 @@
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
-namespace FrooxEngine.ProtoFlux.Locomotion
+namespace FrooxEngine.ProtoFlux.Status
 {
     [ContinuouslyChanging]
-    [NodeCategory("ProtoFlux/Obsidian/Locomotion")]
+    [NodeCategory("ProtoFlux/Obsidian/Status")]
     public class IsUserInSeatedModeNode : ValueFunctionNode<ExecutionContext, bool>
     {
         public readonly ObjectInput<User> User;
