@@ -1,19 +1,61 @@
-﻿using FrooxEngine;
+﻿using System;
+using Elements.Core;
+using FrooxEngine;
+using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
+using FrooxEngine.ProtoFlux.Locomotion;
 
-namespace FrooxEngine.ProtoFlux.Locomotion
+[Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Locomotion" })]
+public class IsUserInSeatedMode : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, bool>
 {
-    [ContinuouslyChanging]
-    [NodeCategory("ProtoFlux/Obsidian/Users/Status")]
-    public class IsUserInSeatedModeNode : ValueFunctionNode<ExecutionContext, bool>
-    {
-        public readonly ObjectInput<User> User;
+    public readonly SyncRef<INodeObjectOutput<User>> User;
 
-        protected override bool Compute(ExecutionContext context)
+    public override Type NodeType => typeof(IsUserInSeatedModeNode);
+
+    public IsUserInSeatedModeNode TypedNodeInstance { get; private set; }
+
+    public override INode NodeInstance => TypedNodeInstance;
+
+    public override int NodeInputCount => base.NodeInputCount + 1;
+
+    public override N Instantiate<N>()
+    {
+        if (TypedNodeInstance != null)
         {
-            User user = User.Evaluate(context);
-            return user == null ? false : user.InputInterface.SeatedMode;
+            throw new InvalidOperationException("Node has already been instantiated");
         }
+        IsUserInSeatedModeNode isUserInSeatedModeNodeInstance = (TypedNodeInstance = new IsUserInSeatedModeNode());
+        return isUserInSeatedModeNodeInstance as N;
+    }
+
+    protected override void AssociateInstanceInternal(INode node)
+    {
+        if (node is IsUserInSeatedModeNode typedNodeInstance)
+        {
+            TypedNodeInstance = typedNodeInstance;
+            return;
+        }
+        throw new ArgumentException("Node instance is not of type " + typeof(IsUserInSeatedModeNode));
+    }
+
+    public override void ClearInstance()
+    {
+        TypedNodeInstance = null;
+    }
+
+    protected override ISyncRef GetInputInternal(ref int index)
+    {
+        ISyncRef inputInternal = base.GetInputInternal(ref index);
+        if (inputInternal != null)
+        {
+            return inputInternal;
+        }
+        if (index == 0)
+        {
+            return User;
+        }
+        index -= 1;
+        return null;
     }
 }
