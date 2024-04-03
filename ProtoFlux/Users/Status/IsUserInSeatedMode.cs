@@ -13,12 +13,7 @@ namespace FrooxEngine.ProtoFlux.Locomotion
         protected override bool Compute(ExecutionContext context)
         {
             User user = User.Evaluate(context);
-            if (user == null)
-            {
-                return false;
-            }
-
-            return user.InputInterface.SeatedMode;
+            return user == null ? false : user.InputInterface.SeatedMode;
         }
     }
 }
