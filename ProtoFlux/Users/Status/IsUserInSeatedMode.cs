@@ -1,5 +1,4 @@
-﻿using FrooxEngine;
-using ProtoFlux.Core;
+﻿using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
 namespace FrooxEngine.ProtoFlux.Status

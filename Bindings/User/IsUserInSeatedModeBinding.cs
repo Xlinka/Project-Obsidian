@@ -1,10 +1,9 @@
 ﻿using System;
-using Elements.Core;
 using FrooxEngine;
 using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
-using FrooxEngine.ProtoFlux.Locomotion;
+using FrooxEngine.ProtoFlux.Status;
 
 [Category(new string[] { "ProtoFlux/Runtimes/Execution/Nodes/Obsidian/Locomotion" })]
 public class IsUserInSeatedModeBinding : FrooxEngine.ProtoFlux.Runtimes.Execution.ValueFunctionNode<ExecutionContext, bool>
