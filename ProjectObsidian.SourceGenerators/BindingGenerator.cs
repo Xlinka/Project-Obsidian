@@ -21,7 +21,6 @@ namespace SourceGenerators
 
         public void Execute(GeneratorExecutionContext context)
         {
-            var index = 0;
             foreach (var tree in context.Compilation.SyntaxTrees)
             {
                 var result = new StringBuilder();
@@ -33,10 +32,7 @@ namespace SourceGenerators
                 var res = result.ToString();
 
                 if (!string.IsNullOrWhiteSpace(res))
-                {
                     context.AddSource($"{walker.BaseName}Bindings.g.cs", result.ToString());
-                    index++;
-                }
             }
         }
     }
@@ -96,7 +92,22 @@ namespace SourceGenerators
         public const string FluxPrefix = "ProtoFlux.Runtimes.Execution.";
 
         //TODO: add more, this is not all of the valid node types
-        public static readonly string[] ValidNodeTypes = { "VoidNode", "ObjectFunctionNode", "ValueFunctionNode", "AsyncActionNode", "ActionNode" };
+        public static readonly string[] ValidNodeTypes =
+        {
+            "NestedNode",
+            "VoidNode", 
+            
+            "ObjectFunctionNode", 
+            "ValueFunctionNode", 
+
+            "ActionNode", 
+            "ActionFlowNode",
+            "ActionBreakableFlowNode",
+            
+            "AsyncActionNode", 
+            "AsyncActionFlowNode", 
+            "AsyncActionBreakableFlowNode",
+        };
 
         private string UsingEnumerate =>
             _usingDeclarations
@@ -106,7 +117,19 @@ namespace SourceGenerators
         private readonly OrderedCount _inputCount = new("NodeInputCount", "GetInputInternal", "ISyncRef");
         private readonly OrderedCount _outputCount = new("NodeOutputCount", "GetOutputInternal", "INodeOutput");
         private readonly OrderedCount _impulseCount = new("NodeImpulseCount", "GetImpulseInternal", "ISyncRef");
+        private readonly OrderedCount _operationCount = new("NodeImpulseCount", "GetImpulseInternal", "INodeOperation");
+        
+        private readonly OrderedCount _inputListCount = new("NodeInputListCount", "GetInputListInternal", "ISyncList");
+        private readonly OrderedCount _outputListCount = new("NodeOutputListCount", "GetOutputListInternal", "ISyncList");
         private readonly OrderedCount _impulseListCount = new("NodeImpulseListCount", "GetImpulseListInternal", "ISyncList");
+        private readonly OrderedCount _operationListCount = new("NodeOperationListCount", "GetOperationListInternal", "ISyncList");
+
+        private IEnumerable<OrderedCount> _counts => new[]
+            { _inputCount, _outputCount, _impulseCount, _operationCount, 
+                _inputListCount, _outputListCount, _impulseListCount, _operationListCount };
+
+        private string CountOverride => string.Concat(_counts.Select(i => i.CountOverride));
+        private string GetOverride => string.Concat(_counts.Select(i => i.GetOverride));
         
         private List<string> _declarations = [];
         private string Declarations => string.Concat(_declarations);
@@ -132,10 +155,7 @@ public partial class {_fullName} : {_baseType}
     public global::{_currentNameSpace}.{_fullName} TypedNodeInstance {{ get; private set; }}
     public override INode NodeInstance => (INode)this.TypedNodeInstance;
     public override void ClearInstance() => this.TypedNodeInstance = null;
-{_inputCount.CountOverride}
-{_outputCount.CountOverride}
-{_impulseCount.CountOverride}
-{_impulseListCount.CountOverride}
+{CountOverride}
     public override N Instantiate<N>()
     {{
         if (this.TypedNodeInstance != null) throw new System.InvalidOperationException(""Node has already been instantiated"");
@@ -144,10 +164,7 @@ public partial class {_fullName} : {_baseType}
         return localVar as N;
     }}
     protected override void AssociateInstanceInternal(INode node) => this.TypedNodeInstance = node is global::{_currentNameSpace}.{_fullName} localVar ? localVar : throw new System.ArgumentException(""Node instance is not of type "" + typeof (global::{_currentNameSpace}.{_fullName})?.ToString());
-{_inputCount.GetOverride}
-{_outputCount.GetOverride}
-{_impulseCount.GetOverride}
-{_impulseListCount.GetOverride}
+{GetOverride}
 }}";
                 return str;
             }
@@ -167,14 +184,14 @@ public partial class {_fullName} : {_baseType}
 
         private void TypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
         {
-            if (!type.Contains(targetTypeName + "<")) return;
+            if (!type.Contains(targetTypeName)) return;
             var t = type.TrimEnds((targetTypeName + "<").Length, 1);
             counter.Add(name);
             _declarations.Add(string.Format("    new public readonly " + declarationFormat + " {0};\n", name, t));
         }
         private void UntypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
         {
-            if (!type.Contains(targetTypeName + "<")) return;
+            if (!type.Contains(targetTypeName)) return;
             counter.Add(name);
             _declarations.Add(string.Format(declarationFormat, name));
         }
@@ -183,22 +200,38 @@ public partial class {_fullName} : {_baseType}
             var type = node.Declaration.Type.ToString();
             var name = node.Declaration.Variables.First().ToString();
             
-            //object in/out
+            //inputs
             TypedFieldDetection(type, name, "ObjectInput", "SyncRef<INodeObjectOutput<{1}>>", _inputCount);
-            TypedFieldDetection(type, name, "ObjectOutput", "NodeObjectOutput<{1}>", _outputCount);
             TypedFieldDetection(type, name, "ObjectArgument", "SyncRef<INodeObjectOutput<{1}>>", _inputCount);
+            TypedFieldDetection(type, name, "ValueInput", "SyncRef<INodeValueOutput<{1}>>", _inputCount);
+            TypedFieldDetection(type, name, "ValueArgument", "SyncRef<INodeValueOutput<{1}>>", _inputCount);
             
-            //value in/out
-            TypedFieldDetection(type, name, "ValueInput", "SyncRef<INodeValueOutput<{0}>>", _inputCount);
-            TypedFieldDetection(type, name, "ValueOutput", "NodeValueOutput<{0}>", _outputCount);
-            TypedFieldDetection(type, name, "ValueArgument", "SyncRef<INodeValueOutput<{0}>>", _inputCount);
+            //outputs
+            TypedFieldDetection(type, name, "ObjectOutput", "NodeObjectOutput<{1}>", _outputCount);
+            TypedFieldDetection(type, name, "ValueOutput", "NodeValueOutput<{1}>", _outputCount);
             
             //impulses
+            UntypedFieldDetection(type, name, "Call", "SyncRef<ISyncNodeOperation>", _impulseCount);
             UntypedFieldDetection(type, name, "Continuation", "SyncRef<INodeOperation>", _impulseCount);
             UntypedFieldDetection(type, name, "AsyncCall", "SyncRef<INodeOperation>", _impulseCount);
+            UntypedFieldDetection(type, name, "AsyncResumption", "SyncRef<INodeOperation>", _impulseCount);
+            
+            //operations
+            UntypedFieldDetection(type, name, "Operation", "SyncNodeOperation", _operationCount);
+            
+            //lists
+            
+            //input lists
+            TypedFieldDetection(type, name, "ValueInputList", "SyncRefList<INodeValueOutput<{1}>>", _inputListCount);
+            
+            //output lists
+            TypedFieldDetection(type, name, "ObjectInputList", "SyncRefList<INodeObjectOutput<{1}>>", _outputListCount);
             
             //impulse lists
             UntypedFieldDetection(type, name, "ContinuationList", "SyncRefList<INodeOperation>", _impulseListCount);
+            
+            //operation lists
+            UntypedFieldDetection(type, name, "SyncOperationList", "SyncList<SyncNodeOperation>", _operationListCount);
             
             base.VisitFieldDeclaration(node);
         }
