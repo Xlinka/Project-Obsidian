@@ -43,6 +43,55 @@ namespace SourceGenerators
 
     public class BindingGeneratorSyntaxWalker : CSharpSyntaxWalker
     {
+        private class OrderedCount
+        {
+            private readonly string CountVariableName;
+            private readonly string MethodName;
+            private readonly string MethodReturnType;
+            public string CountOverride => VariableNames.Count == 0
+                ? ""
+                : $"    public override int {CountVariableName} => base.{CountVariableName} + {VariableNames.Count};";
+
+            public void Add(string value) => VariableNames.Add(value);
+
+            public string GetOverride
+            {
+                get
+                {
+                    if (VariableNames.Count == 0) return "";
+                    var str = $@"
+    protected override {MethodReturnType} {MethodName}(ref int index)
+    {{
+        var item = base.{MethodName}(ref index);
+        if (item != null) return item;
+        switch (index)
+        {{
+";
+                    for (var index = 0; index < VariableNames.Count; index++)
+                    {
+                        var order = VariableNames[index];
+                        str += $"            case {index}:\n                return this.{order};\n";
+                    }
+                    str += $@"
+            default:
+                index -= {VariableNames.Count};
+                return null;
+        }}
+    }}";
+                    return str;
+                }
+            }
+            
+            public readonly List<string> VariableNames = new();
+
+            public OrderedCount(string countVariableName, string methodName, string methodReturnType)
+            {
+                CountVariableName = countVariableName;
+                MethodName = methodName;
+                MethodReturnType = methodReturnType;
+            }
+        }
+        
         public const string BindingPrefix = "FrooxEngine.";
         public const string FluxPrefix = "ProtoFlux.Runtimes.Execution.";
 
@@ -53,113 +102,12 @@ namespace SourceGenerators
             _usingDeclarations
                 .Where(u => !string.IsNullOrWhiteSpace(u))
                 .Aggregate("", (current, u) => current + $"using {u};\n");
-        private string InputCountOverride => _inputOrder.Count == 0
-            ? ""
-            : $"    public override int NodeInputCount => base.NodeInputCount + {_inputOrder.Count};";
 
-        private string OutputCountOverride => _outputOrder.Count == 0
-            ? ""
-            : $"    public override int NodeOutputCount => base.NodeOutputCount + {_outputOrder.Count};";
+        private readonly OrderedCount _inputCount = new("NodeInputCount", "GetInputInternal", "ISyncRef");
+        private readonly OrderedCount _outputCount = new("NodeOutputCount", "GetOutputInternal", "INodeOutput");
+        private readonly OrderedCount _impulseCount = new("NodeImpulseCount", "GetImpulseInternal", "ISyncRef");
+        private readonly OrderedCount _impulseListCount = new("NodeImpulseListCount", "GetImpulseListInternal", "ISyncList");
         
-        private string ImpulseCountOverride => _impulseOrder.Count == 0
-            ? ""
-            : $"    public override int NodeImpulseCount => base.NodeImpulseCount + {_impulseOrder.Count};";
-
-        private string GetInputInternalOverride
-        {
-            get
-            {
-                if (_inputOrder.Count == 0) return "";
-                var str = $$"""
-                            
-                                protected override ISyncRef GetInputInternal(ref int index)
-                                {
-                                    var inputInternal = base.GetInputInternal(ref index);
-                                    if (inputInternal != null) return inputInternal;
-                                    switch (index)
-                                    {
-
-                            """;
-                for (var index = 0; index < _inputOrder.Count; index++)
-                {
-                    var order = _inputOrder[index];
-                    str += $"            case {index}:\n                return this.{order};\n";
-                }
-                str += $$"""
-                         
-                                     default:
-                                         index -= {{_inputOrder.Count}};
-                                         return null;
-                                 }
-                             }
-                         """;
-                return str;
-            }
-        }
-        
-        private string GetImpulseInternalOverride
-        {
-            get
-            {
-                if (_impulseOrder.Count == 0) return "";
-                var str = $$"""
-                            
-                                protected override ISyncRef GetImpulseInternal(ref int index)
-                                {
-                                    var impulseInternal = base.GetImpulseInternal(ref index);
-                                    if (impulseInternal != null) return impulseInternal;
-                                    switch (index)
-                                    {
-
-                            """;
-                for (var index = 0; index < _impulseOrder.Count; index++)
-                {
-                    var order = _impulseOrder[index];
-                    str += $"            case {index}:\n                return this.{order};\n";
-                }
-                str += $$"""
-                         
-                                     default:
-                                         index -= {{_impulseOrder.Count}};
-                                         return null;
-                                 }
-                             }
-                         """;
-                return str;
-            }
-        }
-        private string GetOutputInternalOverride
-        {
-            get
-            {
-                if (_outputOrder.Count == 0) return "";
-                var str = $$"""
-                            
-                                protected override INodeOutput GetOutputInternal(ref int index)
-                                {
-                                    var outputInternal = base.GetOutputInternal(ref index);
-                                    if (outputInternal != null) return outputInternal;
-                                    switch (index)
-                                    {
-
-                            """;
-                for (var index = 0; index < _outputOrder.Count; index++)
-                {
-                    var order = _outputOrder[index];
-                    str += $"            case {index}:\n                return this.{order};\n";
-                }
-                str += $$"""
-                         
-                                     default:
-                                         index -= {{_outputOrder.Count}};
-                                         return null;
-                                 }
-                             }
-                         """;
-                return str;
-            }
-        }
-
         private List<string> _declarations = [];
         private string Declarations => string.Concat(_declarations);
 
@@ -179,13 +127,15 @@ namespace {BindingPrefix}{_currentNameSpace};
 public partial class {_fullName} : {_baseType}
 {{
 {Declarations}
+{_nodeNameOverride}
     public override System.Type NodeType => typeof (global::{_currentNameSpace}.{_fullName});
     public global::{_currentNameSpace}.{_fullName} TypedNodeInstance {{ get; private set; }}
     public override INode NodeInstance => (INode)this.TypedNodeInstance;
     public override void ClearInstance() => this.TypedNodeInstance = null;
-{InputCountOverride}
-{OutputCountOverride}
-{ImpulseCountOverride}
+{_inputCount.CountOverride}
+{_outputCount.CountOverride}
+{_impulseCount.CountOverride}
+{_impulseListCount.CountOverride}
     public override N Instantiate<N>()
     {{
         if (this.TypedNodeInstance != null) throw new System.InvalidOperationException(""Node has already been instantiated"");
@@ -194,9 +144,10 @@ public partial class {_fullName} : {_baseType}
         return localVar as N;
     }}
     protected override void AssociateInstanceInternal(INode node) => this.TypedNodeInstance = node is global::{_currentNameSpace}.{_fullName} localVar ? localVar : throw new System.ArgumentException(""Node instance is not of type "" + typeof (global::{_currentNameSpace}.{_fullName})?.ToString());
-{GetInputInternalOverride}
-{GetOutputInternalOverride}
-{GetImpulseInternalOverride}
+{_inputCount.GetOverride}
+{_outputCount.GetOverride}
+{_impulseCount.GetOverride}
+{_impulseListCount.GetOverride}
 }}";
                 return str;
             }
@@ -212,20 +163,7 @@ public partial class {_fullName} : {_baseType}
         private string _fullBaseType;
         private string _match;
         private string _category;
-
-        private readonly Dictionary<string, string> _objectInputs = new();
-        private readonly Dictionary<string, string> _valueInputs = new();
-        
-        private readonly Dictionary<string, string> _objectArguments = new();
-        private readonly Dictionary<string, string> _valueArguments = new();
-        
-        private readonly Dictionary<string, string> _objectOutputs = new();
-        private readonly Dictionary<string, string> _valueOutputs = new();
-
-        private readonly List<string> _inputOrder = new();
-        private readonly List<string> _outputOrder = new();
-
-        private readonly List<string> _impulseOrder = new();
+        private string _nodeNameOverride = "";
 
         public override void VisitFieldDeclaration(FieldDeclarationSyntax node)
         {
@@ -236,15 +174,13 @@ public partial class {_fullName} : {_baseType}
             if (type.Contains("ObjectInput<"))
             {
                 var t = type.TrimEnds("ObjectInput<".Length, 1);
-                _objectInputs.Add(name, t);
-                _inputOrder.Add(name);
+                _inputCount.Add(name);
                 _declarations.Add($"    new public readonly SyncRef<INodeObjectOutput<{t}>> {name};\n");
             }
             if (type.Contains("ObjectOutput<"))
             {
                 var t = type.TrimEnds("ObjectOutput<".Length, 1);
-                _objectOutputs.Add(name, t);
-                _outputOrder.Add(name);
+                _outputCount.Add(name);
                 _declarations.Add($"    new public readonly NodeObjectOutput<{t}> {name};\n");
             }
             
@@ -252,43 +188,46 @@ public partial class {_fullName} : {_baseType}
             if (type.Contains("ValueInput<"))
             {
                 var t = type.TrimEnds("ValueInput<".Length, 1);
-                _valueInputs.Add(name, t);
-                _inputOrder.Add(name);
+                _inputCount.Add(name);
                 _declarations.Add($"    new public readonly SyncRef<INodeValueOutput<{t}>> {name};\n");
             }
             if (type.Contains("ValueOutput<"))
             {
                 var t = type.TrimEnds("ValueOutput<".Length, 1);
-                _valueOutputs.Add(name, t);
-                _outputOrder.Add(name);
+                _outputCount.Add(name);
                 _declarations.Add($"    new public readonly NodeValueOutput<{t}> {name};\n");
             }
 
             //impulses
             if (type.EndsWith("Continuation"))
             {
-                _impulseOrder.Add(name);
+                _impulseCount.Add(name);
                 _declarations.Add($"    new public readonly SyncRef<INodeOperation> {name};\n");
             }
             if (type.EndsWith("AsyncCall"))
             {
-                _impulseOrder.Add(name);
+                _impulseCount.Add(name);
                 _declarations.Add($"    new public readonly SyncRef<INodeOperation> {name};\n");
+            }
+            
+            //impulse lists
+            if (type.EndsWith("ContinuationList"))
+            {
+                _impulseListCount.Add(name);
+                _declarations.Add($"    new public readonly SyncRefList<INodeOperation> {name};\n");
             }
             
             //arguments
             if (type.Contains("ObjectArgument<"))
             {
                 var t = type.TrimEnds("ObjectArgument<".Length, 1);
-                _objectArguments.Add(name, t);
-                _inputOrder.Add(name);
+                _inputCount.Add(name);
                 _declarations.Add($"    new public readonly SyncRef<INodeObjectOutput<{t}>> {name};\n");
             }
             if (type.Contains("ValueArgument<"))
             {
                 var t = type.TrimEnds("ValueArgument<".Length, 1);
-                _valueArguments.Add(name, t);
-                _inputOrder.Add(name);
+                _inputCount.Add(name);
                 _declarations.Add($"    new public readonly SyncRef<INodeValueOutput<{t}>> {name};\n");
             }
             base.VisitFieldDeclaration(node);
@@ -350,14 +289,22 @@ public partial class {_fullName} : {_baseType}
             var find = node.AttributeLists.SelectMany(i => i.Attributes)
                 .FirstOrDefault(i => i.Name.ToString() == "NodeCategory");
 
-            if (find is null || find.ArgumentList is null)
+            if (find?.ArgumentList is null)
             {
                 base.VisitClassDeclaration(node);
                 return;
             }
+            
+            _category = find.ArgumentList.Arguments.First().ToString().TrimEnds(1,1);
+            
+            var findName = node.AttributeLists.SelectMany(i => i.Attributes)
+                .FirstOrDefault(i => i.Name.ToString() == "NodeName");
 
-            _category = find.ArgumentList.Arguments.First().ToString();
-            _category = _category.Substring(1, _category.Length - 2);
+
+            if (findName?.ArgumentList != null)
+            {
+                _nodeNameOverride = $"        public override string NodeName => {findName.ArgumentList.Arguments.First().ToString().TrimEnds(1,1)};";
+            }
             
             foreach (var u in _usingDeclarations)
             {
