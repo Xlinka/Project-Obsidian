@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using FrooxEngine;
+using FrooxEngine.ProtoFlux;
 using Obsidian;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
@@ -8,11 +9,11 @@ using ProtoFlux.Runtimes.Execution;
 namespace ProtoFlux.Runtimes.Execution.Nodes.Strings
 {
     [NodeCategory("Obsidian/String")]
-    public class DecodeMorseNode : ObjectFunctionNode<ExecutionContext, string>
+    public class DecodeMorseNode : ObjectFunctionNode<FrooxEngineContext, string>
     {
         public readonly ObjectInput<string> Input;
 
-        protected override string Compute(ExecutionContext context)
+        protected override string Compute(FrooxEngineContext context)
         {
             var input = Input.Evaluate(context);
             if (string.IsNullOrWhiteSpace(input))

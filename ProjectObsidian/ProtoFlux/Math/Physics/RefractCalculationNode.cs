@@ -3,17 +3,18 @@ using FrooxEngine;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using System;
+using FrooxEngine.ProtoFlux;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics
 {
     [NodeCategory("Obsidian/Math/Physics")]
-    public class RefractionNode : ValueFunctionNode<ExecutionContext, float>
+    public class RefractionNode : ValueFunctionNode<FrooxEngineContext, float>
     {
         public ValueInput<float> RefractiveIndex1;  
         public ValueInput<float> RefractiveIndex2;  
         public ValueInput<float> AngleOfIncidence;  
 
-        protected override float Compute(ExecutionContext context)
+        protected override float Compute(FrooxEngineContext context)
         {
             float n1 = RefractiveIndex1.Evaluate(context);
             float n2 = RefractiveIndex2.Evaluate(context);

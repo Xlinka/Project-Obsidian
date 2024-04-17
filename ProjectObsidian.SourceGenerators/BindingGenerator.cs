@@ -179,8 +179,8 @@ namespace {BindingPrefix}{_currentNameSpace};
 public partial class {_fullName} : {_baseType}
 {{
 {Declarations}
-    public override System.Type NodeType => typeof ({_currentNameSpace}.{_fullName});
-    public {_currentNameSpace}.{_fullName} TypedNodeInstance {{ get; private set; }}
+    public override System.Type NodeType => typeof (global::{_currentNameSpace}.{_fullName});
+    public global::{_currentNameSpace}.{_fullName} TypedNodeInstance {{ get; private set; }}
     public override INode NodeInstance => (INode)this.TypedNodeInstance;
     public override void ClearInstance() => this.TypedNodeInstance = null;
 {InputCountOverride}
@@ -189,11 +189,11 @@ public partial class {_fullName} : {_baseType}
     public override N Instantiate<N>()
     {{
         if (this.TypedNodeInstance != null) throw new System.InvalidOperationException(""Node has already been instantiated"");
-        var localVar = new {_currentNameSpace}.{_fullName}();
+        var localVar = new global::{_currentNameSpace}.{_fullName}();
         this.TypedNodeInstance = localVar;
         return localVar as N;
     }}
-    protected override void AssociateInstanceInternal(INode node) => this.TypedNodeInstance = node is {_currentNameSpace}.{_fullName} localVar ? localVar : throw new System.ArgumentException(""Node instance is not of type "" + typeof ({_currentNameSpace}.{_fullName})?.ToString());
+    protected override void AssociateInstanceInternal(INode node) => this.TypedNodeInstance = node is global::{_currentNameSpace}.{_fullName} localVar ? localVar : throw new System.ArgumentException(""Node instance is not of type "" + typeof (global::{_currentNameSpace}.{_fullName})?.ToString());
 {GetInputInternalOverride}
 {GetOutputInternalOverride}
 {GetImpulseInternalOverride}
@@ -206,6 +206,7 @@ public partial class {_fullName} : {_baseType}
         private bool _valid;
         private string _currentNameSpace;
         private string _fullName;
+        private string _additionalName = "";
         public string BaseName;
         private string _baseType;
         private string _fullBaseType;
@@ -318,11 +319,13 @@ public partial class {_fullName} : {_baseType}
 
             if (node.TypeParameterList is not null)
             {
-                fullName += "<";
-                fullName = node.TypeParameterList.Parameters.Aggregate(fullName,
+                _additionalName += "<";
+                _additionalName = node.TypeParameterList.Parameters.Aggregate(_additionalName,
                     (current, p) => current + $"{p.Identifier.Text},");
-                fullName = fullName.Substring(0, fullName.Length - 1); //remove last ,
-                fullName += ">";
+                _additionalName = _additionalName.Substring(0, _additionalName.Length - 1); //remove last ,
+                _additionalName += ">";
+
+                fullName += _additionalName;
             }
             
             BaseName = baseName;

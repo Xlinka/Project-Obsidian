@@ -1,19 +1,20 @@
 ﻿using System;
 using FrooxEngine;
+using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Strings
 {
     [NodeCategory("Obsidian/String")]
-    public class HammingDistanceNonNullableNode : ValueFunctionNode<ExecutionContext, int>
+    public class HammingDistanceNonNullableNode : ValueFunctionNode<FrooxEngineContext, int>
     {
         public readonly ObjectInput<string> String1;
         public readonly ObjectInput<string> String2;
 
 
     
-        protected override int Compute(ExecutionContext context)
+        protected override int Compute(FrooxEngineContext context)
         {
             var string1 = String1.Evaluate(context);
             var string2 = String2.Evaluate(context);

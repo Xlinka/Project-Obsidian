@@ -1,4 +1,5 @@
 ﻿using System;
+using FrooxEngine.ProtoFlux;
 using Newtonsoft.Json.Linq;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
@@ -6,12 +7,12 @@ using ProtoFlux.Runtimes.Execution;
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
 {
     [NodeCategory("Obsidian/Json")]
-    public class JsonParseStringNode : ObjectFunctionNode<ExecutionContext, JObject>
+    public class JsonParseStringNode : ObjectFunctionNode<FrooxEngineContext, JObject>
     {
         public readonly ObjectInput<string> Input;
 
    
-        protected override JObject Compute(ExecutionContext context)
+        protected override JObject Compute(FrooxEngineContext context)
         {
             var input = Input.Evaluate(context);
             if (string.IsNullOrEmpty(input))
