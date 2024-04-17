@@ -47,7 +47,7 @@ namespace SourceGenerators
         public const string FluxPrefix = "ProtoFlux.Runtimes.Execution.";
 
         //TODO: add more, this is not all of the valid node types
-        public static readonly string[] ValidNodeTypes = { "VoidNode", "ObjectFunctionNode", "ValueFunctionNode" };
+        public static readonly string[] ValidNodeTypes = { "VoidNode", "ObjectFunctionNode", "ValueFunctionNode", "AsyncActionNode", "ActionNode" };
 
         private string UsingEnumerate =>
             _usingDeclarations
@@ -266,6 +266,11 @@ public partial class {_fullName} : {_baseType}
 
             //impulses
             if (type.EndsWith("Continuation"))
+            {
+                _impulseOrder.Add(name);
+                _declarations.Add($"    new public readonly SyncRef<INodeOperation> {name};\n");
+            }
+            if (type.EndsWith("AsyncCall"))
             {
                 _impulseOrder.Add(name);
                 _declarations.Add($"    new public readonly SyncRef<INodeOperation> {name};\n");
