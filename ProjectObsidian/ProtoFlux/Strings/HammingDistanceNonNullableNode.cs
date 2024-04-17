@@ -5,7 +5,7 @@ using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Strings
 {
-    [NodeCategory("ProtoFlux/Obsidian/String")]
+    [NodeCategory("Obsidian/String")]
     public class HammingDistanceNonNullableNode : ValueFunctionNode<ExecutionContext, int>
     {
         public readonly ObjectInput<string> String1;

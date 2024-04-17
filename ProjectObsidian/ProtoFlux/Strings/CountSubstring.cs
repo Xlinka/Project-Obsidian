@@ -5,7 +5,7 @@ using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Strings
 {
-    [NodeCategory("ProtoFlux/Obsidian/String")]
+    [NodeCategory("Obsidian/String")]
     public class CountSubstringNode : ValueFunctionNode<ExecutionContext, int>
     {
         public readonly ObjectInput<string> String;

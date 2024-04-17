@@ -7,7 +7,7 @@ using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Strings
 {
-    [NodeCategory("ProtoFlux/Obsidian/String")]
+    [NodeCategory("Obsidian/String")]
     public class EncodeMD5Node : ObjectFunctionNode<ExecutionContext, string>
     {
         private static readonly MD5CryptoServiceProvider MD5 = new MD5CryptoServiceProvider();

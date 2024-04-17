@@ -7,6 +7,7 @@ using System;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics
 {
+    [NodeCategory("Obsidian/Math/Physics")]
     public class CentripetalForceCalculationNode : ValueFunctionNode<ExecutionContext, float>
     {
         public ValueInput<float> Mass;

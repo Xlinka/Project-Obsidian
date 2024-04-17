@@ -5,7 +5,7 @@ using ProtoFlux.Runtimes.Execution;
 namespace ProtoFlux.Runtimes.Execution.Nodes.FrooxEngine.Locomotion
 {
     [ContinuouslyChanging]
-    [NodeCategory("ProtoFlux/Obsidian/Locomotion")]
+    [NodeCategory("Obsidian/Locomotion")]
     public class IsUserInSeatedModeNode : ValueFunctionNode<ExecutionContext, bool>
     {
         public readonly ObjectInput<User> User;

@@ -7,7 +7,7 @@ using Obsidian;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Strings
 {
-    [NodeCategory("ProtoFlux/Obsidian/String")]
+    [NodeCategory("Obsidian/String")]
     public class EncodeMorseNode : ObjectFunctionNode<ExecutionContext, string>
     {
         public readonly ObjectInput<string> Input;

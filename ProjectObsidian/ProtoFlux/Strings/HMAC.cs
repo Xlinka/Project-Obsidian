@@ -16,7 +16,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Strings
         SHA512
     }
 
-    [NodeCategory("ProtoFlux/Obsidian/String")]
+    [NodeCategory("Obsidian/String")]
     public class HMACNode : ObjectFunctionNode<ExecutionContext, string>
     {
         public readonly ObjectInput<string> Message;

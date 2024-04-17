@@ -7,7 +7,7 @@ using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Strings
 {
-    [NodeCategory("ProtoFlux/Obsidian/String")]
+    [NodeCategory("Obsidian/String")]
     public class DecodeMorseNode : ObjectFunctionNode<ExecutionContext, string>
     {
         public readonly ObjectInput<string> Input;
