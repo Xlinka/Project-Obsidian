@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Project-Obsidian</RootNamespace>
+    <AssemblyName>Project-Obsidian</AssemblyName>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>11</LangVersion>
+    <Copyright>Copyright ©  2023</Copyright>
+    <Product>Project-Obsidian</Product>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ResonitePath>$(MSBuildThisFileDirectory)Resonite\</ResonitePath>
+    <ResonitePath Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\Resonite\')">C:\Program Files (x86)\Steam\steamapps\common\Resonite\</ResonitePath>
+    <ResonitePath Condition="Exists('$(HOME)/.steam/steam/steamapps/common/Resonite/')">$(HOME)/.steam/steam/steamapps/common/Resonite/</ResonitePath>
+    <ResonitePath Condition="Exists('/mnt/LocalDisk2/SteamLibrary/steamapps/common/Resonite/')">/mnt/LocalDisk2/SteamLibrary/steamapps/common/Resonite/</ResonitePath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="ProtoFlux\Bindings\Networking\**" />
+    <EmbeddedResource Remove="ProtoFlux\Bindings\Networking\**" />
+    <None Remove="ProtoFlux\Bindings\Networking\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Elements.Core">
+      <HintPath>$(ResonitePath)Resonite_Data/Managed/Elements.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="FrooxEngine">
+      <HintPath>$(ResonitePath)Resonite_Data/Managed/FrooxEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(ResonitePath)Resonite_Data/Managed/Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="ProtoFlux.Core">
+      <HintPath>$(ResonitePath)Resonite_Data/Managed/ProtoFlux.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="ProtoFlux.Nodes.Core">
+      <HintPath>$(ResonitePath)Resonite_Data/Managed/ProtoFlux.Nodes.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="ProtoFlux.Nodes.FrooxEngine">
+      <HintPath>$(ResonitePath)Resonite_Data/Managed/ProtoFlux.Nodes.FrooxEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="ProtoFluxBindings">
+      <HintPath>$(ResonitePath)Resonite_Data/Managed/ProtoFluxBindings.dll</HintPath>
+    </Reference>
+	  <Reference Include="Elements.Assets">
+		  <HintPath>$(ResonitePath)Resonite_Data/Managed/Elements.Assets.dll</HintPath>
+	  </Reference>
+	  <Reference Include="SteamVR">
+	    <HintPath>$(ResonitePath)/Resonite_Data/Managed/SteamVR.dll</HintPath>
+	  </Reference>
+	  <Reference Include="System.Net.Http" />  
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ProjectObsidian.SourceGenerators\SourceGenerators.csproj" OutputItemType="Analyzer" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3"> </PackageReference>
+  </ItemGroup>
+</Project>
