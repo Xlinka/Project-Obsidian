@@ -167,20 +167,16 @@ public partial class {_fullName} : {_baseType}
 
         private void TypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
         {
-            if (type.Contains(targetTypeName + "<"))
-            {
-                var t = type.TrimEnds((targetTypeName + "<").Length, 1);
-                counter.Add(name);
-                _declarations.Add(string.Format(declarationFormat, t, name));
-            }
+            if (!type.Contains(targetTypeName + "<")) return;
+            var t = type.TrimEnds((targetTypeName + "<").Length, 1);
+            counter.Add(name);
+            _declarations.Add(string.Format("    new public readonly " + declarationFormat + "{0};\n", name, t));
         }
         private void UntypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
         {
-            if (type.Contains(targetTypeName + "<"))
-            {
-                counter.Add(name);
-                _declarations.Add(string.Format(declarationFormat, name));
-            }
+            if (!type.Contains(targetTypeName + "<")) return;
+            counter.Add(name);
+            _declarations.Add(string.Format(declarationFormat, name));
         }
         public override void VisitFieldDeclaration(FieldDeclarationSyntax node)
         {
@@ -188,30 +184,21 @@ public partial class {_fullName} : {_baseType}
             var name = node.Declaration.Variables.First().ToString();
             
             //object in/out
-            TypedFieldDetection(type, name, "ObjectInput", 
-                "    new public readonly SyncRef<INodeObjectOutput<{0}>> {1};\n", _inputCount);
-            TypedFieldDetection(type, name, "ObjectOutput", 
-                "    new public readonly NodeObjectOutput<{0}> {1};\n", _outputCount);
-            TypedFieldDetection(type, name, "ObjectArgument", 
-                "    new public readonly SyncRef<INodeObjectOutput<{0}>> {1};\n", _inputCount);
+            TypedFieldDetection(type, name, "ObjectInput", "SyncRef<INodeObjectOutput<{1}>>", _inputCount);
+            TypedFieldDetection(type, name, "ObjectOutput", "NodeObjectOutput<{1}>", _outputCount);
+            TypedFieldDetection(type, name, "ObjectArgument", "SyncRef<INodeObjectOutput<{1}>>", _inputCount);
             
             //value in/out
-            TypedFieldDetection(type, name, "ValueInput", 
-                "    new public readonly SyncRef<INodeValueOutput<{0}>> {1};\n", _inputCount);
-            TypedFieldDetection(type, name, "ValueOutput", 
-                "    new public readonly NodeValueOutput<{0}> {1};\n", _outputCount);
-            TypedFieldDetection(type, name, "ValueArgument", 
-                "    new public readonly SyncRef<INodeValueOutput<{0}>> {1};\n", _inputCount);
+            TypedFieldDetection(type, name, "ValueInput", "SyncRef<INodeValueOutput<{0}>>", _inputCount);
+            TypedFieldDetection(type, name, "ValueOutput", "NodeValueOutput<{0}>", _outputCount);
+            TypedFieldDetection(type, name, "ValueArgument", "SyncRef<INodeValueOutput<{0}>>", _inputCount);
             
             //impulses
-            UntypedFieldDetection(type, name, "Continuation", 
-                "    new public readonly SyncRef<INodeOperation> {0};\n", _impulseCount);
-            UntypedFieldDetection(type, name, "AsyncCall", 
-                "    new public readonly SyncRef<INodeOperation> {0};\n", _impulseCount);
+            UntypedFieldDetection(type, name, "Continuation", "SyncRef<INodeOperation>", _impulseCount);
+            UntypedFieldDetection(type, name, "AsyncCall", "SyncRef<INodeOperation>", _impulseCount);
             
             //impulse lists
-            UntypedFieldDetection(type, name, "ContinuationList", 
-                "    new public readonly SyncRefList<INodeOperation> {0};\n", _impulseListCount);
+            UntypedFieldDetection(type, name, "ContinuationList", "SyncRefList<INodeOperation>", _impulseListCount);
             
             base.VisitFieldDeclaration(node);
         }
