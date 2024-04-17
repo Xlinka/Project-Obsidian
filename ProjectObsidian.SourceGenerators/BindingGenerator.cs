@@ -53,27 +53,6 @@ namespace SourceGenerators
             _usingDeclarations
                 .Where(u => !string.IsNullOrWhiteSpace(u))
                 .Aggregate("", (current, u) => current + $"using {u};\n");
-
-        private string ObjectInputDeclaration => _objectInputs.Aggregate("",
-            (current, pair) =>
-                current + $"    new public readonly SyncRef<INodeObjectOutput<{pair.Value}>> {pair.Key};\n");
-
-        private string ObjectOutputDeclaration => _objectOutputs.Aggregate("",
-            (current, pair) => 
-                current + $"    new public readonly NodeObjectOutput<{pair.Value}> {pair.Key};\n");
-        
-        private string ValueInputDeclaration => _valueInputs.Aggregate("",
-            (current, pair) =>
-                current + $"    new public readonly SyncRef<INodeValueOutput<{pair.Value}>> {pair.Key};\n");
-
-        private string ValueOutputDeclaration => _valueOutputs.Aggregate("",
-            (current, pair) => 
-                current + $"    new public readonly NodeValueOutput<{pair.Value}> {pair.Key};\n");
-        
-        private string ImpulseDeclaration => _impulseOrder.Aggregate("",
-            (current, name) =>
-                current + $"    new public readonly SyncRef<INodeOperation> {name};\n");
-
         private string InputCountOverride => _inputOrder.Count == 0
             ? ""
             : $"    public override int NodeInputCount => base.NodeInputCount + {_inputOrder.Count};";
@@ -181,6 +160,9 @@ namespace SourceGenerators
             }
         }
 
+        private List<string> _declarations = [];
+        private string Declarations => string.Concat(_declarations);
+
         public string Result
         {
             get
@@ -196,11 +178,7 @@ namespace {BindingPrefix}{_currentNameSpace};
 [Category(new string[] {{""ProtoFlux/Runtimes/Execution/Nodes/{_category}""}})]
 public partial class {_fullName} : {_baseType}
 {{
-{ObjectInputDeclaration}
-{ObjectOutputDeclaration}
-{ValueInputDeclaration}
-{ValueOutputDeclaration}
-{ImpulseDeclaration}
+{Declarations}
     public override System.Type NodeType => typeof ({_currentNameSpace}.{_fullName});
     public {_currentNameSpace}.{_fullName} TypedNodeInstance {{ get; private set; }}
     public override INode NodeInstance => (INode)this.TypedNodeInstance;
@@ -252,31 +230,60 @@ public partial class {_fullName} : {_baseType}
         {
             var type = node.Declaration.Type.ToString();
             var name = node.Declaration.Variables.First().ToString();
+            
+            //object in/out
             if (type.Contains("ObjectInput<"))
             {
-                _objectInputs.Add(name, type.TrimEnds("ObjectInput<".Length, 1));
+                var t = type.TrimEnds("ObjectInput<".Length, 1);
+                _objectInputs.Add(name, t);
                 _inputOrder.Add(name);
+                _declarations.Add($"    new public readonly SyncRef<INodeObjectOutput<{t}>> {name};\n");
             }
             if (type.Contains("ObjectOutput<"))
             {
-                _objectOutputs.Add(name, type.TrimEnds("ObjectOutput<".Length, 1));
+                var t = type.TrimEnds("ObjectOutput<".Length, 1);
+                _objectOutputs.Add(name, t);
                 _outputOrder.Add(name);
+                _declarations.Add($"    new public readonly NodeObjectOutput<{t}> {name};\n");
             }
             
+            //value in/out
             if (type.Contains("ValueInput<"))
             {
-                _valueInputs.Add(name, type.TrimEnds("ValueInput<".Length, 1));
+                var t = type.TrimEnds("ValueInput<".Length, 1);
+                _valueInputs.Add(name, t);
                 _inputOrder.Add(name);
+                _declarations.Add($"    new public readonly SyncRef<INodeValueOutput<{t}>> {name};\n");
             }
             if (type.Contains("ValueOutput<"))
             {
-                _valueOutputs.Add(name, type.TrimEnds("ValueOutput<".Length, 1));
+                var t = type.TrimEnds("ValueOutput<".Length, 1);
+                _valueOutputs.Add(name, t);
                 _outputOrder.Add(name);
+                _declarations.Add($"    new public readonly NodeValueOutput<{t}> {name};\n");
             }
 
+            //impulses
             if (type.EndsWith("Continuation"))
             {
                 _impulseOrder.Add(name);
+                _declarations.Add($"    new public readonly SyncRef<INodeOperation> {name};\n");
+            }
+            
+            //arguments
+            if (type.Contains("ObjectArgument<"))
+            {
+                var t = type.TrimEnds("ObjectArgument<".Length, 1);
+                _objectArguments.Add(name, t);
+                _inputOrder.Add(name);
+                _declarations.Add($"    new public readonly SyncRef<INodeObjectOutput<{t}>> {name};\n");
+            }
+            if (type.Contains("ValueArgument<"))
+            {
+                var t = type.TrimEnds("ValueArgument<".Length, 1);
+                _valueArguments.Add(name, t);
+                _inputOrder.Add(name);
+                _declarations.Add($"    new public readonly SyncRef<INodeValueOutput<{t}>> {name};\n");
             }
             base.VisitFieldDeclaration(node);
         }
