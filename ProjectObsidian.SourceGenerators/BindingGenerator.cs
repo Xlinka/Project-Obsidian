@@ -165,71 +165,54 @@ public partial class {_fullName} : {_baseType}
         private string _category;
         private string _nodeNameOverride = "";
 
+        private void TypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
+        {
+            if (type.Contains(targetTypeName + "<"))
+            {
+                var t = type.TrimEnds((targetTypeName + "<").Length, 1);
+                counter.Add(name);
+                _declarations.Add(string.Format(declarationFormat, t, name));
+            }
+        }
+        private void UntypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
+        {
+            if (type.Contains(targetTypeName + "<"))
+            {
+                counter.Add(name);
+                _declarations.Add(string.Format(declarationFormat, name));
+            }
+        }
         public override void VisitFieldDeclaration(FieldDeclarationSyntax node)
         {
             var type = node.Declaration.Type.ToString();
             var name = node.Declaration.Variables.First().ToString();
             
             //object in/out
-            if (type.Contains("ObjectInput<"))
-            {
-                var t = type.TrimEnds("ObjectInput<".Length, 1);
-                _inputCount.Add(name);
-                _declarations.Add($"    new public readonly SyncRef<INodeObjectOutput<{t}>> {name};\n");
-            }
-            if (type.Contains("ObjectOutput<"))
-            {
-                var t = type.TrimEnds("ObjectOutput<".Length, 1);
-                _outputCount.Add(name);
-                _declarations.Add($"    new public readonly NodeObjectOutput<{t}> {name};\n");
-            }
+            TypedFieldDetection(type, name, "ObjectInput", 
+                "    new public readonly SyncRef<INodeObjectOutput<{0}>> {1};\n", _inputCount);
+            TypedFieldDetection(type, name, "ObjectOutput", 
+                "    new public readonly NodeObjectOutput<{0}> {1};\n", _outputCount);
+            TypedFieldDetection(type, name, "ObjectArgument", 
+                "    new public readonly SyncRef<INodeObjectOutput<{0}>> {1};\n", _inputCount);
             
             //value in/out
-            if (type.Contains("ValueInput<"))
-            {
-                var t = type.TrimEnds("ValueInput<".Length, 1);
-                _inputCount.Add(name);
-                _declarations.Add($"    new public readonly SyncRef<INodeValueOutput<{t}>> {name};\n");
-            }
-            if (type.Contains("ValueOutput<"))
-            {
-                var t = type.TrimEnds("ValueOutput<".Length, 1);
-                _outputCount.Add(name);
-                _declarations.Add($"    new public readonly NodeValueOutput<{t}> {name};\n");
-            }
-
+            TypedFieldDetection(type, name, "ValueInput", 
+                "    new public readonly SyncRef<INodeValueOutput<{0}>> {1};\n", _inputCount);
+            TypedFieldDetection(type, name, "ValueOutput", 
+                "    new public readonly NodeValueOutput<{0}> {1};\n", _outputCount);
+            TypedFieldDetection(type, name, "ValueArgument", 
+                "    new public readonly SyncRef<INodeValueOutput<{0}>> {1};\n", _inputCount);
+            
             //impulses
-            if (type.EndsWith("Continuation"))
-            {
-                _impulseCount.Add(name);
-                _declarations.Add($"    new public readonly SyncRef<INodeOperation> {name};\n");
-            }
-            if (type.EndsWith("AsyncCall"))
-            {
-                _impulseCount.Add(name);
-                _declarations.Add($"    new public readonly SyncRef<INodeOperation> {name};\n");
-            }
+            UntypedFieldDetection(type, name, "Continuation", 
+                "    new public readonly SyncRef<INodeOperation> {0};\n", _impulseCount);
+            UntypedFieldDetection(type, name, "AsyncCall", 
+                "    new public readonly SyncRef<INodeOperation> {0};\n", _impulseCount);
             
             //impulse lists
-            if (type.EndsWith("ContinuationList"))
-            {
-                _impulseListCount.Add(name);
-                _declarations.Add($"    new public readonly SyncRefList<INodeOperation> {name};\n");
-            }
+            UntypedFieldDetection(type, name, "ContinuationList", 
+                "    new public readonly SyncRefList<INodeOperation> {0};\n", _impulseListCount);
             
-            //arguments
-            if (type.Contains("ObjectArgument<"))
-            {
-                var t = type.TrimEnds("ObjectArgument<".Length, 1);
-                _inputCount.Add(name);
-                _declarations.Add($"    new public readonly SyncRef<INodeObjectOutput<{t}>> {name};\n");
-            }
-            if (type.Contains("ValueArgument<"))
-            {
-                var t = type.TrimEnds("ValueArgument<".Length, 1);
-                _inputCount.Add(name);
-                _declarations.Add($"    new public readonly SyncRef<INodeValueOutput<{t}>> {name};\n");
-            }
             base.VisitFieldDeclaration(node);
         }
 
@@ -302,9 +285,8 @@ public partial class {_fullName} : {_baseType}
 
 
             if (findName?.ArgumentList != null)
-            {
-                _nodeNameOverride = $"        public override string NodeName => {findName.ArgumentList.Arguments.First().ToString().TrimEnds(1,1)};";
-            }
+                _nodeNameOverride =
+                    $"    public override string NodeName => {findName.ArgumentList.Arguments.First().ToString()};";
             
             foreach (var u in _usingDeclarations)
             {
