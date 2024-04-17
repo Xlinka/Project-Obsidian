@@ -170,7 +170,7 @@ public partial class {_fullName} : {_baseType}
             if (!type.Contains(targetTypeName + "<")) return;
             var t = type.TrimEnds((targetTypeName + "<").Length, 1);
             counter.Add(name);
-            _declarations.Add(string.Format("    new public readonly " + declarationFormat + "{0};\n", name, t));
+            _declarations.Add(string.Format("    new public readonly " + declarationFormat + " {0};\n", name, t));
         }
         private void UntypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
         {
