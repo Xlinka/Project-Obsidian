@@ -2,7 +2,9 @@
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
-[NodeCategory("Protoflux/Obsidian/Math/Constants")]
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Constants;
+
+[NodeCategory("Obsidian/Math/Constants")]
 [NodeName("Epsilon Float")]
 public class EpsilonFloat : ValueFunctionNode<ExecutionContext, float>
 {
