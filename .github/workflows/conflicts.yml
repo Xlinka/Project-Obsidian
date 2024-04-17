@@ -1,19 +1,20 @@
 name: Check for merge conflicts
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
 
 jobs:
-  triage:
+  add_labels:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+      pull-requests: write
+      repository-projects: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
 
       - name: Check for merge conflicts
         uses: mschilde/auto-label-merge-conflicts@v2.0
