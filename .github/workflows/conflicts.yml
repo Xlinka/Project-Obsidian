@@ -1,23 +1,16 @@
-name: Check for merge conflicts
+name: 'Check for merge conflicts'
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
-
 jobs:
-  add_labels:
+  triage:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      repository-projects: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-
-      - name: Check for merge conflicts
-        uses: mschilde/auto-label-merge-conflicts@v2.0
+      - uses: mschilde/auto-label-merge-conflicts@v2.0
         with:
           CONFLICT_LABEL_NAME: "Has Conflicts"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
