@@ -3,7 +3,9 @@ using FrooxEngine;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
-[NodeCategory("ProtoFlux/Obsidian/Math/Random")]
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Random;
+
+[NodeCategory("Obsidian/Math/Random")]
 [NodeName("Random Euler Angles")]
 [ContinuouslyChanging]
 

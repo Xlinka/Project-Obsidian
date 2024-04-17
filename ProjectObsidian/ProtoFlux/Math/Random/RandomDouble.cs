@@ -3,7 +3,9 @@ using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Actions;
 
-[NodeCategory("ProtoFlux/Obsidian/Math/Random")]
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Random;
+
+[NodeCategory("Obsidian/Math/Random")]
 [NodeName("Random Double")]
 [ContinuouslyChanging]
 public class RandomDouble : ValueFunctionNode<ExecutionContext, double>

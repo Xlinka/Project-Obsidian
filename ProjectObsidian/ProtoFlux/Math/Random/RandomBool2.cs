@@ -4,7 +4,9 @@ using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Actions;
 
-[NodeCategory("ProtoFlux/Obsidian/Math/Random")]
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Random;
+
+[NodeCategory("Obsidian/Math/Random")]
 [ContinuouslyChanging]
 
 public class RandomBool2 : ObjectFunctionNode<ExecutionContext, bool2>
@@ -13,8 +15,8 @@ public class RandomBool2 : ObjectFunctionNode<ExecutionContext, bool2>
 
     protected override bool2 Compute(ExecutionContext context)
     {
-        float2 chance = Chance.Evaluate(context);
-        bool2 result = new bool2(
+        var chance = Chance.Evaluate(context);
+        var result = new bool2(
             RandomX.Chance(chance.x),
             RandomX.Chance(chance.y)
         );

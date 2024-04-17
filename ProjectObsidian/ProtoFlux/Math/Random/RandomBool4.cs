@@ -4,7 +4,9 @@ using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Actions;
 using FrooxEngine;
 
-[NodeCategory("ProtoFlux/Obsidian/Math/Random")]
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Random;
+
+[NodeCategory("Obsidian/Math/Random")]
 [NodeName("Random Bool4")]
 [ContinuouslyChanging]
 public class RandomBool4 : ValueFunctionNode<ExecutionContext, bool4>
