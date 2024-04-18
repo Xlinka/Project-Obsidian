@@ -182,18 +182,20 @@ public partial class {_fullName} : {_baseType}
         private string _category;
         private string _nodeNameOverride = "";
 
-        private void TypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
+        private bool TypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
         {
-            if (!type.Contains(targetTypeName)) return;
+            if (!type.Contains(targetTypeName)) return false;
             var t = type.TrimEnds((targetTypeName + "<").Length, 1);
             counter.Add(name);
             _declarations.Add(string.Format("    new public readonly " + declarationFormat + " {0};\n", name, t));
+            return true;
         }
-        private void UntypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
+        private bool UntypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
         {
-            if (!type.Contains(targetTypeName)) return;
+            if (!type.Contains(targetTypeName)) return false;
             counter.Add(name);
-            _declarations.Add(string.Format(declarationFormat, name));
+            _declarations.Add(string.Format("    new public readonly " + declarationFormat + " {0};\n", name));
+            return true;
         }
         public override void VisitFieldDeclaration(FieldDeclarationSyntax node)
         {
@@ -211,9 +213,11 @@ public partial class {_fullName} : {_baseType}
             TypedFieldDetection(type, name, "ValueOutput", "NodeValueOutput<{1}>", _outputCount);
             
             //impulses
-            UntypedFieldDetection(type, name, "Call", "SyncRef<ISyncNodeOperation>", _impulseCount);
+            if (!UntypedFieldDetection(type, name, "Call", "SyncRef<ISyncNodeOperation>", _impulseCount))
+            {
+                UntypedFieldDetection(type, name, "AsyncCall", "SyncRef<INodeOperation>", _impulseCount);
+            }
             UntypedFieldDetection(type, name, "Continuation", "SyncRef<INodeOperation>", _impulseCount);
-            UntypedFieldDetection(type, name, "AsyncCall", "SyncRef<INodeOperation>", _impulseCount);
             UntypedFieldDetection(type, name, "AsyncResumption", "SyncRef<INodeOperation>", _impulseCount);
             
             //operations
