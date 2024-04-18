@@ -213,10 +213,8 @@ public partial class {_fullName} : {_baseType}
             TypedFieldDetection(type, name, "ValueOutput", "NodeValueOutput<{1}>", _outputCount);
             
             //impulses
-            if (!UntypedFieldDetection(type, name, "Call", "SyncRef<ISyncNodeOperation>", _impulseCount))
-            {
-                UntypedFieldDetection(type, name, "AsyncCall", "SyncRef<INodeOperation>", _impulseCount);
-            }
+            if (!UntypedFieldDetection(type, name, "AsyncCall", "SyncRef<INodeOperation>", _impulseCount))
+                UntypedFieldDetection(type, name, "Call", "SyncRef<ISyncNodeOperation>", _impulseCount);
             UntypedFieldDetection(type, name, "Continuation", "SyncRef<INodeOperation>", _impulseCount);
             UntypedFieldDetection(type, name, "AsyncResumption", "SyncRef<INodeOperation>", _impulseCount);
             
