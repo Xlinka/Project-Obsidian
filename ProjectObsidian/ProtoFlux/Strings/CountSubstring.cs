@@ -1,17 +1,18 @@
 ﻿using System;
 using FrooxEngine;
+using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Strings
 {
-    [NodeCategory("ProtoFlux/Obsidian/String")]
-    public class CountSubstringNode : ValueFunctionNode<ExecutionContext, int>
+    [NodeCategory("Obsidian/String")]
+    public class CountSubstringNode : ValueFunctionNode<FrooxEngineContext, int>
     {
         public readonly ObjectInput<string> String;
         public readonly ObjectInput<string> Pattern;
 
-        protected override int Compute(ExecutionContext context)
+        protected override int Compute(FrooxEngineContext context)
         {
             var str = String.Evaluate(context);
             var pattern = Pattern.Evaluate(context);

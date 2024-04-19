@@ -1,17 +1,20 @@
 ﻿using Elements.Core;
+using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Actions;
 
-[NodeCategory("ProtoFlux/Obsidian/Math/Random")]
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Random;
+
+[NodeCategory("Obsidian/Math/Random")]
 [NodeName("Random Double")]
 [ContinuouslyChanging]
-public class RandomDouble : ValueFunctionNode<ExecutionContext, double>
+public class RandomDouble : ValueFunctionNode<FrooxEngineContext, double>
 {
     public ValueInput<double> Min;
     public ValueInput<double> Max;
 
-    protected override double Compute(ExecutionContext context)
+    protected override double Compute(FrooxEngineContext context)
     {
         var min = Min.Evaluate(context);
         var max = Max.Evaluate(context);

@@ -21,7 +21,6 @@ namespace SourceGenerators
 
         public void Execute(GeneratorExecutionContext context)
         {
-            var index = 0;
             foreach (var tree in context.Compilation.SyntaxTrees)
             {
                 var result = new StringBuilder();
@@ -33,153 +32,107 @@ namespace SourceGenerators
                 var res = result.ToString();
 
                 if (!string.IsNullOrWhiteSpace(res))
-                {
                     context.AddSource($"{walker.BaseName}Bindings.g.cs", result.ToString());
-                    index++;
-                }
             }
         }
     }
 
     public class BindingGeneratorSyntaxWalker : CSharpSyntaxWalker
     {
+        private class OrderedCount
+        {
+            private readonly string CountVariableName;
+            private readonly string MethodName;
+            private readonly string MethodReturnType;
+            public string CountOverride => VariableNames.Count == 0
+                ? ""
+                : $"    public override int {CountVariableName} => base.{CountVariableName} + {VariableNames.Count};";
+
+            public void Add(string value) => VariableNames.Add(value);
+
+            public string GetOverride
+            {
+                get
+                {
+                    if (VariableNames.Count == 0) return "";
+                    var str = $@"
+    protected override {MethodReturnType} {MethodName}(ref int index)
+    {{
+        var item = base.{MethodName}(ref index);
+        if (item != null) return item;
+        switch (index)
+        {{
+";
+                    for (var index = 0; index < VariableNames.Count; index++)
+                    {
+                        var order = VariableNames[index];
+                        str += $"            case {index}:\n                return this.{order};\n";
+                    }
+                    str += $@"
+            default:
+                index -= {VariableNames.Count};
+                return null;
+        }}
+    }}";
+                    return str;
+                }
+            }
+            
+            public readonly List<string> VariableNames = new();
+
+            public OrderedCount(string countVariableName, string methodName, string methodReturnType)
+            {
+                CountVariableName = countVariableName;
+                MethodName = methodName;
+                MethodReturnType = methodReturnType;
+            }
+        }
+        
         public const string BindingPrefix = "FrooxEngine.";
         public const string FluxPrefix = "ProtoFlux.Runtimes.Execution.";
 
         //TODO: add more, this is not all of the valid node types
-        public static readonly string[] ValidNodeTypes = { "VoidNode", "ObjectFunctionNode", "ValueFunctionNode" };
+        public static readonly string[] ValidNodeTypes =
+        {
+            "NestedNode",
+            "VoidNode", 
+            
+            "ObjectFunctionNode", 
+            "ValueFunctionNode", 
+
+            "ActionNode", 
+            "ActionFlowNode",
+            "ActionBreakableFlowNode",
+            
+            "AsyncActionNode", 
+            "AsyncActionFlowNode", 
+            "AsyncActionBreakableFlowNode",
+        };
 
         private string UsingEnumerate =>
             _usingDeclarations
                 .Where(u => !string.IsNullOrWhiteSpace(u))
                 .Aggregate("", (current, u) => current + $"using {u};\n");
 
-        private string ObjectInputDeclaration => _objectInputs.Aggregate("",
-            (current, pair) =>
-                current + $"    new public readonly SyncRef<INodeObjectOutput<{pair.Value}>> {pair.Key};\n");
-
-        private string ObjectOutputDeclaration => _objectOutputs.Aggregate("",
-            (current, pair) => 
-                current + $"    new public readonly NodeObjectOutput<{pair.Value}> {pair.Key};\n");
+        private readonly OrderedCount _inputCount = new("NodeInputCount", "GetInputInternal", "ISyncRef");
+        private readonly OrderedCount _outputCount = new("NodeOutputCount", "GetOutputInternal", "INodeOutput");
+        private readonly OrderedCount _impulseCount = new("NodeImpulseCount", "GetImpulseInternal", "ISyncRef");
+        private readonly OrderedCount _operationCount = new("NodeImpulseCount", "GetImpulseInternal", "INodeOperation");
         
-        private string ValueInputDeclaration => _valueInputs.Aggregate("",
-            (current, pair) =>
-                current + $"    new public readonly SyncRef<INodeValueOutput<{pair.Value}>> {pair.Key};\n");
+        private readonly OrderedCount _inputListCount = new("NodeInputListCount", "GetInputListInternal", "ISyncList");
+        private readonly OrderedCount _outputListCount = new("NodeOutputListCount", "GetOutputListInternal", "ISyncList");
+        private readonly OrderedCount _impulseListCount = new("NodeImpulseListCount", "GetImpulseListInternal", "ISyncList");
+        private readonly OrderedCount _operationListCount = new("NodeOperationListCount", "GetOperationListInternal", "ISyncList");
 
-        private string ValueOutputDeclaration => _valueOutputs.Aggregate("",
-            (current, pair) => 
-                current + $"    new public readonly NodeValueOutput<{pair.Value}> {pair.Key};\n");
+        private IEnumerable<OrderedCount> _counts => new[]
+            { _inputCount, _outputCount, _impulseCount, _operationCount, 
+                _inputListCount, _outputListCount, _impulseListCount, _operationListCount };
+
+        private string CountOverride => string.Concat(_counts.Select(i => i.CountOverride));
+        private string GetOverride => string.Concat(_counts.Select(i => i.GetOverride));
         
-        private string ImpulseDeclaration => _impulseOrder.Aggregate("",
-            (current, name) =>
-                current + $"    new public readonly SyncRef<INodeOperation> {name};\n");
-
-        private string InputCountOverride => _inputOrder.Count == 0
-            ? ""
-            : $"    public override int NodeInputCount => base.NodeInputCount + {_inputOrder.Count};";
-
-        private string OutputCountOverride => _outputOrder.Count == 0
-            ? ""
-            : $"    public override int NodeOutputCount => base.NodeOutputCount + {_outputOrder.Count};";
-        
-        private string ImpulseCountOverride => _impulseOrder.Count == 0
-            ? ""
-            : $"    public override int NodeImpulseCount => base.NodeImpulseCount + {_impulseOrder.Count};";
-
-        private string GetInputInternalOverride
-        {
-            get
-            {
-                if (_inputOrder.Count == 0) return "";
-                var str = $$"""
-                            
-                                protected override ISyncRef GetInputInternal(ref int index)
-                                {
-                                    var inputInternal = base.GetInputInternal(ref index);
-                                    if (inputInternal != null) return inputInternal;
-                                    switch (index)
-                                    {
-
-                            """;
-                for (var index = 0; index < _inputOrder.Count; index++)
-                {
-                    var order = _inputOrder[index];
-                    str += $"            case {index}:\n                return this.{order};\n";
-                }
-                str += $$"""
-                         
-                                     default:
-                                         index -= {{_inputOrder.Count}};
-                                         return null;
-                                 }
-                             }
-                         """;
-                return str;
-            }
-        }
-        
-        private string GetImpulseInternalOverride
-        {
-            get
-            {
-                if (_impulseOrder.Count == 0) return "";
-                var str = $$"""
-                            
-                                protected override ISyncRef GetImpulseInternal(ref int index)
-                                {
-                                    var impulseInternal = base.GetImpulseInternal(ref index);
-                                    if (impulseInternal != null) return impulseInternal;
-                                    switch (index)
-                                    {
-
-                            """;
-                for (var index = 0; index < _impulseOrder.Count; index++)
-                {
-                    var order = _impulseOrder[index];
-                    str += $"            case {index}:\n                return this.{order};\n";
-                }
-                str += $$"""
-                         
-                                     default:
-                                         index -= {{_impulseOrder.Count}};
-                                         return null;
-                                 }
-                             }
-                         """;
-                return str;
-            }
-        }
-        private string GetOutputInternalOverride
-        {
-            get
-            {
-                if (_outputOrder.Count == 0) return "";
-                var str = $$"""
-                            
-                                protected override INodeOutput GetOutputInternal(ref int index)
-                                {
-                                    var outputInternal = base.GetOutputInternal(ref index);
-                                    if (outputInternal != null) return outputInternal;
-                                    switch (index)
-                                    {
-
-                            """;
-                for (var index = 0; index < _outputOrder.Count; index++)
-                {
-                    var order = _outputOrder[index];
-                    str += $"            case {index}:\n                return this.{order};\n";
-                }
-                str += $$"""
-                         
-                                     default:
-                                         index -= {{_outputOrder.Count}};
-                                         return null;
-                                 }
-                             }
-                         """;
-                return str;
-            }
-        }
+        private List<string> _declarations = [];
+        private string Declarations => string.Concat(_declarations);
 
         public string Result
         {
@@ -196,29 +149,22 @@ namespace {BindingPrefix}{_currentNameSpace};
 [Category(new string[] {{""ProtoFlux/Runtimes/Execution/Nodes/{_category}""}})]
 public partial class {_fullName} : {_baseType}
 {{
-{ObjectInputDeclaration}
-{ObjectOutputDeclaration}
-{ValueInputDeclaration}
-{ValueOutputDeclaration}
-{ImpulseDeclaration}
-    public override System.Type NodeType => typeof ({_currentNameSpace}.{_fullName});
-    public {_currentNameSpace}.{_fullName} TypedNodeInstance {{ get; private set; }}
+{Declarations}
+{_nodeNameOverride}
+    public override System.Type NodeType => typeof (global::{_currentNameSpace}.{_fullName});
+    public global::{_currentNameSpace}.{_fullName} TypedNodeInstance {{ get; private set; }}
     public override INode NodeInstance => (INode)this.TypedNodeInstance;
     public override void ClearInstance() => this.TypedNodeInstance = null;
-{InputCountOverride}
-{OutputCountOverride}
-{ImpulseCountOverride}
+{CountOverride}
     public override N Instantiate<N>()
     {{
         if (this.TypedNodeInstance != null) throw new System.InvalidOperationException(""Node has already been instantiated"");
-        var localVar = new {_currentNameSpace}.{_fullName}();
+        var localVar = new global::{_currentNameSpace}.{_fullName}();
         this.TypedNodeInstance = localVar;
         return localVar as N;
     }}
-    protected override void AssociateInstanceInternal(INode node) => this.TypedNodeInstance = node is {_currentNameSpace}.{_fullName} localVar ? localVar : throw new System.ArgumentException(""Node instance is not of type "" + typeof ({_currentNameSpace}.{_fullName})?.ToString());
-{GetInputInternalOverride}
-{GetOutputInternalOverride}
-{GetImpulseInternalOverride}
+    protected override void AssociateInstanceInternal(INode node) => this.TypedNodeInstance = node is global::{_currentNameSpace}.{_fullName} localVar ? localVar : throw new System.ArgumentException(""Node instance is not of type "" + typeof (global::{_currentNameSpace}.{_fullName})?.ToString());
+{GetOverride}
 }}";
                 return str;
             }
@@ -228,56 +174,67 @@ public partial class {_fullName} : {_baseType}
         private bool _valid;
         private string _currentNameSpace;
         private string _fullName;
+        private string _additionalName = "";
         public string BaseName;
         private string _baseType;
         private string _fullBaseType;
         private string _match;
         private string _category;
+        private string _nodeNameOverride = "";
 
-        private readonly Dictionary<string, string> _objectInputs = new();
-        private readonly Dictionary<string, string> _valueInputs = new();
-        
-        private readonly Dictionary<string, string> _objectArguments = new();
-        private readonly Dictionary<string, string> _valueArguments = new();
-        
-        private readonly Dictionary<string, string> _objectOutputs = new();
-        private readonly Dictionary<string, string> _valueOutputs = new();
-
-        private readonly List<string> _inputOrder = new();
-        private readonly List<string> _outputOrder = new();
-
-        private readonly List<string> _impulseOrder = new();
-
+        private bool TypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
+        {
+            if (!type.Contains(targetTypeName)) return false;
+            var t = type.TrimEnds((targetTypeName + "<").Length, 1);
+            counter.Add(name);
+            _declarations.Add(string.Format("    new public readonly " + declarationFormat + " {0};\n", name, t));
+            return true;
+        }
+        private bool UntypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
+        {
+            if (!type.Contains(targetTypeName)) return false;
+            counter.Add(name);
+            _declarations.Add(string.Format("    new public readonly " + declarationFormat + " {0};\n", name));
+            return true;
+        }
         public override void VisitFieldDeclaration(FieldDeclarationSyntax node)
         {
             var type = node.Declaration.Type.ToString();
             var name = node.Declaration.Variables.First().ToString();
-            if (type.Contains("ObjectInput<"))
-            {
-                _objectInputs.Add(name, type.TrimEnds("ObjectInput<".Length, 1));
-                _inputOrder.Add(name);
-            }
-            if (type.Contains("ObjectOutput<"))
-            {
-                _objectOutputs.Add(name, type.TrimEnds("ObjectOutput<".Length, 1));
-                _outputOrder.Add(name);
-            }
             
-            if (type.Contains("ValueInput<"))
-            {
-                _valueInputs.Add(name, type.TrimEnds("ValueInput<".Length, 1));
-                _inputOrder.Add(name);
-            }
-            if (type.Contains("ValueOutput<"))
-            {
-                _valueOutputs.Add(name, type.TrimEnds("ValueOutput<".Length, 1));
-                _outputOrder.Add(name);
-            }
-
-            if (type.EndsWith("Continuation"))
-            {
-                _impulseOrder.Add(name);
-            }
+            //inputs
+            TypedFieldDetection(type, name, "ObjectInput", "SyncRef<INodeObjectOutput<{1}>>", _inputCount);
+            TypedFieldDetection(type, name, "ObjectArgument", "SyncRef<INodeObjectOutput<{1}>>", _inputCount);
+            TypedFieldDetection(type, name, "ValueInput", "SyncRef<INodeValueOutput<{1}>>", _inputCount);
+            TypedFieldDetection(type, name, "ValueArgument", "SyncRef<INodeValueOutput<{1}>>", _inputCount);
+            
+            //outputs
+            TypedFieldDetection(type, name, "ObjectOutput", "NodeObjectOutput<{1}>", _outputCount);
+            TypedFieldDetection(type, name, "ValueOutput", "NodeValueOutput<{1}>", _outputCount);
+            
+            //impulses
+            if (!UntypedFieldDetection(type, name, "AsyncCall", "SyncRef<INodeOperation>", _impulseCount))
+                UntypedFieldDetection(type, name, "Call", "SyncRef<ISyncNodeOperation>", _impulseCount);
+            UntypedFieldDetection(type, name, "Continuation", "SyncRef<INodeOperation>", _impulseCount);
+            UntypedFieldDetection(type, name, "AsyncResumption", "SyncRef<INodeOperation>", _impulseCount);
+            
+            //operations
+            UntypedFieldDetection(type, name, "Operation", "SyncNodeOperation", _operationCount);
+            
+            //lists
+            
+            //input lists
+            TypedFieldDetection(type, name, "ValueInputList", "SyncRefList<INodeValueOutput<{1}>>", _inputListCount);
+            
+            //output lists
+            TypedFieldDetection(type, name, "ObjectInputList", "SyncRefList<INodeObjectOutput<{1}>>", _outputListCount);
+            
+            //impulse lists
+            UntypedFieldDetection(type, name, "ContinuationList", "SyncRefList<INodeOperation>", _impulseListCount);
+            
+            //operation lists
+            UntypedFieldDetection(type, name, "SyncOperationList", "SyncList<SyncNodeOperation>", _operationListCount);
+            
             base.VisitFieldDeclaration(node);
         }
 
@@ -311,11 +268,13 @@ public partial class {_fullName} : {_baseType}
 
             if (node.TypeParameterList is not null)
             {
-                fullName += "<";
-                fullName = node.TypeParameterList.Parameters.Aggregate(fullName,
+                _additionalName += "<";
+                _additionalName = node.TypeParameterList.Parameters.Aggregate(_additionalName,
                     (current, p) => current + $"{p.Identifier.Text},");
-                fullName = fullName.Substring(0, fullName.Length - 1); //remove last ,
-                fullName += ">";
+                _additionalName = _additionalName.Substring(0, _additionalName.Length - 1); //remove last ,
+                _additionalName += ">";
+
+                fullName += _additionalName;
             }
             
             BaseName = baseName;
@@ -335,14 +294,21 @@ public partial class {_fullName} : {_baseType}
             var find = node.AttributeLists.SelectMany(i => i.Attributes)
                 .FirstOrDefault(i => i.Name.ToString() == "NodeCategory");
 
-            if (find is null || find.ArgumentList is null)
+            if (find?.ArgumentList is null)
             {
                 base.VisitClassDeclaration(node);
                 return;
             }
+            
+            _category = find.ArgumentList.Arguments.First().ToString().TrimEnds(1,1);
+            
+            var findName = node.AttributeLists.SelectMany(i => i.Attributes)
+                .FirstOrDefault(i => i.Name.ToString() == "NodeName");
 
-            _category = find.ArgumentList.Arguments.First().ToString();
-            _category = _category.Substring(1, _category.Length - 2);
+
+            if (findName?.ArgumentList != null)
+                _nodeNameOverride =
+                    $"    public override string NodeName => {findName.ArgumentList.Arguments.First().ToString()};";
             
             foreach (var u in _usingDeclarations)
             {

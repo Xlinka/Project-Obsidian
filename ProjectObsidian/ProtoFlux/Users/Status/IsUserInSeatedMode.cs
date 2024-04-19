@@ -1,19 +1,20 @@
 ﻿using FrooxEngine;
+using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.FrooxEngine.Locomotion
 {
     [ContinuouslyChanging]
-    [NodeCategory("ProtoFlux/Obsidian/Locomotion")]
-    public class IsUserInSeatedModeNode : ValueFunctionNode<ExecutionContext, bool>
+    [NodeCategory("Obsidian/Locomotion")]
+    public class IsUserInSeatedModeNode : ValueFunctionNode<FrooxEngineContext, bool>
     {
         public readonly ObjectInput<User> User;
 
-        protected override bool Compute(ExecutionContext context)
+        protected override bool Compute(FrooxEngineContext context)
         {
-            User user = User.Evaluate(context);
-            return user == null ? false : user.InputInterface.SeatedMode;
+            var user = User.Evaluate(context);
+            return user != null && user.InputInterface.SeatedMode;
         }
     }
 }

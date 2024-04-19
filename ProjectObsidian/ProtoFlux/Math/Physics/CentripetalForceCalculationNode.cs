@@ -4,16 +4,18 @@ using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics;
 using System;
+using FrooxEngine.ProtoFlux;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics
 {
-    public class CentripetalForceCalculationNode : ValueFunctionNode<ExecutionContext, float>
+    [NodeCategory("Obsidian/Math/Physics")]
+    public class CentripetalForceCalculationNode : ValueFunctionNode<FrooxEngineContext, float>
     {
         public ValueInput<float> Mass;
         public ValueInput<float> Velocity;
         public ValueInput<float> Radius;
 
-        protected override float Compute(ExecutionContext context)
+        protected override float Compute(FrooxEngineContext context)
         {
             try
             {

@@ -4,6 +4,7 @@ using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using Elements.Core;
 using FrooxEngine;
+using FrooxEngine.ProtoFlux;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
 {
@@ -11,13 +12,13 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
     [GenericTypes(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long),
                   typeof(ulong), typeof(float), typeof(double), typeof(string), typeof(Uri), typeof(JToken), typeof(JObject),
                   typeof(JArray))]
-    public class JsonInsertToArrayNode<T> : ObjectFunctionNode<ExecutionContext, JArray>
+    public class JsonInsertToArrayNode<T> : ObjectFunctionNode<FrooxEngineContext, JArray>
     {
         public readonly ObjectInput<JArray> Array;
         public readonly ObjectInput<T> Object;
         public readonly ObjectInput<int> Index;
 
-        protected override JArray Compute(ExecutionContext context)
+        protected override JArray Compute(FrooxEngineContext context)
         {
             var array = Array.Evaluate(context);
             var obj = Object.Evaluate(context);
@@ -28,7 +29,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
             try
             {
                 var output = (JArray)array.DeepClone();
-                JToken token = obj is JToken jToken ? jToken : new JValue(obj);
+                var token = obj is JToken jToken ? jToken : new JValue(obj);
                 output.Insert(index, token);
                 return output;
             }

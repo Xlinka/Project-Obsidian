@@ -11,7 +11,7 @@ using Obsidian;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.FrooxEngine.Input;
 
-[NodeCategory("Devices")]
+[NodeCategory("Obsidian/Devices")]
 public class ViveTrackerBattery : VoidNode<FrooxEngineContext>
 {
     public ObjectArgument<User> User;

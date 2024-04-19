@@ -1,4 +1,5 @@
 ﻿using System;
+using FrooxEngine.ProtoFlux;
 using Newtonsoft.Json.Linq;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
@@ -6,13 +7,13 @@ using ProtoFlux.Runtimes.Execution;
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
 {
     [NodeCategory("Obsidian/Json")]
-    public class JsonRemoveFromArrayNode : ObjectFunctionNode<ExecutionContext, JArray>
+    public class JsonRemoveFromArrayNode : ObjectFunctionNode<FrooxEngineContext, JArray>
     {
         public readonly ObjectInput<JArray> Array;
         public readonly ObjectInput<int> Index;
 
 
-        protected override JArray Compute(ExecutionContext context)
+        protected override JArray Compute(FrooxEngineContext context)
         {
             var array = Array.Evaluate(context);
             var index = Index.Evaluate(context);

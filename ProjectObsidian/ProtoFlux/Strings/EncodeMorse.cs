@@ -1,18 +1,19 @@
 ﻿using System;
 using System.Text;
 using FrooxEngine;
+using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using Obsidian;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Strings
 {
-    [NodeCategory("ProtoFlux/Obsidian/String")]
-    public class EncodeMorseNode : ObjectFunctionNode<ExecutionContext, string>
+    [NodeCategory("Obsidian/String")]
+    public class EncodeMorseNode : ObjectFunctionNode<FrooxEngineContext, string>
     {
         public readonly ObjectInput<string> Input;
 
-        protected override string Compute(ExecutionContext context)
+        protected override string Compute(FrooxEngineContext context)
         {
             var input = Input.Evaluate(context);
             if (string.IsNullOrWhiteSpace(input))

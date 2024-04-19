@@ -4,6 +4,7 @@ using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using Elements.Core;
 using FrooxEngine;
+using FrooxEngine.ProtoFlux;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
 {
@@ -11,11 +12,11 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
     [GenericTypes(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long),
                   typeof(ulong), typeof(float), typeof(double), typeof(string), typeof(Uri), typeof(JToken), typeof(JObject),
                   typeof(JArray))]
-    public class JsonQuickGetFromObjectNode<T> : ObjectFunctionNode<ExecutionContext, T>
+    public class JsonQuickGetFromObjectNode<T> : ObjectFunctionNode<FrooxEngineContext, T>
     {
         public readonly ObjectInput<string> Input;
         public readonly ObjectInput<string> Tag;
-        protected override T Compute(ExecutionContext context)
+        protected override T Compute(FrooxEngineContext context)
         {
             var input = Input.Evaluate(context);
             var tag = Tag.Evaluate(context);

@@ -3,16 +3,17 @@ using FrooxEngine;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using System;
+using FrooxEngine.ProtoFlux;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Physics
 {
     [NodeCategory("Obsidian/Math/Physics")]
-    public class KineticFrictionNode : ValueFunctionNode<ExecutionContext, float3>
+    public class KineticFrictionNode : ValueFunctionNode<FrooxEngineContext, float3>
     {
         public ValueInput<float3> NormalForce;
         public ValueInput<float> KineticFrictionCoefficient;
 
-        protected override float3 Compute(ExecutionContext context)
+        protected override float3 Compute(FrooxEngineContext context)
         {
             float3 normal = NormalForce.Evaluate(context);
             float coefficient = KineticFrictionCoefficient.Evaluate(context);
