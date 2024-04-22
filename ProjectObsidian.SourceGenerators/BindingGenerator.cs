@@ -46,7 +46,7 @@ namespace SourceGenerators
             private readonly string MethodReturnType;
             public string CountOverride => VariableNames.Count == 0
                 ? ""
-                : $"    public override int {CountVariableName} => base.{CountVariableName} + {VariableNames.Count};";
+                : $"    public override int {CountVariableName} => base.{CountVariableName} + {VariableNames.Count};\n";
 
             public void Add(string value) => VariableNames.Add(value);
 
@@ -117,7 +117,7 @@ namespace SourceGenerators
         private readonly OrderedCount _inputCount = new("NodeInputCount", "GetInputInternal", "ISyncRef");
         private readonly OrderedCount _outputCount = new("NodeOutputCount", "GetOutputInternal", "INodeOutput");
         private readonly OrderedCount _impulseCount = new("NodeImpulseCount", "GetImpulseInternal", "ISyncRef");
-        private readonly OrderedCount _operationCount = new("NodeImpulseCount", "GetImpulseInternal", "INodeOperation");
+        private readonly OrderedCount _operationCount = new("NodeOperationCount", "GetOperationInternal", "INodeOperation");
         
         private readonly OrderedCount _inputListCount = new("NodeInputListCount", "GetInputListInternal", "ISyncList");
         private readonly OrderedCount _outputListCount = new("NodeOutputListCount", "GetOutputListInternal", "ISyncList");
