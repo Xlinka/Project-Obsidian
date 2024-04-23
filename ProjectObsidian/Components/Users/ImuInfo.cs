@@ -5,7 +5,7 @@ using Valve.VR;
 
 namespace FrooxEngine;
 
-public enum ImuErrorCode : int
+public enum ImuErrorCode
 {
     None = 0,
     AlreadyOpened = 1,
@@ -34,7 +34,6 @@ public class ImuInfo : Component
     private ulong _buffer;
     private string _previousPath;
     private bool _previousSimulating;
-    private static readonly int ImuSampleSize = Marshal.SizeOf<ImuSample_t>();
 
     ~ImuInfo()
     {
@@ -59,14 +58,17 @@ public class ImuInfo : Component
             else if (_buffer == 0 || _previousPath != Path.Value)
             {
                 CloseBuffer();
-                ulong buffer = default;
-                //TODO: make this not run every frame if it fails
-                var errorCode = OpenVR.IOBuffer.Open(Path.Value, EIOBufferMode.Read, sizeof(ImuErrorCode), 0u, ref buffer);
-                UniLog.Log($"{buffer}, {errorCode.ToString()}");
-                if (errorCode == EIOBufferError.IOBuffer_Success)
+                unsafe
                 {
-                    _buffer = buffer;
-                    _previousPath = Path.Value;
+                    ulong buffer = default;
+                    //TODO: make this not run every frame if it fails
+                    var errorCode = OpenVR.IOBuffer.Open(Path.Value, EIOBufferMode.Read, (uint)sizeof(ImuSample_t), 0u, ref buffer);
+                    UniLog.Log($"{buffer}, {errorCode.ToString()}");
+                    if (errorCode == EIOBufferError.IOBuffer_Success)
+                    {
+                        _buffer = buffer;
+                        _previousPath = Path.Value;
+                    }
                 }
             }
             if (_buffer != 0)
@@ -76,9 +78,9 @@ public class ImuInfo : Component
                     var punRead = 0u;
                     var imuSample_t = default(ImuSample_t);
 
-                    var error = OpenVR.IOBuffer.Read(_buffer, (IntPtr)(&imuSample_t), (uint)ImuSampleSize, ref punRead);
+                    var error = OpenVR.IOBuffer.Read(_buffer, (IntPtr)(&imuSample_t), (uint)sizeof(ImuSample_t), ref punRead);
                     
-                    if (error == EIOBufferError.IOBuffer_Success && punRead == ImuSampleSize)
+                    if (error == EIOBufferError.IOBuffer_Success && punRead == sizeof(ImuSample_t))
                     {
                         var fSampleTime = imuSample_t.fSampleTime;
                         var vAccel = new double3(imuSample_t.vAccel.v0, imuSample_t.vAccel.v1, imuSample_t.vAccel.v2);
