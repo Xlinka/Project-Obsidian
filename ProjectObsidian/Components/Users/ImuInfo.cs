@@ -5,21 +5,6 @@ using Valve.VR;
 
 namespace FrooxEngine;
 
-public enum ImuErrorCode
-{
-    None = 0,
-    AlreadyOpened = 1,
-    AlreadyClosed = 2,
-    UnknownException = 3,
-    PathIsNullOrEmpty = 4,
-    IOBuffer_OperationFailed = 100,
-    IOBuffer_InvalidHandle = 101,
-    IOBuffer_InvalidArgument = 102,
-    IOBuffer_PathExists = 103,
-    IOBuffer_PathDoesNotExist = 104,
-    IOBuffer_Permission = 105
-}
-
 [Category("Obsidian/Devices")]
 public class ImuInfo : Component
 {
@@ -54,7 +39,7 @@ public class ImuInfo : Component
 
         if (Simulate.Value && LocalUser == SimulatingUser.Target)
         {
-            if (!LocalUser.VR_Active) CloseBuffer(); //we aren't in VR, we probably shouldn't be sampling
+            if (!LocalUser.VR_Active || OpenVR.IOBuffer is null || string.IsNullOrEmpty(Path.Value)) CloseBuffer();
             else if (_buffer == 0 || _previousPath != Path.Value)
             {
                 CloseBuffer();
