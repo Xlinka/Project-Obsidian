@@ -147,7 +147,7 @@ using {_currentNameSpace};
 namespace {BindingPrefix}{_currentNameSpace};
 
 [Category(new string[] {{""ProtoFlux/Runtimes/Execution/Nodes/{_category}""}})]
-public partial class {_fullName} : {_baseType}
+public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execution.{_baseType}
 {{
 {Declarations}
 {_nodeNameOverride}
@@ -203,37 +203,37 @@ public partial class {_fullName} : {_baseType}
             var name = node.Declaration.Variables.First().ToString();
             
             //inputs
-            TypedFieldDetection(type, name, "ObjectInput", "SyncRef<INodeObjectOutput<{1}>>", _inputCount);
-            TypedFieldDetection(type, name, "ObjectArgument", "SyncRef<INodeObjectOutput<{1}>>", _inputCount);
-            TypedFieldDetection(type, name, "ValueInput", "SyncRef<INodeValueOutput<{1}>>", _inputCount);
-            TypedFieldDetection(type, name, "ValueArgument", "SyncRef<INodeValueOutput<{1}>>", _inputCount);
+            TypedFieldDetection(type, name, "ObjectInput", "global::FrooxEngine.SyncRef<global::FrooxEngine.ProtoFlux.INodeObjectOutput<{1}>>", _inputCount);
+            TypedFieldDetection(type, name, "ObjectArgument", "global::FrooxEngine.SyncRef<global::FrooxEngine.ProtoFlux.INodeObjectOutput<{1}>>", _inputCount);
+            TypedFieldDetection(type, name, "ValueInput", "global::FrooxEngine.SyncRef<global::FrooxEngine.ProtoFlux.INodeValueOutput<{1}>>", _inputCount);
+            TypedFieldDetection(type, name, "ValueArgument", "global::FrooxEngine.SyncRef<global::FrooxEngine.ProtoFlux.INodeValueOutput<{1}>>", _inputCount);
             
             //outputs
-            TypedFieldDetection(type, name, "ObjectOutput", "NodeObjectOutput<{1}>", _outputCount);
-            TypedFieldDetection(type, name, "ValueOutput", "NodeValueOutput<{1}>", _outputCount);
+            TypedFieldDetection(type, name, "ObjectOutput", "global::FrooxEngine.ProtoFlux.NodeObjectOutput<{1}>", _outputCount);
+            TypedFieldDetection(type, name, "ValueOutput", "global::FrooxEngine.ProtoFlux.NodeValueOutput<{1}>", _outputCount);
             
             //impulses
-            if (!UntypedFieldDetection(type, name, "AsyncCall", "SyncRef<INodeOperation>", _impulseCount))
-                UntypedFieldDetection(type, name, "Call", "SyncRef<ISyncNodeOperation>", _impulseCount);
-            UntypedFieldDetection(type, name, "Continuation", "SyncRef<INodeOperation>", _impulseCount);
-            UntypedFieldDetection(type, name, "AsyncResumption", "SyncRef<INodeOperation>", _impulseCount);
+            if (!UntypedFieldDetection(type, name, "AsyncCall", "global::FrooxEngine.SyncRef<global::FrooxEngine.ProtoFlux.INodeOperation>", _impulseCount))
+                UntypedFieldDetection(type, name, "Call", "global::FrooxEngine.SyncRef<global::FrooxEngine.ProtoFlux.ISyncNodeOperation>", _impulseCount);
+            UntypedFieldDetection(type, name, "Continuation", "global::FrooxEngine.SyncRef<global::FrooxEngine.ProtoFlux.INodeOperation>", _impulseCount);
+            UntypedFieldDetection(type, name, "AsyncResumption", "global::FrooxEngine.SyncRef<global::FrooxEngine.ProtoFlux.INodeOperation>", _impulseCount);
             
             //operations
-            UntypedFieldDetection(type, name, "Operation", "SyncNodeOperation", _operationCount);
+            UntypedFieldDetection(type, name, "Operation", "global::FrooxEngine.ProtoFlux.SyncNodeOperation", _operationCount);
             
             //lists
             
             //input lists
-            TypedFieldDetection(type, name, "ValueInputList", "SyncRefList<INodeValueOutput<{1}>>", _inputListCount);
+            TypedFieldDetection(type, name, "ValueInputList", "global::FrooxEngine.SyncRefList<global::FrooxEngine.ProtoFlux.INodeValueOutput<{1}>>", _inputListCount);
             
             //output lists
-            TypedFieldDetection(type, name, "ObjectInputList", "SyncRefList<INodeObjectOutput<{1}>>", _outputListCount);
+            TypedFieldDetection(type, name, "ObjectInputList", "global::FrooxEngine.SyncRefList<global::FrooxEngine.ProtoFlux.INodeObjectOutput<{1}>>", _outputListCount);
             
             //impulse lists
-            UntypedFieldDetection(type, name, "ContinuationList", "SyncRefList<INodeOperation>", _impulseListCount);
+            UntypedFieldDetection(type, name, "ContinuationList", "global::FrooxEngine.SyncRefList<global::FrooxEngine.ProtoFlux.INodeOperation>", _impulseListCount);
             
             //operation lists
-            UntypedFieldDetection(type, name, "SyncOperationList", "SyncList<SyncNodeOperation>", _operationListCount);
+            UntypedFieldDetection(type, name, "SyncOperationList", "global::FrooxEngine.SyncList<global::FrooxEngine.ProtoFlux.SyncNodeOperation>", _operationListCount);
             
             base.VisitFieldDeclaration(node);
         }
