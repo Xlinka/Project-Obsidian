@@ -2,10 +2,10 @@
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
-namespace ProtoFlux.Users.Avatar
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Interaction
 {
     [ContinuouslyChanging]
-    [NodeCategory("ProtoFlux/Obsidian/Avatar")]
+    [NodeCategory("Obsidian/Interaction")]
     public class FindGrabbableFromSlot : ObjectFunctionNode<ExecutionContext, IGrabbable>
     {
         public readonly ObjectInput<Slot> Slot;
