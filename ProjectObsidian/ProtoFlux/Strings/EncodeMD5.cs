@@ -6,7 +6,7 @@ using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
-namespace ProtoFlux.Runtimes.Execution.Nodes.Strings
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Strings
 {
     [NodeCategory("Obsidian/String")]
     public class EncodeMD5Node : ObjectFunctionNode<FrooxEngineContext, string>

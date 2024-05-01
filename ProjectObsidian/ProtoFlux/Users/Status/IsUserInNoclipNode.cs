@@ -3,7 +3,7 @@ using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
-namespace ProtoFlux.Runtimes.Execution.Nodes.FrooxEngine.Locomotion
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Locomotion
 {
     [ContinuouslyChanging]
     [NodeCategory("Obsidian/Locomotion")]

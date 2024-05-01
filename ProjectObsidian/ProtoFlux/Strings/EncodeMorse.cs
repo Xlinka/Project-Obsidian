@@ -6,7 +6,7 @@ using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using Obsidian;
 
-namespace ProtoFlux.Runtimes.Execution.Nodes.Strings
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Strings
 {
     [NodeCategory("Obsidian/String")]
     public class EncodeMorseNode : ObjectFunctionNode<FrooxEngineContext, string>
