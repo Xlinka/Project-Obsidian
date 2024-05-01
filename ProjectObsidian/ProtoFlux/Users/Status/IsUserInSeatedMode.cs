@@ -1,11 +1,10 @@
 ﻿using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
-namespace FrooxEngine.ProtoFlux.Status
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Users.Status
 {
-    [ContinuouslyChanging]
-    [NodeCategory("ProtoFlux/Obsidian/Status")]
-    public class IsUserInSeatedModeNode : ValueFunctionNode<ExecutionContext, bool>
+    [NodeCategory("Obsidian/Users/Status")]
+    public class IsUserInSeatedModeNode : ValueFunctionNode<FrooxEngineContext, bool>
     {
         public readonly ObjectInput<User> User;
 
