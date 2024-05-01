@@ -15,10 +15,14 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Users.Avatar
         protected override Slot Compute(ExecutionContext context)
         {
             User user = User.Evaluate(context);
+            if (user == null) return null;
+
             Slot slot = user.Root.Slot;
             List<AvatarRoot> list = new List<AvatarRoot>();
             slot.GetFirstDirectComponentsInChildren(list);
-            return user == null || list.Count == 0 ? null : list[0].Slot;
+            if (list.Count == 0) return null;
+
+            return list[0].Slot;
         }
     }
 }
