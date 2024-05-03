@@ -18,11 +18,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Users.Avatar
             if (user == null) return null;
 
             Slot slot = user.Root.Slot;
-            List<AvatarRoot> list = new List<AvatarRoot>();
+            List<AvatarRoot> list = Pool.BorrowList<AvatarRoot>();
             slot.GetFirstDirectComponentsInChildren(list);
-            if (list.Count == 0) return null;
+            Slot avatarRoot = list.FirstOrDefault()?.Slot;
+            Pool.Return(ref list);
 
-            return list[0].Slot;
+            return avatarRoot;
         }
     }
 }
