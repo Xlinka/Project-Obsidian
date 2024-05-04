@@ -1,13 +1,15 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using Elements.Core;
 using FrooxEngine;
 using FrooxEngine.CommonAvatar;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
-namespace ProtoFlux.Users.Avatar
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Users.Avatar
 {
     [ContinuouslyChanging]
-    [NodeCategory("ProtoFlux/Obsidian/Avatar")]
+    [NodeCategory("Obsidian/Avatar")]
     public class AvatarRootSlot : ObjectFunctionNode<ExecutionContext, Slot>
     {
         public readonly ObjectInput<User> User;
@@ -15,10 +17,15 @@ namespace ProtoFlux.Users.Avatar
         protected override Slot Compute(ExecutionContext context)
         {
             User user = User.Evaluate(context);
+            if (user == null) return null;
+
             Slot slot = user.Root.Slot;
-            List<AvatarRoot> list = new List<AvatarRoot>();
+            List<AvatarRoot> list = Pool.BorrowList<AvatarRoot>();
             slot.GetFirstDirectComponentsInChildren(list);
-            return user == null || list.Count == 0 ? null : list[0].Slot;
+            Slot avatarRoot = list.FirstOrDefault()?.Slot;
+            Pool.Return(ref list);
+
+            return avatarRoot;
         }
     }
 }
