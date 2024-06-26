@@ -22,8 +22,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math
         {
             if (n < 0)
             {
-                UniLog.Log("Negative numbers are not allowed.");
-                return -1; // Special error value
+                //UniLog.Log("Negative numbers are not allowed.");
+                return -1; 
             }
             if (n == 0)
                 return 0;
