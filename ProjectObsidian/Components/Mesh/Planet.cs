@@ -51,7 +51,7 @@ namespace Obsidian
                 mesh.AddTriangle(triangles[i], triangles[i + 1], triangles[i + 2]);
             }
 
-            mesh.RecalculateNormals(AllTriangles);
+           // mesh.RecalculateNormals(AllTriangles);
         }
 
         private void CreateIcosahedron(List<float3> vertices, List<int> triangles)

@@ -1,25 +1,31 @@
-﻿using Elements.Core;
+﻿using System;
+using Elements.Core;
 using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using ProtoFlux.Runtimes.Execution.Nodes.Actions;
 
-namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Random;
-
-[NodeCategory("Obsidian/Math/Random")]
-[NodeName("Random Character")]
-[ContinuouslyChanging]
-public class RandomCharacter : ValueFunctionNode<FrooxEngineContext, char>
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math.Random
 {
-    public ValueInput<int> Start;
-    public ValueInput<int> End;
-    public ObjectInput<string> String;
-
-    protected override char Compute(FrooxEngineContext context)
+    [NodeCategory("Obsidian/Math/Random")]
+    [NodeName("Random Character")]
+    [ContinuouslyChanging]
+    public class RandomCharacter : ValueFunctionNode<FrooxEngineContext, char>
     {
-        var str = String.Evaluate(context);
-        var start = MathX.Clamp(Start.Evaluate(context), 0, str.Length);
-        var end = MathX.Clamp(End.Evaluate(context,str.Length), start, str.Length);
-        return str[RandomX.Range(start, end)];
+        public ValueInput<int> Start;
+        public ValueInput<int> End;
+
+        protected override char Compute(FrooxEngineContext context)
+        {
+            int start = MathX.Clamp(Start.Evaluate(context), 0, 25); 
+            int end = MathX.Clamp(End.Evaluate(context), start, 25); 
+            if (start == end)
+            {
+                return (char)('A' + start); 
+            }
+
+            int randomIndex = RandomX.Range(start, end + 1); 
+            return (char)('A' + randomIndex);
+        }
     }
 }
