@@ -21,7 +21,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math
         private int Fibonacci(int n)
         {
             if (n < 0)
-                throw new ArgumentException("Negative numbers are not allowed.");
+            {
+                UniLog.Log("Negative numbers are not allowed.");
+                return -1; // Special error value
+            }
             if (n == 0)
                 return 0;
             if (n == 1)
