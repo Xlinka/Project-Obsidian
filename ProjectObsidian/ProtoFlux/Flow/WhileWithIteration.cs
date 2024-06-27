@@ -20,13 +20,13 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Flow
             LoopStart.Execute(context);
             while (Condition.Evaluate(context, defaultValue: false))
             {
-                iter++;
                 i.Write(iter, context);
                 if (context.AbortExecution)
                 {
                     throw new ExecutionAbortedException(base.Runtime as IExecutionRuntime, this, LoopIteration.Target, isAsync: false);
                 }
                 LoopIteration.Execute(context);
+                iter++;
             }
             return LoopEnd.Target;
         }

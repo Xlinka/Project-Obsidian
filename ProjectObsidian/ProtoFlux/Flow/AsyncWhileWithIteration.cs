@@ -5,7 +5,7 @@ using ProtoFlux.Runtimes.Execution;
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Flow
 {
     [NodeCategory("Obsidian/Flow")]
-    [NodeName("AsyncWhileWithI", false)]
+    [NodeName("AsyncWhile With I", false)]
     public class AsyncWhileWithIteration : AsyncActionNode<ExecutionContext>
     {
         public ValueInput<bool> Condition;
@@ -21,13 +21,13 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Flow
             await LoopStart.ExecuteAsync(context);
             while (Condition.Evaluate(context, defaultValue: false))
             {
-                iter++;
                 i.Write(iter, context);
                 if (context.AbortExecution)
                 {
                     throw new ExecutionAbortedException(base.Runtime as IExecutionRuntime, this, LoopIteration.Target, isAsync: true);
                 }
                 await LoopIteration.ExecuteAsync(context);
+                iter++;
             }
             return LoopEnd.Target;
         }
