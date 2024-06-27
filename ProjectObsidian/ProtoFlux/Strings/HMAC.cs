@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Security.Cryptography;
 using System.Text;
+using Elements.Core;
 using FrooxEngine;
 using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
@@ -20,18 +21,18 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Strings
     [NodeCategory("Obsidian/String")]
     public class HMACNode : ObjectFunctionNode<FrooxEngineContext, string>
     {
-        public readonly ObjectInput<string> Message;
-        public readonly ObjectInput<string> Key;
-        public readonly ObjectInput<HashFunction> HashAlgorithm;
+        public ObjectInput<string> Message;
+        public ObjectInput<string> Key;
+        public ValueInput<HashFunction> HashAlgorithm;
 
         protected override string Compute(FrooxEngineContext context)
         {
-            string message = Message.Evaluate(context);
-            string key = Key.Evaluate(context);
+            string message = Message.Evaluate(context) ?? string.Empty;
+            string key = Key.Evaluate(context) ?? string.Empty;
             HashFunction hashFunction = HashAlgorithm.Evaluate(context);
 
             if (string.IsNullOrEmpty(message) || string.IsNullOrEmpty(key))
-                return "";
+                return string.Empty;
 
             byte[] keyBytes = Encoding.UTF8.GetBytes(key);
             byte[] messageBytes = Encoding.UTF8.GetBytes(message);
