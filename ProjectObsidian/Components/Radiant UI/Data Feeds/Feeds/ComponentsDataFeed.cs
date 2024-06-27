@@ -21,6 +21,7 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
 
     private void AddComponent(Component c)
     {
+        // If local elements are written to synced fields it can cause exceptions and crashes
         if (c.IsLocalElement) return;
         foreach (KeyValuePair<SearchPhraseFeedUpdateHandler, ComponentsDataFeedData> updateHandler in _updateHandlers)
         {
