@@ -39,11 +39,12 @@ namespace Obsidian
             // Apply noise to vertices
             ApplyPerlinNoise(vertices, radius, noiseScale, noiseStrength);
 
-            // Assign vertices and triangles to the mesh
+            // Assign vertices, normals, and triangles to the mesh
             mesh.SetVertexCount(vertices.Count);
             for (int i = 0; i < vertices.Count; i++)
             {
                 mesh.SetVertex(i, vertices[i]);
+                mesh.SetNormal(i, vertices[i].Normalized); // Set normals directly
             }
 
             for (int i = 0; i < triangles.Count; i += 3)
@@ -51,27 +52,26 @@ namespace Obsidian
                 mesh.AddTriangle(triangles[i], triangles[i + 1], triangles[i + 2]);
             }
 
-           // mesh.RecalculateNormals(AllTriangles);
         }
 
         private void CreateIcosahedron(List<float3> vertices, List<int> triangles)
         {
             float t = (1.0f + MathX.Sqrt(5.0f)) / 2.0f;
 
-            vertices.Add(new float3(-1, t, 0));
-            vertices.Add(new float3(1, t, 0));
-            vertices.Add(new float3(-1, -t, 0));
-            vertices.Add(new float3(1, -t, 0));
+            vertices.Add(new float3(-1, t, 0).Normalized);
+            vertices.Add(new float3(1, t, 0).Normalized);
+            vertices.Add(new float3(-1, -t, 0).Normalized);
+            vertices.Add(new float3(1, -t, 0).Normalized);
 
-            vertices.Add(new float3(0, -1, t));
-            vertices.Add(new float3(0, 1, t));
-            vertices.Add(new float3(0, -1, -t));
-            vertices.Add(new float3(0, 1, -t));
+            vertices.Add(new float3(0, -1, t).Normalized);
+            vertices.Add(new float3(0, 1, t).Normalized);
+            vertices.Add(new float3(0, -1, -t).Normalized);
+            vertices.Add(new float3(0, 1, -t).Normalized);
 
-            vertices.Add(new float3(t, 0, -1));
-            vertices.Add(new float3(t, 0, 1));
-            vertices.Add(new float3(-t, 0, -1));
-            vertices.Add(new float3(-t, 0, 1));
+            vertices.Add(new float3(t, 0, -1).Normalized);
+            vertices.Add(new float3(t, 0, 1).Normalized);
+            vertices.Add(new float3(-t, 0, -1).Normalized);
+            vertices.Add(new float3(-t, 0, 1).Normalized);
 
             triangles.AddRange(new int[] {
                 0, 11, 5,
@@ -136,14 +136,10 @@ namespace Obsidian
 
             float3 p1 = vertices[v1];
             float3 p2 = vertices[v2];
-            float3 middle = new float3(
-                (p1.x + p2.x) / 2.0f,
-                (p1.y + p2.y) / 2.0f,
-                (p1.z + p2.z) / 2.0f
-            );
+            float3 middle = (p1 + p2) / 2.0f;
 
             midpoint = vertices.Count;
-            vertices.Add(middle);
+            vertices.Add(middle.Normalized);
 
             midpointCache[key] = midpoint;
             return midpoint;
