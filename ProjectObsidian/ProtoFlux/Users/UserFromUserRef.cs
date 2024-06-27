@@ -7,7 +7,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Users
 {
     [ContinuouslyChanging]
     [NodeCategory("Obsidian/Users")]
-    [NodeName("UserFromUserRef")]
+    [NodeName("User From UserRef")]
     public class UserFromUserRef : ObjectFunctionNode<FrooxEngineContext, User>
     {
         public readonly ObjectInput<UserRef> UserRef;
