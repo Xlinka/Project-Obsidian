@@ -21,11 +21,13 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
 
     private void AddComponent(Component c)
     {
+        if (c.IsLocalElement) return;
         foreach (KeyValuePair<SearchPhraseFeedUpdateHandler, ComponentsDataFeedData> updateHandler in _updateHandlers)
         {
             var data = updateHandler.Value.RegisterComponent(c);
             foreach (ISyncMember syncMember in data.component.SyncMembers)
             {
+                if (syncMember.IsLocalElement) continue;
                 data.AddMember(syncMember);
             }
             ProcessUpdate(updateHandler.Key, data);
@@ -175,9 +177,12 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
         var components = IncludeChildrenSlots ? TargetSlot.Target.GetComponentsInChildren<Component>() : TargetSlot.Target.GetComponents<Component>();
         foreach (Component allComponent in components)
         {
+            // If local elements are written to synced fields it can cause exceptions and crashes
+            if (allComponent.IsLocalElement) continue;
             componentDataFeedData.RegisterComponent(allComponent);
             foreach (ISyncMember syncMember in allComponent.SyncMembers)
             {
+                if (syncMember.IsLocalElement) continue;
                 componentDataFeedData.AddMember(syncMember);
             }
         }
