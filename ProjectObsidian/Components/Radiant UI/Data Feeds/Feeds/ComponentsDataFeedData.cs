@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System;
 using FrooxEngine;
 
 namespace Obsidian;
@@ -21,10 +22,12 @@ internal class ComponentsDataFeedData
     {
         bool created;
         ComponentData componentData = EnsureEntry(c, out created);
-        if (componentData.component != null)
+
+        if (!created)
         {
-            //throw new InvalidOperationException("Component with this ReferenceID has already been added!");
+            throw new InvalidOperationException("Component with this ReferenceID has already been added!");
         }
+
         componentData.component = c;
         return componentData;
     }
