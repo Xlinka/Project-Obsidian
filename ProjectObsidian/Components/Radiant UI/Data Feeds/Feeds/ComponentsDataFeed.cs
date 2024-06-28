@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Elements.Core;
 using FrooxEngine;
 using SkyFrost.Base;
@@ -19,19 +20,28 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
 
     private Slot _lastSlot = null;
 
+    private static HashSet<Type> _componentTypes = new();
+
+    private static bool SearchStringValid(string str)
+    {
+        return !string.IsNullOrWhiteSpace(str) && str.Length >= 3;
+    }
+
     private void AddComponent(Component c)
     {
         // If local elements are written to synced fields it can cause exceptions and crashes
         if (c.IsLocalElement) return;
         foreach (KeyValuePair<SearchPhraseFeedUpdateHandler, ComponentsDataFeedData> updateHandler in _updateHandlers)
         {
-            var data = updateHandler.Value.RegisterComponent(c);
-            foreach (ISyncMember syncMember in data.component.SyncMembers)
+            var result = updateHandler.Value.AddComponent(c);
+            foreach (ISyncMember syncMember in result.data.component.SyncMembers)
             {
-                if (syncMember.IsLocalElement) continue;
-                data.AddMember(syncMember);
+                if (FilterMember(syncMember))
+                {
+                    result.data.AddMember(syncMember);
+                }
             }
-            ProcessUpdate(updateHandler.Key, data);
+            ProcessUpdate(updateHandler.Key, result.data);
         }
     }
 
@@ -53,22 +63,28 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
         }
     }
 
+    private bool FilterMember(ISyncMember member)
+    {
+        if (member.IsLocalElement) return false;
+        return true;
+    }
+
     private void ProcessUpdate(SearchPhraseFeedUpdateHandler handler, ComponentData data)
     {
         bool flag = true;
         if (!string.IsNullOrEmpty(handler.searchPhrase))
         {
-            List<string> list = Pool.BorrowList<string>();
-            List<string> list2 = Pool.BorrowList<string>();
-            List<string> list3 = Pool.BorrowList<string>();
-            SearchQueryParser.Parse(handler.searchPhrase, list, list2, list3);
-            if (!data.MatchesSearchParameters(list, list2, list3))
+            List<string> optionalTerms = Pool.BorrowList<string>();
+            List<string> requiredTerms = Pool.BorrowList<string>();
+            List<string> excludedTerms = Pool.BorrowList<string>();
+            SearchQueryParser.Parse(handler.searchPhrase, optionalTerms, requiredTerms, excludedTerms);
+            if (!data.MatchesSearchParameters(optionalTerms, requiredTerms, excludedTerms))
             {
                 flag = false;
             }
-            Pool.Return(ref list);
-            Pool.Return(ref list2);
-            Pool.Return(ref list3);
+            Pool.Return(ref optionalTerms);
+            Pool.Return(ref requiredTerms);
+            Pool.Return(ref excludedTerms);
         }
         if (!flag)
         {
@@ -94,6 +110,12 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
     {
         s.ComponentAdded -= AddComponent;
         s.ComponentRemoved -= RemoveComponent;
+    }
+
+    protected override void OnAwake()
+    {
+        base.OnAwake();
+        _lastSlot = TargetSlot.Target;
     }
 
     protected override void OnChanges()
@@ -156,17 +178,44 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
         }
     }
 
+    private void GetAllTypes(HashSet<Type> allTypes, CategoryNode<Type> categoryNode)
+    {
+        foreach (var elem in categoryNode.Elements)
+        {
+            allTypes.Add(elem);
+        }
+        foreach (var subCat in categoryNode.Subcategories)
+        {
+            GetAllTypes(allTypes, subCat);
+        }
+    }
+
+    private IEnumerable<Type> EnumerateAllTypes(CategoryNode<Type> categoryNode)
+    {
+        foreach (var elem in categoryNode.Elements)
+        {
+            yield return elem;
+        }
+        foreach (var subCat in categoryNode.Subcategories)
+        {
+            foreach(var elem2 in EnumerateAllTypes(subCat))
+            {
+                yield return elem2;
+            }
+        }
+    }
+
     public async IAsyncEnumerable<DataFeedItem> Enumerate(IReadOnlyList<string> path, IReadOnlyList<string> groupKeys, string searchPhrase, object viewData)
     {
-        if (path != null && path.Count > 0)
+        if (TargetSlot.Target != null && (path != null && path.Count > 0))
+        {
+            yield break;
+        }
+        if (TargetSlot.Target == null && (path == null || path.Count == 0) && !SearchStringValid(searchPhrase))
         {
             yield break;
         }
         if (groupKeys != null && groupKeys.Count > 0)
-        {
-            yield break;
-        }
-        if (TargetSlot.Target == null)
         {
             yield break;
         }
@@ -175,16 +224,66 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
         componentDataFeedData.Clear();
         searchPhrase = searchPhrase?.Trim();
 
-        var components = IncludeChildrenSlots ? TargetSlot.Target.GetComponentsInChildren<Component>() : TargetSlot.Target.GetComponents<Component>();
-        foreach (Component allComponent in components)
+        if (TargetSlot.Target == null)
         {
-            // If local elements are written to synced fields it can cause exceptions and crashes
-            if (allComponent.IsLocalElement) continue;
-            componentDataFeedData.RegisterComponent(allComponent);
-            foreach (ISyncMember syncMember in allComponent.SyncMembers)
+            var lib = WorkerInitializer.ComponentLibrary;
+            if (path != null && path.Count > 0)
             {
-                if (syncMember.IsLocalElement) continue;
-                componentDataFeedData.AddMember(syncMember);
+                var catNode = lib;
+                foreach (var str in path)
+                {
+                    var subCat = catNode.Subcategories.FirstOrDefault(x => x.Name == str);
+                    if (subCat != null)
+                    {
+                        catNode = subCat;
+                    }
+                    else
+                    {
+                        yield break;
+                    }
+                }
+                if (SearchStringValid(searchPhrase))
+                {
+                    foreach (var elem in EnumerateAllTypes(catNode))
+                    {
+                        componentDataFeedData.AddComponentType(elem);
+                    }
+                }
+                else
+                {
+                    foreach (var elem in catNode.Elements)
+                    {
+                        componentDataFeedData.AddComponentType(elem);
+                    }
+                }
+            }
+            else
+            {
+                if (_componentTypes.Count == 0)
+                {
+                    GetAllTypes(_componentTypes, lib);
+                }
+                foreach (var elem in _componentTypes)
+                {
+                    componentDataFeedData.AddComponentType(elem);
+                }
+            }
+        }
+        else
+        {
+            var components = IncludeChildrenSlots ? TargetSlot.Target.GetComponentsInChildren<Component>() : TargetSlot.Target.GetComponents<Component>();
+            foreach (Component allComponent in components)
+            {
+                // If local elements are written to synced fields it can cause exceptions and crashes
+                if (allComponent.IsLocalElement) continue;
+                var result = componentDataFeedData.AddComponent(allComponent);
+                foreach (ISyncMember syncMember in allComponent.SyncMembers)
+                {
+                    if (FilterMember(syncMember))
+                    {
+                        result.data.AddMember(syncMember);
+                    }
+                }
             }
         }
         

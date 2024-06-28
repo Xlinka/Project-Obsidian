@@ -11,21 +11,37 @@ public class ComponentData
 
     public Component component;
 
+    private Type _componentType;
+
     public bool Submitted { get; private set; }
 
     public string MainName
     {
         get
         {
-            return component.Name;
+            return component?.Name ?? _componentType.Name;
         }
     }
 
+    public string uniqueId;
+
     public int MemberCount => members.Count;
+
+    public Type ComponentType => component?.GetType() ?? _componentType;
+
+    public bool IsGenericType => ComponentType.IsGenericType;
+
+    public Type GenericTypeDefinition => IsGenericType ? ComponentType.GetGenericTypeDefinition() : null;
 
     public ComponentData(Component component)
     {
         this.component = component;
+        _componentType = component.GetType();
+    }
+
+    public ComponentData(Type type)
+    {
+        this._componentType = type;
     }
 
     public void MarkSubmitted()
@@ -87,12 +103,9 @@ public class ComponentData
 
     public bool MatchesTerm(string term)
     {
-        if (component != null)
+        if (ContainsTerm(MainName, term))
         {
-            if (ContainsTerm(component.Name, term))
-            {
-                return true;
-            }
+            return true;
         }
         return false;
     }
@@ -108,6 +121,6 @@ public class ComponentData
 
     public override string ToString()
     {
-        return $"Name: {MainName}, ReferenceID: {component.ReferenceID}, Members: {members.Count}";
+        return $"Name: {MainName}, UniqueID: {uniqueId}, MemberCount: {MemberCount}";
     }
 }
