@@ -205,16 +205,23 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
         }
     }
 
+    private DataFeedCategory GenerateCategory(string key, IReadOnlyList<string> path)
+    {
+        DataFeedCategory dataFeedCategory = new DataFeedCategory();
+        dataFeedCategory.InitBase(key, path, null, ("Category." + key).AsLocaleKey(), OfficialAssets.Graphics.Icons.Gizmo.TransformLocal);
+        return dataFeedCategory;
+    }
+
     public async IAsyncEnumerable<DataFeedItem> Enumerate(IReadOnlyList<string> path, IReadOnlyList<string> groupKeys, string searchPhrase, object viewData)
     {
         if (TargetSlot.Target != null && (path != null && path.Count > 0))
         {
             yield break;
         }
-        if (TargetSlot.Target == null && (path == null || path.Count == 0) && !SearchStringValid(searchPhrase))
-        {
-            yield break;
-        }
+        //if (TargetSlot.Target == null && (path == null || path.Count == 0) && !SearchStringValid(searchPhrase))
+        //{
+        //    yield break;
+        //}
         if (groupKeys != null && groupKeys.Count > 0)
         {
             yield break;
@@ -242,6 +249,10 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
                         yield break;
                     }
                 }
+                foreach (var subCat2 in catNode.Subcategories)
+                {
+                    yield return GenerateCategory(subCat2.Name, path);
+                }
                 if (SearchStringValid(searchPhrase))
                 {
                     foreach (var elem in EnumerateAllTypes(catNode))
@@ -263,9 +274,16 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
                 {
                     GetAllTypes(_componentTypes, lib);
                 }
-                foreach (var elem in _componentTypes)
+                foreach (var subCat in lib.Subcategories)
                 {
-                    componentDataFeedData.AddComponentType(elem);
+                    yield return GenerateCategory(subCat.Name, path);
+                }
+                if (SearchStringValid(searchPhrase))
+                {
+                    foreach (var elem in _componentTypes)
+                    {
+                        componentDataFeedData.AddComponentType(elem);
+                    }
                 }
             }
         }
