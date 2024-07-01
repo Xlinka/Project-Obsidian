@@ -11,7 +11,7 @@ public class ComponentDataFeedItem : DataFeedItem
 
     public ComponentDataFeedItem(ComponentData componentData)
     {
-        InitBase(componentData.component.ReferenceID.ToString(), null, null, componentData.MainName);
+        InitBase(componentData.uniqueId, null, null, componentData.MainName);
         Data = componentData;
         foreach (ISyncMember member in componentData.members)
         {
