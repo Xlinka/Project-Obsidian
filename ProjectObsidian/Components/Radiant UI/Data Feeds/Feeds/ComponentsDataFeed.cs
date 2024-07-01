@@ -7,6 +7,14 @@ using SkyFrost.Base;
 
 namespace Obsidian;
 
+// This feed has two functions. 
+
+// If TargetSlot has a reference, it returns the components on that slot, optionally also returning components on children slots (IncludeChildrenSlots bool)
+// It also returns the sync members (fields, lists etc) as DataFeedEntity<ISyncMember>
+
+// If TargetSlot is null, it returns the components from the component library, which includes the categories (DataFeedCategoryItem)
+// When enumerating the component library, the Component reference on the ComponentDataItemInterface will be null and there will be no members
+
 [Category(new string[] { "Obsidian/Radiant UI/Data Feeds/Feeds" })]
 public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWorldElement
 {
@@ -27,7 +35,7 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
         return !string.IsNullOrWhiteSpace(str) && str.Length >= 3;
     }
 
-    private void AddComponent(Component c)
+    private void OnSlotComponentAdded(Component c)
     {
         // If local elements are written to synced fields it can cause exceptions and crashes
         if (c.IsLocalElement) return;
@@ -45,7 +53,7 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
         }
     }
 
-    private void RemoveComponent(Component c)
+    private void OnSlotComponentRemoved(Component c)
     {
         foreach (KeyValuePair<SearchPhraseFeedUpdateHandler, ComponentsDataFeedData> updateHandler in _updateHandlers)
         {
@@ -102,14 +110,14 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
 
     private void Subscribe(Slot s)
     {
-        s.ComponentAdded += AddComponent;
-        s.ComponentRemoved += RemoveComponent;
+        s.ComponentAdded += OnSlotComponentAdded;
+        s.ComponentRemoved += OnSlotComponentRemoved;
     }
 
     private void Unsubscribe(Slot s)
     {
-        s.ComponentAdded -= AddComponent;
-        s.ComponentRemoved -= RemoveComponent;
+        s.ComponentAdded -= OnSlotComponentAdded;
+        s.ComponentRemoved -= OnSlotComponentRemoved;
     }
 
     protected override void OnAwake()
@@ -205,10 +213,16 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
         }
     }
 
+    private string GetCategoryKey(CategoryNode<Type> categoryNode)
+    {
+        return categoryNode.Name;
+    }
+
     private DataFeedCategory GenerateCategory(string key, IReadOnlyList<string> path)
     {
         DataFeedCategory dataFeedCategory = new DataFeedCategory();
-        dataFeedCategory.InitBase(key, path, null, ("Category." + key).AsLocaleKey(), OfficialAssets.Graphics.Icons.Gizmo.TransformLocal);
+        // random icon
+        dataFeedCategory.InitBase(key, path, null, key, OfficialAssets.Graphics.Icons.Gizmo.TransformLocal);
         return dataFeedCategory;
     }
 
@@ -218,10 +232,6 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
         {
             yield break;
         }
-        //if (TargetSlot.Target == null && (path == null || path.Count == 0) && !SearchStringValid(searchPhrase))
-        //{
-        //    yield break;
-        //}
         if (groupKeys != null && groupKeys.Count > 0)
         {
             yield break;
@@ -251,7 +261,7 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
                 }
                 foreach (var subCat2 in catNode.Subcategories)
                 {
-                    yield return GenerateCategory(subCat2.Name, path);
+                    yield return GenerateCategory(GetCategoryKey(subCat2), path);
                 }
                 if (SearchStringValid(searchPhrase))
                 {
@@ -276,7 +286,7 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
                 }
                 foreach (var subCat in lib.Subcategories)
                 {
-                    yield return GenerateCategory(subCat.Name, path);
+                    yield return GenerateCategory(GetCategoryKey(subCat), path);
                 }
                 if (SearchStringValid(searchPhrase))
                 {
