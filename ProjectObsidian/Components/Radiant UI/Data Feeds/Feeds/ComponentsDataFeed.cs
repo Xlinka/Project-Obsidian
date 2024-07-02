@@ -59,7 +59,7 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
         {
             var result = updateHandler.Value.RemoveComponent(c);
             result.data.ClearSubmitted();
-            updateHandler.Key.handler(ToItem(result.data), DataFeedItemChange.Removed);
+            updateHandler.Key.handler(GenerateComponent(result.data), DataFeedItemChange.Removed);
         }
     }
 
@@ -99,12 +99,12 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
             if (data.Submitted)
             {
                 data.ClearSubmitted();
-                handler.handler(ToItem(data), DataFeedItemChange.Removed);
+                handler.handler(GenerateComponent(data), DataFeedItemChange.Removed);
             }
             return;
         }
         data.MarkSubmitted();
-        DataFeedItem item = ToItem(data);
+        DataFeedItem item = GenerateComponent(data);
         handler.handler(item, DataFeedItemChange.Added);
     }
 
@@ -124,6 +124,14 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
     {
         base.OnAwake();
         _lastSlot = TargetSlot.Target;
+        if (_lastSlot != null)
+        {
+            Subscribe(_lastSlot);
+            if (IncludeChildrenSlots)
+            {
+                _lastSlot.ForeachChild(childSlot => Subscribe(childSlot));
+            }
+        }
     }
 
     protected override void OnChanges()
@@ -226,6 +234,14 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
         return dataFeedCategory;
     }
 
+    private TypeFeedItem GenerateType(Type type, string key, IReadOnlyList<string> path)
+    {
+        TypeFeedItem typeFeedItem = new TypeFeedItem(type);
+        // random icon
+        typeFeedItem.InitBase(key, path, null, type.GetNiceName(), OfficialAssets.Graphics.Icons.Gizmo.TransformLocal);
+        return typeFeedItem;
+    }
+
     public async IAsyncEnumerable<DataFeedItem> Enumerate(IReadOnlyList<string> path, IReadOnlyList<string> groupKeys, string searchPhrase, object viewData)
     {
         if (TargetSlot.Target != null && (path != null && path.Count > 0))
@@ -324,7 +340,14 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
             if (componentData.MatchesSearchParameters(optionalTerms, requiredTerms, excludedTerms))
             {
                 componentData.MarkSubmitted();
-                yield return ToItem(componentData);
+                if (TargetSlot.Target != null)
+                {
+                    yield return GenerateComponent(componentData);
+                }
+                else
+                {
+                    yield return GenerateType(componentData.ComponentType, componentData.ComponentType.GetHashCode().ToString(), path);
+                }
             }
         }
         Pool.Return(ref optionalTerms);
@@ -332,7 +355,7 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
         Pool.Return(ref excludedTerms);
     }
 
-    private DataFeedItem ToItem(ComponentData data)
+    private ComponentDataFeedItem GenerateComponent(ComponentData data)
     {
         return new ComponentDataFeedItem(data);
     }
