@@ -4,6 +4,7 @@ using System.Reflection;
 using Elements.Core;
 using FrooxEngine;
 using FrooxEngine.ProtoFlux.Core;
+using Obsidian.Shaders;
 
 namespace Obsidian
 {
