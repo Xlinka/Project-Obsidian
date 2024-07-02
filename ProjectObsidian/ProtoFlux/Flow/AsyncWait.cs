@@ -2,45 +2,48 @@
 using System.Threading.Tasks;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
-
-[NodeCategory("Flow/Async")]
-[NodeName("Async Wait", false)]
-public class AsyncWait : AsyncActionNode<ExecutionContext>
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Flow
 {
-    public ValueInput<bool> Condition;
-    public ValueInput<float> Timeout;
-
-    public AsyncCall OnStarted;
-
-    public Continuation OnDone;
-    public Continuation TimedOut;
-
-    protected override async Task<IOperation> RunAsync(ExecutionContext context)
+    [NodeCategory("Obsidian/Flow")]
+    [NodeName("Async Wait", false)]
+    public class AsyncWait : AsyncActionNode<ExecutionContext>
     {
-        await OnStarted.ExecuteAsync(context);
+        public ValueInput<bool> Condition;
+        public ValueInput<float> Timeout;
 
-        var timeoutInSeconds = Timeout.Evaluate(context);
-        var startTime = DateTime.UtcNow;
+        public AsyncCall OnStarted;
 
-        // Initial evaluation of the condition
-        if (Condition.Evaluate(context, defaultValue: false))
+        public Continuation OnDone;
+        public Continuation TimedOut;
+
+        protected override async Task<IOperation> RunAsync(ExecutionContext context)
         {
+            await OnStarted.ExecuteAsync(context);
+
+            var timeoutInSeconds = Timeout.Evaluate(context);
+            var startTime = DateTime.UtcNow;
+
+            // Initial evaluation of the condition
+            if (Condition.Evaluate(context, defaultValue: false))
+            {
+                return OnDone.Target;
+            }
+
+            while (!Condition.Evaluate(context, defaultValue: false))
+            {
+                if ((DateTime.UtcNow - startTime).TotalSeconds > timeoutInSeconds)
+                {
+                    return TimedOut.Target;
+                }
+
+                if (context.AbortExecution)
+                {
+                    throw new ExecutionAbortedException(base.Runtime as IExecutionRuntime, this, TimedOut.Target, isAsync: true);
+                }
+            }
+
             return OnDone.Target;
         }
-
-        while (!Condition.Evaluate(context, defaultValue: false))
-        {
-            if ((DateTime.UtcNow - startTime).TotalSeconds > timeoutInSeconds)
-            {
-                return TimedOut.Target;
-            }
-
-            if (context.AbortExecution)
-            {
-                throw new ExecutionAbortedException(base.Runtime as IExecutionRuntime, this, TimedOut.Target, isAsync: true);
-            }
-        }
-
-        return OnDone.Target;
     }
 }
+
