@@ -63,7 +63,7 @@ internal class ComponentsDataFeedData
 
 		if (!createdEntry)
 		{
-			throw new InvalidOperationException("Component with this Type has already been added! Type: " + GetUniqueId(type));
+			throw new InvalidOperationException("Component with this Type has already been added! Type: " + type.FullName);
 		}
 
 		return componentData;

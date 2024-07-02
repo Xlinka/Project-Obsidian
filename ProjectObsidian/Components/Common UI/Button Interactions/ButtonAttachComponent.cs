@@ -15,7 +15,7 @@ public class ButtonAttachComponent : Component, IButtonPressReceiver, IComponent
 
     protected override void OnAttach()
     {
-        base.OnAwake();
+        base.OnAttach();
         Undoable.Value = true;
     }
 
