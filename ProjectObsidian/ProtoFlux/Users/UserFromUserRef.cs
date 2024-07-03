@@ -14,6 +14,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Users
 
         protected override User Compute(FrooxEngineContext context)
         {
+            if (UserRef.Evaluate(context) == null)
+            {
+                return null;
+            }
             UserRef userRef = UserRef.Evaluate(context);
             return userRef.Target;
         }
