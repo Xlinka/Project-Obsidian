@@ -120,9 +120,9 @@ public class ComponentsDataFeed : Component, IDataFeedComponent, IDataFeed, IWor
         s.ComponentRemoved -= OnSlotComponentRemoved;
     }
 
-    protected override void OnAwake()
+    protected override void OnStart()
     {
-        base.OnAwake();
+        base.OnStart();
         _lastSlot = TargetSlot.Target;
         if (_lastSlot != null)
         {
