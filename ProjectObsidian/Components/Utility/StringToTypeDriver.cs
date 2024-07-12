@@ -23,7 +23,7 @@ public class StringToTypeDriver : Component
         {
             try
             {
-                var parsedType = WorkerManager.ParseNiceType(Text.Value);
+                var parsedType = World.Types.ParseNiceType(Text.Value, allowAmbigious: true);
                 Target.Target.Value = parsedType;
             }
             catch (Exception ex)
