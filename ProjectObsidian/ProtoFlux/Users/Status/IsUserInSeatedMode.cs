@@ -1,4 +1,6 @@
-﻿using ProtoFlux.Core;
+﻿using FrooxEngine;
+using FrooxEngine.ProtoFlux;
+using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Users.Status
@@ -8,7 +10,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Users.Status
     {
         public readonly ObjectInput<User> User;
 
-        protected override bool Compute(ExecutionContext context)
+        protected override bool Compute(FrooxEngineContext context)
         {
             User user = User.Evaluate(context);
             return user == null ? false : user.InputInterface.SeatedMode;

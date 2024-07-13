@@ -13,7 +13,7 @@ public enum ArithmeticMode
 }
 
 [Category(new string[] { "Obsidian/Transform/Drivers" })]
-[GenericTypes(GenericTypesAttribute.Group.Primitives)]
+[GenericTypes(GenericTypesAttribute.Group.EnginePrimitives)]
 public class MultiValueArithmeticDriver<T> : Component
 {
 	public static bool IsValidGenericType => Coder<T>.SupportsAddSub;
