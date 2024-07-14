@@ -11,25 +11,24 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
     [NodeCategory("Obsidian/Json")]
     [GenericTypes(typeof(string), typeof(Uri), typeof(JToken), typeof(JObject),
                   typeof(JArray))]
-    public class JsonQuickGetObject<T> : ObjectFunctionNode<FrooxEngineContext, T>
+    public class JsonGetObjectFromJArray<T> : ObjectFunctionNode<FrooxEngineContext, T>
     {
-        public readonly ObjectInput<string> Input;
-        public readonly ObjectInput<string> Tag;
+        public readonly ObjectInput<JArray> Input;
+        public readonly ValueInput<int> Index;
+   
         protected override T Compute(FrooxEngineContext context)
         {
             var input = Input.Evaluate(context);
-            var tag = Tag.Evaluate(context);
-            if (string.IsNullOrEmpty(input) || string.IsNullOrEmpty(tag))
+            var index = Index.Evaluate(context);
+            if (input == null || index < 0 || index >= input.Count)
                 return default;
 
             try
             {
-                var inputObject = JObject.Parse(input);
-                return inputObject[tag].Value<T>() ?? default;
+                return input[index].Value<T>();
             }
             catch
             {
-                // In case of parsing error or if the tag is not found
                 return default;
             }
         }

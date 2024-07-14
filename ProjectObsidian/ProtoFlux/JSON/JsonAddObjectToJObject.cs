@@ -10,10 +10,9 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
 {
     [NodeName("Add To Object")]
     [NodeCategory("Obsidian/Json")]
-    [GenericTypes(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
-                  typeof(long), typeof(ulong), typeof(float), typeof(double), typeof(string), typeof(Uri),
+    [GenericTypes(typeof(string), typeof(Uri),
                   typeof(JToken), typeof(JObject), typeof(JArray))]
-    public class JsonAddToObjectNode<T> : ObjectFunctionNode<FrooxEngineContext, JObject>
+    public class JsonAddObjectToJObject<T> : ObjectFunctionNode<FrooxEngineContext, JObject>
     {
         public readonly ObjectInput<JObject> Input;
         public readonly ObjectInput<string> Tag;

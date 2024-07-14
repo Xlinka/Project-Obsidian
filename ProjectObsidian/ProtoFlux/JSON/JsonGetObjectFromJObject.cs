@@ -9,25 +9,23 @@ using FrooxEngine.ProtoFlux;
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
 {
     [NodeCategory("Obsidian/Json")]
-    [GenericTypes(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long),
-                  typeof(ulong), typeof(float), typeof(double), typeof(string), typeof(Uri), typeof(JToken), typeof(JObject),
+    [GenericTypes(typeof(string), typeof(Uri), typeof(JToken), typeof(JObject),
                   typeof(JArray))]
-    public class JsonGetFromArrayNode<T> : ObjectFunctionNode<FrooxEngineContext, T>
+    public class JsonGetObjectFromJObject<T> : ObjectFunctionNode<FrooxEngineContext, T>
     {
-        public readonly ObjectInput<JArray> Input;
-        public readonly ObjectInput<int> Index;
+        public readonly ObjectInput<JObject> Input;
+        public readonly ObjectInput<string> Tag;
 
-   
         protected override T Compute(FrooxEngineContext context)
         {
             var input = Input.Evaluate(context);
-            var index = Index.Evaluate(context);
-            if (input == null || index < 0 || index >= input.Count)
+            var tag = Tag.Evaluate(context);
+            if (input == null || string.IsNullOrEmpty(tag))
                 return default;
 
             try
             {
-                return input[index].Value<T>();
+                return input[tag].Value<T>();
             }
             catch
             {

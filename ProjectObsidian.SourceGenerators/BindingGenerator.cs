@@ -146,8 +146,9 @@ using {_currentNameSpace};
 
 namespace {BindingPrefix}{_currentNameSpace};
 
+{_genericTypesAttribute}
 [Category(new string[] {{""ProtoFlux/Runtimes/Execution/Nodes/{_category}""}})]
-public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execution.{_baseType}
+public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execution.{_baseType} {_constraintClauses}
 {{
 {Declarations}
 {_nodeNameOverride}
@@ -181,6 +182,8 @@ public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execut
         private string _match;
         private string _category;
         private string _nodeNameOverride = "";
+        private string _constraintClauses;
+        private string _genericTypesAttribute;
 
         private bool TypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
         {
@@ -285,6 +288,9 @@ public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execut
             
             _baseType = baseTypeName;
 
+            // Add the generic parameter constraints
+            _constraintClauses = string.Join(",", node.ConstraintClauses);
+
             if (!node.AttributeLists.Any())
             {
                 base.VisitClassDeclaration(node);
@@ -293,6 +299,8 @@ public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execut
 
             var find = node.AttributeLists.SelectMany(i => i.Attributes)
                 .FirstOrDefault(i => i.Name.ToString() == "NodeCategory");
+
+            _genericTypesAttribute = node.AttributeLists.FirstOrDefault(attr => attr.Attributes.Any(attr2 => attr2.Name.ToString() == "GenericTypes"))?.ToString();
 
             if (find?.ArgumentList is null)
             {

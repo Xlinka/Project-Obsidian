@@ -7,10 +7,9 @@ using ProtoFlux.Runtimes.Execution;
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
 {
     [NodeCategory("Obsidian/Json")]
-    public class JsonParseStringNode : ObjectFunctionNode<FrooxEngineContext, JObject>
+    public class JsonParseStringJObject : ObjectFunctionNode<FrooxEngineContext, JObject>
     {
         public readonly ObjectInput<string> Input;
-
    
         protected override JObject Compute(FrooxEngineContext context)
         {

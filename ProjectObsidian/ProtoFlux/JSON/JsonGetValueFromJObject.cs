@@ -10,9 +10,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
 {
     [NodeCategory("Obsidian/Json")]
     [GenericTypes(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long),
-                  typeof(ulong), typeof(float), typeof(double), typeof(string), typeof(Uri), typeof(JToken), typeof(JObject),
-                  typeof(JArray))]
-    public class JsonGetFromObjectNode<T> : ObjectFunctionNode<FrooxEngineContext, T>
+                  typeof(ulong), typeof(float), typeof(double))]
+    public class JsonGetValueFromJObject<T> : ValueFunctionNode<FrooxEngineContext, T> where T : unmanaged
     {
         public readonly ObjectInput<JObject> Input;
         public readonly ObjectInput<string> Tag;

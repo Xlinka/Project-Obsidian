@@ -9,7 +9,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json;
 
 [NodeCategory("Obsidian/Json")]
 [GenericTypes(typeof(JToken), typeof(JObject), typeof(JArray))]
-public class JsonToStringNode<T> : ObjectFunctionNode<FrooxEngineContext, string>
+public class JsonToString<T> : ObjectFunctionNode<FrooxEngineContext, string>
 {
     public readonly ObjectInput<T> Input;
 
