@@ -10,14 +10,17 @@ namespace Obsidian.Shaders
 {
     internal class ShaderInjection
     {
-
+        public static readonly Uri Mtoon = new("resdb:///f9db0509b5413ae1449ca912aedb660aac028d29415c74a7767daf4fafa4c764.unityshader");
+        public static readonly Uri Wireframe = new("resdb:///83aaa44a3da87c14713c65108b742676ca78516c30f39e33d00945db6801559d.unityshader");
         public static readonly Uri ObsidianTestShader = new("resdb:///65178a8353f8c164cd2c6dc5d07ad3f978157b023f52331b4a0ca2e34781162e.unityshader");
         public static readonly Uri ParallaxOcclusion = new("resdb:///93ae78de262e31f8299661725899aac61d96071ac2ebea8b76a5c56febfc3feb.unityshader");
 
         private static readonly List<Uri> Shaders = new()
         {
             ObsidianTestShader,
-            ParallaxOcclusion
+            ParallaxOcclusion,
+            Wireframe,
+            Mtoon
         };
         public static string ExtractSignature(Uri uri)
         {
