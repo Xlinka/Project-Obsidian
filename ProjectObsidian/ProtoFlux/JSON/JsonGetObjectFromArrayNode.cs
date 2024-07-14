@@ -16,7 +16,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json;
 public class JsonGetObjectFromArrayNode<T> : ObjectFunctionNode<FrooxEngineContext, T> where T : class
 {
     public readonly ObjectInput<JsonArray> Input;
-    public readonly ObjectInput<int> Index;
+    public readonly ValueInput<int> Index;
     public static bool IsValidGenericType => JsonTypeHelper.ValidObjectGetTypes.Contains(typeof(T));
     protected override T Compute(FrooxEngineContext context)
     {
