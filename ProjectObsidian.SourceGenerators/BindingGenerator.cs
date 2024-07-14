@@ -300,7 +300,7 @@ public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execut
             var find = node.AttributeLists.SelectMany(i => i.Attributes)
                 .FirstOrDefault(i => i.Name.ToString() == "NodeCategory");
 
-            _genericTypesAttribute = node.AttributeLists.FirstOrDefault(attr => attr.Attributes.Any(attr2 => attr2.Name.ToString() == "GenericTypes"))?.ToString();
+            _genericTypesAttribute = node.AttributeLists.FirstOrDefault(attrList => attrList.Attributes.Any(attr => attr.Name.ToString() == "GenericTypes"))?.ToString();
 
             if (find?.ArgumentList is null)
             {
