@@ -147,10 +147,11 @@ using {_currentNameSpace};
 namespace {BindingPrefix}{_currentNameSpace};
 
 [Category(new string[] {{""ProtoFlux/Runtimes/Execution/Nodes/{_category}""}})]
-public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execution.{_baseType}
+public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execution.{_baseType} {_constraints}
 {{
+{(string.IsNullOrEmpty(_debug) ? "" : "//")}{_debug}
 {Declarations}
-{_nodeNameOverride}
+{(_isValidGenericTypeMethod ? $"    public static bool IsValidGenericType => global::{_currentNameSpace}.{_fullName}.IsValidGenericType;" : "")}
     public override System.Type NodeType => typeof (global::{_currentNameSpace}.{_fullName});
     public global::{_currentNameSpace}.{_fullName} TypedNodeInstance {{ get; private set; }}
     public override INode NodeInstance => (INode)this.TypedNodeInstance;
@@ -181,6 +182,9 @@ public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execut
         private string _match;
         private string _category;
         private string _nodeNameOverride = "";
+        private string _debug = "";
+        private bool _isValidGenericTypeMethod;
+        private string _constraints = "";
 
         private bool TypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
         {
@@ -237,7 +241,12 @@ public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execut
             
             base.VisitFieldDeclaration(node);
         }
-
+        public override void VisitPropertyDeclaration(PropertyDeclarationSyntax node)
+        {
+            if (node.Identifier.ValueText.Contains("IsValidGenericType")) _isValidGenericTypeMethod = true;
+            base.VisitPropertyDeclaration(node);
+            
+        }
         public override void VisitNamespaceDeclaration(NamespaceDeclarationSyntax node)
         {
             _currentNameSpace = node.Name.ToString();
@@ -279,6 +288,11 @@ public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execut
             
             BaseName = baseName;
             _fullName = fullName;
+
+            if (node.ConstraintClauses.Any())
+            {
+                _constraints = node.ConstraintClauses.ToString();
+            }
             
             var firstBaseType = node.BaseList.Types.First();
             var baseTypeName = firstBaseType.Type.ToString();
