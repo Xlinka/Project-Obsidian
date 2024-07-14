@@ -12,7 +12,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json;
 public class JsonRemoveFromArrayNode : ObjectFunctionNode<FrooxEngineContext, JsonArray>
 {
     public readonly ObjectInput<JsonArray> Array;
-    public readonly ObjectInput<int> Index;
+    public readonly ValueInput<int> Index;
 
 
     protected override JsonArray Compute(FrooxEngineContext context)
