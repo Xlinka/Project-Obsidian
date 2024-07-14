@@ -17,7 +17,7 @@ public class JsonInsertObjectToArrayNode<T> : ObjectFunctionNode<FrooxEngineCont
 {
     public readonly ObjectInput<JsonArray> Array;
     public readonly ObjectInput<T> Object;
-    public readonly ObjectInput<int> Index;
+    public readonly ValueInput<int> Index;
     public static bool IsValidGenericType => JsonTypeHelper.ValidObjectSetTypes.Contains(typeof(T));
     protected override JsonArray Compute(FrooxEngineContext context)
     {

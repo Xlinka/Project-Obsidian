@@ -4,6 +4,7 @@ using FrooxEngine;
 
 namespace Obsidian;
 
+[DataModelType]
 public enum ArithmeticMode
 {
 	Addition,
