@@ -7,20 +7,16 @@ using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json;
 
-[NodeName("Remove From Object")]
+[NodeName("JsonObject From String")]
 [NodeCategory("Obsidian/Json")]
-public class JsonRemoveFromObjectNode : ObjectFunctionNode<FrooxEngineContext, JsonObject>
+public class JsonParseStringObjectNode : ObjectFunctionNode<FrooxEngineContext, JsonObject>
 {
-    public readonly ObjectInput<JsonObject> Input;
-    public readonly ObjectInput<string> Tag;
+    public readonly ObjectInput<string> Input;
 
-  
+   
     protected override JsonObject Compute(FrooxEngineContext context)
     {
         var input = Input.Evaluate(context);
-        if (input == null) return null;
-
-        var tag = Tag.Evaluate(context);
-        return string.IsNullOrEmpty(tag) ? input : input.Remove(tag);
+        return string.IsNullOrEmpty(input) ? null : JsonObject.FromString(input);
     }
 }
