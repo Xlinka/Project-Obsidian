@@ -5,18 +5,18 @@ using Obsidian.Elements;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
-namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json;
+
+[NodeName("JsonObject From String")]
+[NodeCategory("Obsidian/Json")]
+public class JsonParseStringObjectNode : ObjectFunctionNode<FrooxEngineContext, JsonObject>
 {
-    [NodeCategory("Obsidian/Json")]
-    public class JsonParseStringObjectNode : ObjectFunctionNode<FrooxEngineContext, JsonObject>
-    {
-        public readonly ObjectInput<string> Input;
+    public readonly ObjectInput<string> Input;
 
    
-        protected override JsonObject Compute(FrooxEngineContext context)
-        {
-            var input = Input.Evaluate(context);
-            return string.IsNullOrEmpty(input) ? null : JsonObject.FromString(input);
-        }
+    protected override JsonObject Compute(FrooxEngineContext context)
+    {
+        var input = Input.Evaluate(context);
+        return string.IsNullOrEmpty(input) ? null : JsonObject.FromString(input);
     }
 }

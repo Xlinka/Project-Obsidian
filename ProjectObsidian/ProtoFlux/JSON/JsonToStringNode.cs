@@ -9,6 +9,7 @@ using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json;
 
+[NodeName("To String")]
 [NodeCategory("Obsidian/Json")]
 [GenericTypes(typeof(IJsonToken), typeof(JsonObject), typeof(JsonArray))]
 public class JsonToStringNode<T> : ObjectFunctionNode<FrooxEngineContext, string>

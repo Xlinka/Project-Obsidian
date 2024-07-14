@@ -10,13 +10,14 @@ using Obsidian.Elements;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json;
 
+[NodeName("Get From Array")]
 [NodeCategory("Obsidian/Json")]
 [GenericTypes(typeof(string), typeof(Uri), typeof(JsonObject), typeof(JsonArray))]
 public class JsonGetObjectFromArrayNode<T> : ObjectFunctionNode<FrooxEngineContext, T> where T : class
 {
     public readonly ObjectInput<JsonArray> Input;
     public readonly ObjectInput<int> Index;
-    public static bool IsValidGenericType => JsonTypeHelper.ValidObjectTypes.Contains(typeof(T));
+    public static bool IsValidGenericType => JsonTypeHelper.ValidObjectGetTypes.Contains(typeof(T));
     protected override T Compute(FrooxEngineContext context)
     {
         var input = Input.Evaluate(context);

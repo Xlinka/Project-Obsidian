@@ -7,6 +7,7 @@ using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
 {
+    [NodeName("Count")]
     [NodeCategory("Obsidian/Json")]
     public class JsonCountArrayChildrenNode : ValueFunctionNode<FrooxEngineContext, int>
     {

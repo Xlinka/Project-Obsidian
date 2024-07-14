@@ -23,14 +23,18 @@ public static class JsonTypeHelper
         typeof(long), typeof(ulong), typeof(float), typeof(double), typeof(string), typeof(Uri),
         typeof(JsonObject), typeof(JsonArray),
     };
-    public static readonly Type[] ValidValueGetTypes =
+    public static readonly Type[] ValidValueTypes =
     {
         typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
         typeof(long), typeof(ulong), typeof(float), typeof(double)
     };
-    public static readonly Type[] ValidObjectTypes =
+    public static readonly Type[] ValidObjectGetTypes =
     {
         typeof(string), typeof(Uri), typeof(JsonObject), typeof(JsonArray),
+    };
+    public static readonly Type[] ValidObjectSetTypes =
+    {
+        typeof(string), typeof(Uri), typeof(IJsonToken), typeof(JsonObject), typeof(JsonArray),
     };
 }
 

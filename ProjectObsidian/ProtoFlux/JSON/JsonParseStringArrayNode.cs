@@ -5,17 +5,17 @@ using Obsidian.Elements;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
-namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json
-{
-    [NodeCategory("Obsidian/Json")]
-    public class JsonParseStringArrayNode : ObjectFunctionNode<FrooxEngineContext, JsonArray>
-    {
-        public readonly ObjectInput<string> Input;
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json;
 
-        protected override JsonArray Compute(FrooxEngineContext context)
-        {
-            var input = Input.Evaluate(context);
-            return string.IsNullOrEmpty(input) ? null : JsonArray.FromString(input);
-        }
+[NodeName("JsonArray From String")]
+[NodeCategory("Obsidian/Json")]
+public class JsonParseStringArrayNode : ObjectFunctionNode<FrooxEngineContext, JsonArray>
+{
+    public readonly ObjectInput<string> Input;
+
+    protected override JsonArray Compute(FrooxEngineContext context)
+    {
+        var input = Input.Evaluate(context);
+        return string.IsNullOrEmpty(input) ? null : JsonArray.FromString(input);
     }
 }

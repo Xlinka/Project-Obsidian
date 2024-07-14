@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using ProtoFlux.Core;
@@ -13,15 +13,14 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json;
 [NodeName("Add To Object")]
 [NodeCategory("Obsidian/Json")]
 [GenericTypes(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
-    typeof(long), typeof(ulong), typeof(float), typeof(double), typeof(string), typeof(Uri),
-    typeof(IJsonToken), typeof(JsonObject), typeof(JsonArray))]
-public class JsonAddToObjectNode<T> : ObjectFunctionNode<FrooxEngineContext, JsonObject>
+    typeof(long), typeof(ulong), typeof(float), typeof(double))]
+public class JsonAddValueToObjectNode<T> : ObjectFunctionNode<FrooxEngineContext, JsonObject> where T : unmanaged
 {
     public readonly ObjectInput<JsonObject> Input;
     public readonly ObjectInput<string> Tag;
-    public readonly ObjectInput<T> Object;
+    public readonly ValueInput<T> Object;
 
-    public static bool IsValidGenericType => JsonTypeHelper.AllValidTypes.Contains(typeof(T));
+    public static bool IsValidGenericType => JsonTypeHelper.ValidValueTypes.Contains(typeof(T));
 
     protected override JsonObject Compute(FrooxEngineContext context)
     {
