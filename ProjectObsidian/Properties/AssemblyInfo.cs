@@ -9,7 +9,9 @@
 //------------------------------------------------------------------------------
 
 using System;
+using System.Net;
 using System.Reflection;
+using Newtonsoft.Json.Linq;
 
 using Elements.Core;
 
@@ -26,3 +28,9 @@ using Elements.Core;
 
 //Mark as DataModelAssembly for the Plugin loading system to load this assembly
 [assembly: DataModelAssembly(DataModelAssemblyType.Core)]
+
+[assembly: ExternalDataModelType(typeof(Valve.VR.Imu_OffScaleFlags))]
+[assembly: ExternalDataModelType(typeof(HttpStatusCode))]
+[assembly: ExternalDataModelType(typeof(JObject))]
+[assembly: ExternalDataModelType(typeof(JToken))]
+[assembly: ExternalDataModelType(typeof(JArray))]
