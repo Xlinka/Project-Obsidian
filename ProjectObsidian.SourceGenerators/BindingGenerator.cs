@@ -151,6 +151,7 @@ public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execut
 {{
 {(string.IsNullOrEmpty(_debug) ? "" : "//")}{_debug}
 {Declarations}
+{_nodeNameOverride}
 {(_isValidGenericTypeMethod ? $"    public static bool IsValidGenericType => global::{_currentNameSpace}.{_fullName}.IsValidGenericType;" : "")}
     public override System.Type NodeType => typeof (global::{_currentNameSpace}.{_fullName});
     public global::{_currentNameSpace}.{_fullName} TypedNodeInstance {{ get; private set; }}
