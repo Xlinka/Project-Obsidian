@@ -7,6 +7,7 @@ using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Utility
 {
+    [DataModelType]
     public enum LogSeverity
     {
         Log,
