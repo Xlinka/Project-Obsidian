@@ -9,6 +9,7 @@ using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Strings
 {
+    [DataModelType]
     public enum HashFunction
     {
         MD5,

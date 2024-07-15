@@ -13,6 +13,7 @@ using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Network
 {
+    [DataModelType]
     public enum RequestType
     {
         GET,
