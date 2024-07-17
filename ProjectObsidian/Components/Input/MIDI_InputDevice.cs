@@ -130,18 +130,33 @@ public class MIDI_InputDevice : Component
 
         if (!string.IsNullOrWhiteSpace(DeviceName))
         {
+            if (_settings.InputDevices.Any(dev => dev.DeviceName.Value == DeviceName.Value && dev.AllowConnections.Value == false))
+            {
+                if (_inputDevice != null)
+                {
+                    ReleaseDevice();
+                }
+                SetIsConnected(false);
+                return;
+            }
+
+            if (_inputDevice != null && _inputDevice.IsListeningForEvents && _inputDevice.Name == DeviceName.Value) return;
+
             if (_inputDevice != null)
             {
                 ReleaseDevice();
             }
 
-            if (_settings.InputDevices.Any(dev => dev.DeviceName.Value == DeviceName.Value && dev.AllowConnections.Value == false))
+            try
+            {
+                _inputDevice = Melanchall.DryWetMidi.Multimedia.InputDevice.GetByName(DeviceName.Value);
+            }
+            catch
             {
                 SetIsConnected(false);
                 return;
             }
 
-            _inputDevice = Melanchall.DryWetMidi.Multimedia.InputDevice.GetByName(DeviceName.Value);
             _inputDevice.EventReceived += OnEventReceived;
             _inputDevice.StartEventsListening();
             _inputDevice.ErrorOccurred += (object sender, ErrorOccurredEventArgs args) => 
@@ -154,6 +169,7 @@ public class MIDI_InputDevice : Component
                     _lastEvent.Value = args.Exception.Message;
                 });
             };
+
             SetIsConnected(true);
         }
         else
