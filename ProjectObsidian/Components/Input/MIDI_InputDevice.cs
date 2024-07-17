@@ -130,7 +130,7 @@ public class MIDI_InputDevice : Component
 
         if (!string.IsNullOrWhiteSpace(DeviceName))
         {
-            if (_settings.InputDevices.Any(dev => dev.DeviceName.Value == DeviceName.Value && dev.AllowConnections.Value == false))
+            if (!_settings.InputDevices.Any(dev => dev.DeviceName.Value == DeviceName.Value && dev.AllowConnections.Value == true))
             {
                 if (_inputDevice != null)
                 {

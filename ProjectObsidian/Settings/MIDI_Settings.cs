@@ -33,6 +33,13 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
         {
             base.OnAwake();
         }
+
+        [SettingProperty(null, null, null, false, 0L, null, null)]
+        [SyncMethod(typeof(Action), new string[] { })]
+        public void Remove()
+        {
+            this.FindNearestParent<SyncList<MIDI_Device>>().Remove(this);
+        }
     }
 
     //[NonPersistent]
@@ -74,13 +81,13 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
     [SyncMethod(typeof(SubsettingGetter), new string[] { })]
     public SyncObject GetInputDeviceForSubsetting(string key)
     {
-        return InputDevices.FirstOrDefault((d) => d.Device.Name == key);
+        return InputDevices.FirstOrDefault((d) => d.DeviceName.Value == key);
     }
 
     [SyncMethod(typeof(SubsettingGetter), new string[] { })]
     public SyncObject GetOutputDeviceForSubsetting(string key)
     {
-        return OutputDevices.FirstOrDefault((d) => d.Device.Name == key);
+        return OutputDevices.FirstOrDefault((d) => d.DeviceName.Value == key);
     }
 
     protected override void OnStart()
@@ -103,6 +110,8 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
         _localeData.Messages.Add("Settings.MIDI_Settings.OutputDevices.AllowConnections", "Allow Connections");
         _localeData.Messages.Add("Settings.MIDI_Settings.OutputDevices.DeviceFound", "Device Found");
         _localeData.Messages.Add("Settings.MIDI_Settings.InputDevices.DeviceFound", "Device Found");
+        _localeData.Messages.Add("Settings.MIDI_Settings.InputDevices.Remove", "Remove");
+        _localeData.Messages.Add("Settings.MIDI_Settings.OutputDevices.Remove", "Remove");
 
         // Sometimes the locale is null in here, so wait a bit I guess
         RunInUpdates(7, () =>
