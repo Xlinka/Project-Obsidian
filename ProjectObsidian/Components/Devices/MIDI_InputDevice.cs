@@ -11,29 +11,42 @@ using FrooxEngine.ProtoFlux;
 
 namespace Obsidian;
 
-//[DataModelType]
-//public readonly struct InputDeviceEventData
-//{
-//    //public readonly Component source;
+[DataModelType]
+public readonly struct MIDI_NoteOnOffEventData
+{
+    public readonly int channel;
 
-//    //public readonly float3 globalPoint;
+    public readonly int note;
 
-//    //public readonly float2 localPoint;
+    public readonly int velocity;
 
-//    //public readonly float2 normalizedPressPoint;
-
-//    public InputDeviceEventData(Component pressSource, in float3 globalPressPoint, in float2 localPressPoint, in float2 normalizedPressPoint)
-//    {
-//        source = pressSource;
-//        globalPoint = globalPressPoint;
-//        localPoint = localPressPoint;
-//        this.normalizedPressPoint = normalizedPressPoint;
-//    }
-//}
+    public MIDI_NoteOnOffEventData(in int _channel, in int _note, in int _velocity)
+    {
+        channel = _channel;
+        note = _note;
+        velocity = _velocity;
+    }
+}
 
 [DataModelType]
-public delegate void InputDeviceEventHandler(MIDI_InputDevice device);
-//public delegate void InputDeviceEventHandler(MIDI_InputDevice device, ButtonEventData eventData);
+public readonly struct MIDI_ChannelPressureEventData
+{
+    public readonly int channel;
+
+    public readonly int pressure;
+
+    public MIDI_ChannelPressureEventData(in int _channel, in int _pressure)
+    {
+        channel = _channel;
+        pressure = _pressure;
+    }
+}
+
+[DataModelType]
+public delegate void MIDI_NoteOnOffEventHandler(MIDI_InputDevice device, MIDI_NoteOnOffEventData eventData);
+
+[DataModelType]
+public delegate void MIDI_ChannelPressureEventHandler(MIDI_InputDevice device, MIDI_ChannelPressureEventData eventData);
 
 [Category(new string[] { "Obsidian/Devices" })]
 public class MIDI_InputDevice : Component
@@ -51,16 +64,19 @@ public class MIDI_InputDevice : Component
 
     private IMidiInput _inputDevice;
 
-    private MIDI_Settings _settings;
+    private MIDI_Settings _settings => Settings.GetActiveSetting<MIDI_Settings>();
 
-    public event InputDeviceEventHandler NoteOn;
+    public event MIDI_NoteOnOffEventHandler NoteOn;
 
-    public event InputDeviceEventHandler NoteOff;
+    public event MIDI_NoteOnOffEventHandler NoteOff;
+
+    // Aftertouch?
+    public event MIDI_ChannelPressureEventHandler ChannelPressure;
 
     protected override void OnStart()
     {
         base.OnStart();
-        _settings = Settings.GetActiveSetting<MIDI_Settings>();
+        //_settings = ;
         Settings.RegisterValueChanges<MIDI_Settings>(OnInputDeviceSettingsChanged);
         Update();
     }
@@ -191,7 +207,7 @@ public class MIDI_InputDevice : Component
         }
     }
 
-    unsafe private void OnMessageReceived(object sender, MidiReceivedEventArgs args)
+    private void OnMessageReceived(object sender, MidiReceivedEventArgs args)
     {
         UniLog.Log($"Received {args.Length} bytes");
         UniLog.Log($"Timestamp: {args.Timestamp}");
@@ -202,10 +218,13 @@ public class MIDI_InputDevice : Component
             switch (e.EventType)
             {
                 case MidiEvent.NoteOn:
-                    NoteOn?.Invoke(this);
+                    NoteOn?.Invoke(this, new MIDI_NoteOnOffEventData(e.Channel, e.Msb, e.Lsb));
                     break;
                 case MidiEvent.NoteOff:
-                    NoteOff?.Invoke(this);
+                    NoteOff?.Invoke(this, new MIDI_NoteOnOffEventData(e.Channel, e.Msb, e.Lsb));
+                    break;
+                case MidiEvent.CAf:
+                    ChannelPressure?.Invoke(this, new MIDI_ChannelPressureEventData(e.Channel, e.Msb));
                     break;
                 default:
                     break;

@@ -131,9 +131,8 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
         RunInUpdates(7, () =>
         {
             UpdateLocale();
+            Settings.RegisterValueChanges<LocaleSettings>(UpdateLocale);
         });
-
-        Settings.RegisterValueChanges<LocaleSettings>(UpdateLocale);
 
         RefreshDeviceLists();
     }
