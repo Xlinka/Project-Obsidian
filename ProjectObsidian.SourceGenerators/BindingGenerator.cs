@@ -118,14 +118,15 @@ namespace SourceGenerators
         private readonly OrderedCount _outputCount = new("NodeOutputCount", "GetOutputInternal", "INodeOutput");
         private readonly OrderedCount _impulseCount = new("NodeImpulseCount", "GetImpulseInternal", "ISyncRef");
         private readonly OrderedCount _operationCount = new("NodeOperationCount", "GetOperationInternal", "INodeOperation");
-        
+        private readonly OrderedCount _globalRefCount = new("NodeGlobalRefCount", "GetGlobalRefInternal", "ISyncRef");
+
         private readonly OrderedCount _inputListCount = new("NodeInputListCount", "GetInputListInternal", "ISyncList");
         private readonly OrderedCount _outputListCount = new("NodeOutputListCount", "GetOutputListInternal", "ISyncList");
         private readonly OrderedCount _impulseListCount = new("NodeImpulseListCount", "GetImpulseListInternal", "ISyncList");
         private readonly OrderedCount _operationListCount = new("NodeOperationListCount", "GetOperationListInternal", "ISyncList");
 
         private IEnumerable<OrderedCount> _counts => new[]
-            { _inputCount, _outputCount, _impulseCount, _operationCount, 
+            { _inputCount, _outputCount, _impulseCount, _operationCount, _globalRefCount,
                 _inputListCount, _outputListCount, _impulseListCount, _operationListCount };
 
         private string CountOverride => string.Concat(_counts.Select(i => i.CountOverride));
@@ -224,7 +225,10 @@ public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execut
                 UntypedFieldDetection(type, name, "Call", "global::FrooxEngine.SyncRef<global::FrooxEngine.ProtoFlux.ISyncNodeOperation>", _impulseCount);
             UntypedFieldDetection(type, name, "Continuation", "global::FrooxEngine.SyncRef<global::FrooxEngine.ProtoFlux.INodeOperation>", _impulseCount);
             UntypedFieldDetection(type, name, "AsyncResumption", "global::FrooxEngine.SyncRef<global::FrooxEngine.ProtoFlux.INodeOperation>", _impulseCount);
-            
+
+            //global refs
+            TypedFieldDetection(type, name, "GlobalRef", "global::FrooxEngine.SyncRef<global::FrooxEngine.ProtoFlux.IGlobalValueProxy<{1}>>", _globalRefCount);
+
             //operations
             UntypedFieldDetection(type, name, "Operation", "global::FrooxEngine.ProtoFlux.SyncNodeOperation", _operationCount);
             

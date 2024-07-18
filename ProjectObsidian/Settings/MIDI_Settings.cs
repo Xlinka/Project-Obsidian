@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FrooxEngine;
-using Melanchall.DryWetMidi.Multimedia;
+//using Melanchall.DryWetMidi.Multimedia;
 using Elements.Core;
 using Elements.Assets;
+using Commons.Music.Midi;
 
 namespace Obsidian;
 
@@ -27,7 +28,9 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
         [SettingProperty(null, null, null, false, 0L, null, null)]
         public readonly Sync<bool> AllowConnections;
 
-        public MidiDevice Device { get; internal set; }
+        public IMidiPortDetails Details { get; internal set; }
+
+        public bool IsOutput => this.Parent.Name == "OutputDevices";
 
         protected override void OnAwake()
         {
@@ -43,35 +46,49 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
     }
 
     //[NonPersistent]
-    [SettingSubcategoryList("InputDeviceToItem", null, null, null, null, null)]
+    [SettingSubcategoryList("DeviceToItem", null, null, null, null, null)]
     public readonly SyncList<MIDI_Device> InputDevices;
 
     //[NonPersistent]
-    [SettingSubcategoryList("OutputDeviceToItem", null, null, null, null, null)]
+    [SettingSubcategoryList("DeviceToItem", null, null, null, null, null)]
     public readonly SyncList<MIDI_Device> OutputDevices;
 
     private LocaleData _localeData;
 
-    private DataFeedItem InputDeviceToItem(ISyncMember item)
-    {
-        MIDI_Device device = (MIDI_Device)item;
-        DataFeedGroup dataFeedGroup = new DataFeedGroup();
-        List<DataFeedItem> list = new List<DataFeedItem>();
-        foreach (DataFeedItem item2 in SettingsDataFeed.EnumerateSettingProperties(typeof(MIDI_Device), null, typeof(MIDI_Settings), "InputDevices", "GetInputDeviceForSubsetting", device.DeviceName.Value))
-        {
-            list.Add(item2);
-        }
-        dataFeedGroup.InitBase(device.DeviceName.Value, null, null, device.DeviceName.Value, null, null, null, list);
-        return dataFeedGroup;
-    }
+    //private DataFeedItem InputDeviceToItem(ISyncMember item)
+    //{
+    //    MIDI_Device device = (MIDI_Device)item;
+    //    DataFeedGroup dataFeedGroup = new DataFeedGroup();
+    //    List<DataFeedItem> list = new List<DataFeedItem>();
+    //    foreach (DataFeedItem item2 in SettingsDataFeed.EnumerateSettingProperties(typeof(MIDI_Device), null, typeof(MIDI_Settings), "InputDevices", "GetInputDeviceForSubsetting", device.DeviceName.Value))
+    //    {
+    //        //UniLog.Log("ItemKey: " + item2.ItemKey);
+    //        //var idx = item2.ItemKey.IndexOf(".InputDevices");
+    //        //var changedKey = item2.ItemKey.Substring(0, idx);
+    //        //UniLog.Log("ChangedKey: " + changedKey);
+    //        //item2.InitBase(changedKey, null, null, changedKey);
+    //        //item2.InitBase(item2.ItemKey + "." + device.DeviceName.Value, null, null, item2.ItemKey);
+    //        var parts = item2.ItemKey.Split('.');
+    //        var newLocaleKey = "Settings." + string.Join(".", parts.Take(2));
+    //        item2.InitBase(item2.ItemKey, null, null, newLocaleKey.AsLocaleKey());
+    //        list.Add(item2);
+    //    }
+    //    dataFeedGroup.InitBase(device.DeviceName.Value, null, null, device.DeviceName.Value, null, null, null, list);
+    //    return dataFeedGroup;
+    //}
 
-    private DataFeedItem OutputDeviceToItem(ISyncMember item)
+    private DataFeedItem DeviceToItem(ISyncMember item)
     {
         MIDI_Device device = (MIDI_Device)item;
         DataFeedGroup dataFeedGroup = new DataFeedGroup();
         List<DataFeedItem> list = new List<DataFeedItem>();
-        foreach (DataFeedItem item2 in SettingsDataFeed.EnumerateSettingProperties(typeof(MIDI_Device), null, typeof(MIDI_Settings), "OutputDevices", "GetOutputDeviceForSubsetting", device.DeviceName.Value))
+        var subcat = device.IsOutput ? "OutputDevices" : "InputDevices";
+        var getter = device.IsOutput ? "GetOutputDeviceForSubsetting" : "GetInputDeviceForSubsetting";
+        foreach (DataFeedItem item2 in SettingsDataFeed.EnumerateSettingProperties(typeof(MIDI_Device), null, typeof(MIDI_Settings), subcat, getter, device.DeviceName.Value))
         {
+            var parts = item2.ItemKey.Split('.');
+            var newLocaleKey = "Settings." + string.Join(".", parts.Take(2));
+            item2.InitBase(item2.ItemKey, null, null, newLocaleKey.AsLocaleKey());
             list.Add(item2);
         }
         dataFeedGroup.InitBase(device.DeviceName.Value, null, null, device.DeviceName.Value, null, null, null, list);
@@ -99,19 +116,16 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
         _localeData.Messages = new Dictionary<string, string>();
         _localeData.Messages.Add("Settings.Category.Obsidian", "Obsidian");
         _localeData.Messages.Add("Settings.MIDI_Settings", "MIDI Settings");
-        _localeData.Messages.Add("Settings.MIDI_Settings.RefreshDeviceLists", "Rescan For Devices");
+        _localeData.Messages.Add("Settings.MIDI_Settings.RefreshDeviceLists", "Refresh Devices");
         _localeData.Messages.Add("Settings.MIDI_Settings.InputDevices", "Input Devices");
         _localeData.Messages.Add("Settings.MIDI_Settings.OutputDevices", "Output Devices");
-        _localeData.Messages.Add("Settings.MIDI_Settings.InputDevices.DeviceName", "Input Device Name");
-        _localeData.Messages.Add("Settings.MIDI_Settings.OutputDevices.DeviceName", "Output Device Name");
+
+        _localeData.Messages.Add("Settings.MIDI_Settings.DeviceName", "Device Name");
         _localeData.Messages.Add("Settings.MIDI_Settings.OutputDevices.Breadcrumb", "Output Devices");
         _localeData.Messages.Add("Settings.MIDI_Settings.InputDevices.Breadcrumb", "Input Devices");
-        _localeData.Messages.Add("Settings.MIDI_Settings.InputDevices.AllowConnections", "Allow Connections");
-        _localeData.Messages.Add("Settings.MIDI_Settings.OutputDevices.AllowConnections", "Allow Connections");
-        _localeData.Messages.Add("Settings.MIDI_Settings.OutputDevices.DeviceFound", "Device Found");
-        _localeData.Messages.Add("Settings.MIDI_Settings.InputDevices.DeviceFound", "Device Found");
-        _localeData.Messages.Add("Settings.MIDI_Settings.InputDevices.Remove", "Remove");
-        _localeData.Messages.Add("Settings.MIDI_Settings.OutputDevices.Remove", "Remove");
+        _localeData.Messages.Add("Settings.MIDI_Settings.AllowConnections", "Allow Connections");
+        _localeData.Messages.Add("Settings.MIDI_Settings.DeviceFound", "Device Found");
+        _localeData.Messages.Add("Settings.MIDI_Settings.Remove", "Remove");
 
         // Sometimes the locale is null in here, so wait a bit I guess
         RunInUpdates(7, () =>
@@ -145,53 +159,61 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
         {
             device.DeviceFound.Value = false;
         }
-        foreach (var device in Melanchall.DryWetMidi.Multimedia.InputDevice.GetAll())
+        var access = MidiAccessManager.Default;
+        foreach (var input in access.Inputs)
         {
-            RegisterInputDevice(device);
+            RegisterInputDevice(input);
         }
-        foreach (var device in OutputDevice.GetAll())
+        foreach (var output in access.Outputs)
         {
-            RegisterOutputDevice(device);
+            RegisterOutputDevice(output);
         }
+        //foreach (var device in Melanchall.DryWetMidi.Multimedia.InputDevice.GetAll())
+        //{
+        //    RegisterInputDevice(device);
+        //}
+        //foreach (var device in OutputDevice.GetAll())
+        //{
+        //    RegisterOutputDevice(device);
+        //}
     }
 
-    private void RegisterInputDevice(Melanchall.DryWetMidi.Multimedia.InputDevice inputDevice)
+    private void RegisterInputDevice(IMidiPortDetails details)
     {
-        if (string.IsNullOrEmpty(inputDevice.Name))
+        if (string.IsNullOrEmpty(details.Name))
         {
             return;
         }
-        MIDI_Device device = InputDevices.FirstOrDefault((d) => d.DeviceName.Value == inputDevice.Name);
+        MIDI_Device device = InputDevices.FirstOrDefault((d) => d.DeviceName.Value == details.Name);
         if (device == null)
         {
             device = InputDevices.Add();
-            device.Device = inputDevice;
-            device.DeviceName.Value = inputDevice.Name;
+            //device.Details = details;
+            device.DeviceName.Value = details.Name;
         }
         else
         {
-            device.Device = inputDevice;
+            //device.Device = inputDevice;
         }
+        device.Details = details;
         device.DeviceFound.Value = true;
+        //device.IsOutput = false;
     }
 
-    private void RegisterOutputDevice(OutputDevice outputDevice)
+    private void RegisterOutputDevice(IMidiPortDetails details)
     {
-        if (string.IsNullOrEmpty(outputDevice.Name))
+        if (string.IsNullOrEmpty(details.Name))
         {
             return;
         }
-        MIDI_Device device = OutputDevices.FirstOrDefault((d) => d.DeviceName.Value == outputDevice.Name);
+        MIDI_Device device = OutputDevices.FirstOrDefault((d) => d.DeviceName.Value == details.Name);
         if (device == null)
         {
             device = OutputDevices.Add();
-            device.Device = outputDevice;
-            device.DeviceName.Value = outputDevice.Name;
+            device.DeviceName.Value = details.Name;
         }
-        else
-        {
-            device.Device = outputDevice;
-        }
+        device.Details = details;
         device.DeviceFound.Value = true;
+        //device.IsOutput = true;
     }
 }
