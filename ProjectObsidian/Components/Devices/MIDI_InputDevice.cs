@@ -227,49 +227,49 @@ public class MIDI_InputDevice : Component
 
                 //SysEx events are probably not worth handling
                 case MidiEvent.SysEx1:
-                    //if (DEBUG) UniLog.Log("SysEx1");
+                    //if (DEBUG) UniLog.Log("UnhandledEvent: SysEx1");
                     break;
                 case MidiEvent.SysEx2:
                     // Same as EndSysEx
-                    //if (DEBUG) UniLog.Log("SysEx2");
+                    //if (DEBUG) UniLog.Log("UnhandledEvent: SysEx2");
                     break;
 
                 case MidiEvent.Program:
-                    if (DEBUG) UniLog.Log("Program");
+                    if (DEBUG) UniLog.Log("UnhandledEvent: Program");
                     break;
                 case MidiEvent.MtcQuarterFrame:
-                    if (DEBUG) UniLog.Log("MtcQuarterFrame");
+                    if (DEBUG) UniLog.Log("UnhandledEvent: MtcQuarterFrame");
                     break;
                 case MidiEvent.SongPositionPointer:
-                    if (DEBUG) UniLog.Log("SongPositionPointer");
+                    if (DEBUG) UniLog.Log("UnhandledEvent: SongPositionPointer");
                     break;
                 case MidiEvent.SongSelect:
-                    if (DEBUG) UniLog.Log("SongSelect");
+                    if (DEBUG) UniLog.Log("UnhandledEvent: SongSelect");
                     break;
                 case MidiEvent.TuneRequest:
-                    if (DEBUG) UniLog.Log("TuneRequest");
+                    if (DEBUG) UniLog.Log("UnhandledEvent: TuneRequest");
                     break;
                 case MidiEvent.MidiClock:
-                    if (DEBUG) UniLog.Log("Clock");
+                    if (DEBUG) UniLog.Log("UnhandledEvent: Clock");
                     break;
                 case MidiEvent.MidiTick:
-                    if (DEBUG) UniLog.Log("MidiTick");
+                    if (DEBUG) UniLog.Log("UnhandledEvent: MidiTick");
                     break;
                 case MidiEvent.MidiStart:
-                    if (DEBUG) UniLog.Log("MidiStart");
+                    if (DEBUG) UniLog.Log("UnhandledEvent: MidiStart");
                     break;
                 case MidiEvent.MidiStop:
-                    if (DEBUG) UniLog.Log("MidiStart");
+                    if (DEBUG) UniLog.Log("UnhandledEvent: MidiStart");
                     break;
                 case MidiEvent.MidiContinue:
-                    if (DEBUG) UniLog.Log("MidiContinue");
+                    if (DEBUG) UniLog.Log("UnhandledEvent: MidiContinue");
                     break;
                 case MidiEvent.ActiveSense:
-                    if (DEBUG) UniLog.Log("ActiveSense");
+                    if (DEBUG) UniLog.Log("UnhandledEvent: ActiveSense");
                     break;
                 case MidiEvent.Reset:
                     // Same as Meta
-                    if (DEBUG) UniLog.Log("Reset");
+                    if (DEBUG) UniLog.Log("UnhandledEvent: Reset");
                     break;
                 default:
                     break;

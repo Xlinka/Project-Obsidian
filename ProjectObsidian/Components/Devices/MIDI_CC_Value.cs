@@ -18,6 +18,8 @@ public class MIDI_CC_Value : Component
 
     public readonly Sync<bool> AutoMap;
 
+    public readonly Sync<int> Channel;
+
     public readonly Sync<int> ControllerNumber;
 
     public readonly Sync<MIDI_CC_Definition?> OverrideDefinition;
@@ -57,6 +59,7 @@ public class MIDI_CC_Value : Component
             {
                 AutoMap.Value = false;
                 ControllerNumber.Value = eventData.controller;
+                Channel.Value = eventData.channel;
                 if (OverrideDefinition.Value.HasValue)
                 {
                     if (Enum.IsDefined(typeof(MIDI_CC_Definition), eventData.controller))
@@ -69,20 +72,23 @@ public class MIDI_CC_Value : Component
                     }
                 }
             }
-            if (OverrideDefinition.Value.HasValue && OverrideDefinition.Value.Value != MIDI_CC_Definition.UNDEFINED)
+            if (Channel.Value == eventData.channel)
             {
-                if (eventData.controller == (int)OverrideDefinition.Value.Value)
+                if (OverrideDefinition.Value.HasValue && OverrideDefinition.Value.Value != MIDI_CC_Definition.UNDEFINED)
                 {
-                    Value.Value = eventData.value;
-                    NormalizedValue.Value = eventData.value / 127f;
+                    if (eventData.controller == (int)OverrideDefinition.Value.Value)
+                    {
+                        Value.Value = eventData.value;
+                        NormalizedValue.Value = eventData.value / 127f;
+                    }
                 }
-            }
-            else
-            {
-                if (eventData.controller == ControllerNumber.Value)
+                else
                 {
-                    Value.Value = eventData.value;
-                    NormalizedValue.Value = eventData.value / 127f;
+                    if (eventData.controller == ControllerNumber.Value)
+                    {
+                        Value.Value = eventData.value;
+                        NormalizedValue.Value = eventData.value / 127f;
+                    }
                 }
             }
         });
