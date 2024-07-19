@@ -7,46 +7,9 @@ using System.Collections.Generic;
 using Commons.Music.Midi.RtMidi;
 using CoreMidi;
 using Commons.Music.Midi;
-using FrooxEngine.ProtoFlux;
+using Obsidian.Elements;
 
 namespace Obsidian;
-
-[DataModelType]
-public readonly struct MIDI_NoteOnOffEventData
-{
-    public readonly int channel;
-
-    public readonly int note;
-
-    public readonly int velocity;
-
-    public MIDI_NoteOnOffEventData(in int _channel, in int _note, in int _velocity)
-    {
-        channel = _channel;
-        note = _note;
-        velocity = _velocity;
-    }
-}
-
-[DataModelType]
-public readonly struct MIDI_ChannelPressureEventData
-{
-    public readonly int channel;
-
-    public readonly int pressure;
-
-    public MIDI_ChannelPressureEventData(in int _channel, in int _pressure)
-    {
-        channel = _channel;
-        pressure = _pressure;
-    }
-}
-
-[DataModelType]
-public delegate void MIDI_NoteOnOffEventHandler(MIDI_InputDevice device, MIDI_NoteOnOffEventData eventData);
-
-[DataModelType]
-public delegate void MIDI_ChannelPressureEventHandler(MIDI_InputDevice device, MIDI_ChannelPressureEventData eventData);
 
 [Category(new string[] { "Obsidian/Devices" })]
 public class MIDI_InputDevice : Component
@@ -66,19 +29,28 @@ public class MIDI_InputDevice : Component
 
     private MIDI_Settings _settings => Settings.GetActiveSetting<MIDI_Settings>();
 
-    public event MIDI_NoteOnOffEventHandler NoteOn;
+    public event MIDI_NoteEventHandler NoteOn;
 
-    public event MIDI_NoteOnOffEventHandler NoteOff;
+    public event MIDI_NoteEventHandler NoteOff;
 
-    // Aftertouch?
+    // Pressure for whole keyboard
     public event MIDI_ChannelPressureEventHandler ChannelPressure;
+
+    // Pressure for individual notes (polyphonic)
+    public event MIDI_AftertouchEventHandler Aftertouch;
+
+    public event MIDI_CC_EventHandler Control;
+
+    public event MIDI_PitchWheelEventHandler PitchWheel;
+
+    private const bool DEBUG = true;
 
     protected override void OnStart()
     {
         base.OnStart();
-        //_settings = ;
+        Settings.GetActiveSetting<MIDI_Settings>();
         Settings.RegisterValueChanges<MIDI_Settings>(OnInputDeviceSettingsChanged);
-        Update();
+        RunInUpdates(7, Update);
     }
 
     private void OnInputDeviceSettingsChanged(MIDI_Settings setting)
@@ -89,7 +61,7 @@ public class MIDI_InputDevice : Component
 
     protected override void OnChanges()
     {
-        UniLog.Log("OnChanges");
+        //UniLog.Log("OnChanges");
         base.OnChanges();
         if (_lastEvent.WasChanged)
         {
@@ -107,9 +79,9 @@ public class MIDI_InputDevice : Component
 
     private async void ReleaseDeviceAsync()
     {
-        UniLog.Log("Releasing device");
+        UniLog.Log("Releasing device...");
         await _inputDevice.CloseAsync();
-        UniLog.Log("Setting device to null");
+        UniLog.Log("Device released.");
         _inputDevice = null;
     }
 
@@ -161,10 +133,10 @@ public class MIDI_InputDevice : Component
 
         if (!string.IsNullOrWhiteSpace(DeviceName))
         {
-
+            UniLog.Log("Device name: " + DeviceName.Value);
             if (!_settings.InputDevices.Any(dev => dev.DeviceName.Value == DeviceName.Value && dev.AllowConnections.Value == true))
             {
-                UniLog.Log("Device connection not allowed: " + DeviceName.Value);
+                UniLog.Log("Device connection not allowed.");
                 if (_inputDevice != null)
                 {
                     ReleaseDeviceAsync();
@@ -177,7 +149,7 @@ public class MIDI_InputDevice : Component
                 && (_inputDevice.Connection == MidiPortConnectionState.Open || _inputDevice.Connection == MidiPortConnectionState.Pending) 
                 && _inputDevice.Details.Name == DeviceName.Value) 
             {
-                UniLog.Log("Already connected: " + DeviceName.Value);
+                UniLog.Log("Already connected.");
                 return;
             }
 
@@ -185,7 +157,7 @@ public class MIDI_InputDevice : Component
             var targetDevice = access.Inputs.FirstOrDefault(dev => dev.Name == DeviceName.Value);
             if (targetDevice != null)
             {
-                UniLog.Log("Found the target device: " + targetDevice.Name);
+                UniLog.Log("Found the target device.");
                 _inputDevice = access.OpenInputAsync(targetDevice.Id).Result;
                 _inputDevice.MessageReceived += OnMessageReceived;
                 SetIsConnected(true);
@@ -193,7 +165,7 @@ public class MIDI_InputDevice : Component
             }
             else
             {
-                UniLog.Log("Could not find target device: " + DeviceName.Value);
+                UniLog.Log("Could not find target device.");
                 SetIsConnected(false);
             }
         }
@@ -207,33 +179,101 @@ public class MIDI_InputDevice : Component
         }
     }
 
+    // What
+    private ushort CombineBytes(byte First, byte Second)
+    {
+        ushort _14bit;
+        _14bit = Second;
+        _14bit <<= 7;
+        _14bit |= First;
+        return _14bit;
+    }
+
     private void OnMessageReceived(object sender, MidiReceivedEventArgs args)
     {
-        UniLog.Log($"Received {args.Length} bytes");
-        UniLog.Log($"Timestamp: {args.Timestamp}");
-        UniLog.Log($"Start: {args.Start}");
+        if (DEBUG) UniLog.Log($"Received {args.Length} bytes");
+        if (DEBUG) UniLog.Log($"Timestamp: {args.Timestamp}");
+        if (DEBUG) UniLog.Log($"Start: {args.Start}");
         var events = MidiEvent.Convert(args.Data, args.Start, args.Length);
         foreach (var e in events)
         {
-            switch (e.EventType)
-            {
-                case MidiEvent.NoteOn:
-                    NoteOn?.Invoke(this, new MIDI_NoteOnOffEventData(e.Channel, e.Msb, e.Lsb));
-                    break;
-                case MidiEvent.NoteOff:
-                    NoteOff?.Invoke(this, new MIDI_NoteOnOffEventData(e.Channel, e.Msb, e.Lsb));
-                    break;
-                case MidiEvent.CAf:
-                    ChannelPressure?.Invoke(this, new MIDI_ChannelPressureEventData(e.Channel, e.Msb));
-                    break;
-                default:
-                    break;
-            }
             UniLog.Log(e.ToString());
             RunSynchronously(() =>
             {
                 _lastEvent.Value = e.ToString();
             });
+            switch (e.EventType)
+            {
+                case MidiEvent.NoteOn:
+                    NoteOn?.Invoke(this, new MIDI_NoteEventData(e.Channel, e.Msb, e.Lsb));
+                    break;
+                case MidiEvent.NoteOff:
+                    NoteOff?.Invoke(this, new MIDI_NoteEventData(e.Channel, e.Msb, e.Lsb));
+                    break;
+                case MidiEvent.CAf:
+                    ChannelPressure?.Invoke(this, new MIDI_ChannelPressureEventData(e.Channel, e.Msb));
+                    break;
+                case MidiEvent.CC:
+                    Control?.Invoke(this, new MIDI_CC_EventData(e.Channel, e.Msb, e.Lsb));
+                    break;
+                case MidiEvent.Pitch:
+                    PitchWheel?.Invoke(this, new MIDI_PitchWheelEventData(e.Channel, CombineBytes(e.Msb, e.Lsb)));
+                    break;
+                case MidiEvent.PAf:
+                    Aftertouch?.Invoke(this, new MIDI_AftertouchEventData(e.Channel, e.Msb, e.Lsb));
+                    break;
+
+                // Unhandled events:
+
+                //SysEx events are probably not worth handling
+                case MidiEvent.SysEx1:
+                    //if (DEBUG) UniLog.Log("SysEx1");
+                    break;
+                case MidiEvent.SysEx2:
+                    // Same as EndSysEx
+                    //if (DEBUG) UniLog.Log("SysEx2");
+                    break;
+
+                case MidiEvent.Program:
+                    if (DEBUG) UniLog.Log("Program");
+                    break;
+                case MidiEvent.MtcQuarterFrame:
+                    if (DEBUG) UniLog.Log("MtcQuarterFrame");
+                    break;
+                case MidiEvent.SongPositionPointer:
+                    if (DEBUG) UniLog.Log("SongPositionPointer");
+                    break;
+                case MidiEvent.SongSelect:
+                    if (DEBUG) UniLog.Log("SongSelect");
+                    break;
+                case MidiEvent.TuneRequest:
+                    if (DEBUG) UniLog.Log("TuneRequest");
+                    break;
+                case MidiEvent.MidiClock:
+                    if (DEBUG) UniLog.Log("Clock");
+                    break;
+                case MidiEvent.MidiTick:
+                    if (DEBUG) UniLog.Log("MidiTick");
+                    break;
+                case MidiEvent.MidiStart:
+                    if (DEBUG) UniLog.Log("MidiStart");
+                    break;
+                case MidiEvent.MidiStop:
+                    if (DEBUG) UniLog.Log("MidiStart");
+                    break;
+                case MidiEvent.MidiContinue:
+                    if (DEBUG) UniLog.Log("MidiContinue");
+                    break;
+                case MidiEvent.ActiveSense:
+                    if (DEBUG) UniLog.Log("ActiveSense");
+                    break;
+                case MidiEvent.Reset:
+                    // Same as Meta
+                    if (DEBUG) UniLog.Log("Reset");
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }
