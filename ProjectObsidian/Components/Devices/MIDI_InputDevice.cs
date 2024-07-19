@@ -43,7 +43,7 @@ public class MIDI_InputDevice : Component
 
     public event MIDI_PitchWheelEventHandler PitchWheel;
 
-    private const bool DEBUG = true;
+    private const bool DEBUG = false;
 
     protected override void OnStart()
     {
