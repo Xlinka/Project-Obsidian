@@ -85,9 +85,9 @@ public class MIDI_InputDevice : Component
         _inputDevice = null;
     }
 
-    protected override void OnPrepareDestroy()
+    protected override void OnDispose()
     {
-        base.OnPrepareDestroy();
+        base.OnDispose();
         if (_inputDevice != null)
         {
             ReleaseDeviceAsync();
@@ -197,7 +197,7 @@ public class MIDI_InputDevice : Component
         var events = MidiEvent.Convert(args.Data, args.Start, args.Length);
         foreach (var e in events)
         {
-            UniLog.Log(e.ToString());
+            if (DEBUG) UniLog.Log(e.ToString());
             RunSynchronously(() =>
             {
                 _lastEvent.Value = e.ToString();

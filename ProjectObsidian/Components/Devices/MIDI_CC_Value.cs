@@ -41,9 +41,9 @@ public class MIDI_CC_Value : Component
         }
     }
 
-    protected override void OnPrepareDestroy()
+    protected override void OnDispose()
     {
-        base.OnPrepareDestroy();
+        base.OnDispose();
         if (_device != null)
         {
             _device.Control -= OnControl;
