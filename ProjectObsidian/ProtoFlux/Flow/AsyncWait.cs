@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using FrooxEngine;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Flow
@@ -40,10 +41,11 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Flow
                 {
                     throw new ExecutionAbortedException(base.Runtime as IExecutionRuntime, this, TimedOut.Target, isAsync: true);
                 }
+
+                await default(NextUpdate);
             }
 
             return OnDone.Target;
         }
     }
 }
-
