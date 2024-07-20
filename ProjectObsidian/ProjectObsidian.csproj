@@ -70,6 +70,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ProjectObsidian.SourceGenerators\SourceGenerators.csproj" OutputItemType="Analyzer" />
+    <PackageReference Include="managed-midi" Version="1.10.1" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3"> </PackageReference>
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
