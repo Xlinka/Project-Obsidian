@@ -8,10 +8,11 @@ using Commons.Music.Midi.RtMidi;
 using CoreMidi;
 using Commons.Music.Midi;
 using Obsidian.Elements;
+using Obsidian;
 
-namespace Obsidian;
+namespace Components.Devices.MIDI;
 
-[Category(new string[] { "Obsidian/Devices" })]
+[Category(new string[] { "Obsidian/Devices/MIDI" })]
 public class MIDI_InputDevice : Component
 {
     [NoContinuousParsing]
@@ -145,9 +146,9 @@ public class MIDI_InputDevice : Component
                 return;
             }
 
-            if (_inputDevice != null 
-                && (_inputDevice.Connection == MidiPortConnectionState.Open || _inputDevice.Connection == MidiPortConnectionState.Pending) 
-                && _inputDevice.Details.Name == DeviceName.Value) 
+            if (_inputDevice != null
+                && (_inputDevice.Connection == MidiPortConnectionState.Open || _inputDevice.Connection == MidiPortConnectionState.Pending)
+                && _inputDevice.Details.Name == DeviceName.Value)
             {
                 UniLog.Log("Already connected.");
                 return;

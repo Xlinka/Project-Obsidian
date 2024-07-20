@@ -7,12 +7,12 @@ using Elements.Core;
 using FrooxEngine;
 using FrooxEngine.ProtoFlux;
 using Obsidian.Elements;
-using Obsidian;
+using Components.Devices.MIDI;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Devices;
 
 [NodeName("MIDI Pitch Wheel Event")]
-[NodeCategory("Obsidian/Devices")]
+[NodeCategory("Obsidian/Devices/MIDI")]
 public class MIDI_PitchWheelEvent : VoidNode<FrooxEngineContext>
 {
     public readonly GlobalRef<MIDI_InputDevice> Device;
