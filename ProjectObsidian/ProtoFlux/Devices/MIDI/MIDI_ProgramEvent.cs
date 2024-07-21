@@ -48,7 +48,7 @@ public class MIDI_ProgramEvent : VoidNode<FrooxEngineContext>
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnNoteOn(dev, in e, c);
+                    OnProgram(dev, in e, c);
                 });
             };
             _currentDevice.Write(device, context);
@@ -62,15 +62,15 @@ public class MIDI_ProgramEvent : VoidNode<FrooxEngineContext>
         }
     }
 
-    private void WriteNoteOnOffEventData(in MIDI_ProgramEventData eventData, FrooxEngineContext context)
+    private void WriteProgramEventData(in MIDI_ProgramEventData eventData, FrooxEngineContext context)
     {
         Channel.Write(eventData.channel, context);
         ProgramValue.Write(eventData.program, context);
     }
 
-    private void OnNoteOn(MIDI_InputDevice device, in MIDI_ProgramEventData eventData, FrooxEngineContext context)
+    private void OnProgram(MIDI_InputDevice device, in MIDI_ProgramEventData eventData, FrooxEngineContext context)
     {
-        WriteNoteOnOffEventData(in eventData, context);
+        WriteProgramEventData(in eventData, context);
         Program.Execute(context);
     }
 
