@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Components.Devices.MIDI;
 using Elements.Core;
 
 namespace Obsidian.Elements;
@@ -91,6 +92,20 @@ public enum MIDI_CC_Definition
 }
 
 [DataModelType]
+public readonly struct MIDI_ProgramEventData
+{
+    public readonly int channel;
+
+    public readonly int program;
+
+    public MIDI_ProgramEventData(in int _channel, in int _program)
+    {
+        channel = _channel;
+        program = _program;
+    }
+}
+
+[DataModelType]
 public readonly struct MIDI_PitchWheelEventData
 {
     public readonly int channel;
@@ -122,13 +137,13 @@ public readonly struct MIDI_NoteEventData
 }
 
 [DataModelType]
-public readonly struct MIDI_ChannelPressureEventData
+public readonly struct MIDI_ChannelAftertouchEventData
 {
     public readonly int channel;
 
     public readonly int pressure;
 
-    public MIDI_ChannelPressureEventData(in int _channel, in int _pressure)
+    public MIDI_ChannelAftertouchEventData(in int _channel, in int _pressure)
     {
         channel = _channel;
         pressure = _pressure;
@@ -136,7 +151,7 @@ public readonly struct MIDI_ChannelPressureEventData
 }
 
 [DataModelType]
-public readonly struct MIDI_AftertouchEventData
+public readonly struct MIDI_PolyphonicAftertouchEventData
 {
     public readonly int channel;
 
@@ -144,7 +159,7 @@ public readonly struct MIDI_AftertouchEventData
 
     public readonly int pressure;
 
-    public MIDI_AftertouchEventData(in int _channel, in int _note, in int _pressure)
+    public MIDI_PolyphonicAftertouchEventData(in int _channel, in int _note, in int _pressure)
     {
         channel = _channel;
         note = _note;
@@ -173,13 +188,16 @@ public readonly struct MIDI_CC_EventData
 public delegate void MIDI_NoteEventHandler(MIDI_InputDevice device, MIDI_NoteEventData eventData);
 
 [DataModelType]
-public delegate void MIDI_ChannelPressureEventHandler(MIDI_InputDevice device, MIDI_ChannelPressureEventData eventData);
+public delegate void MIDI_ChannelAftertouchEventHandler(MIDI_InputDevice device, MIDI_ChannelAftertouchEventData eventData);
 
 [DataModelType]
-public delegate void MIDI_AftertouchEventHandler(MIDI_InputDevice device, MIDI_AftertouchEventData eventData);
+public delegate void MIDI_PolyphonicAftertouchEventHandler(MIDI_InputDevice device, MIDI_PolyphonicAftertouchEventData eventData);
 
 [DataModelType]
 public delegate void MIDI_CC_EventHandler(MIDI_InputDevice device, MIDI_CC_EventData eventData);
 
 [DataModelType]
 public delegate void MIDI_PitchWheelEventHandler(MIDI_InputDevice device, MIDI_PitchWheelEventData eventData);
+
+[DataModelType]
+public delegate void MIDI_ProgramEventHandler(MIDI_InputDevice device, MIDI_ProgramEventData eventData);

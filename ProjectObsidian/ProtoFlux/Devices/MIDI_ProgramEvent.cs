@@ -11,25 +11,21 @@ using Obsidian;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Devices;
 
-[NodeName("MIDI Polyphonic Aftertouch Event")]
-[NodeCategory("Obsidian/Devices")]
-public class MIDI_AftertouchEvent : VoidNode<FrooxEngineContext>
+[NodeName("MIDI Program Event")]
+[NodeCategory("Obsidian/Devices/MIDI")]
+public class MIDI_ProgramEvent : VoidNode<FrooxEngineContext>
 {
     public readonly GlobalRef<MIDI_InputDevice> Device;
 
-    public Call Aftertouch;
+    public Call Program;
 
     public readonly ValueOutput<int> Channel;
 
-    public readonly ValueOutput<int> Note;
-
-    public readonly ValueOutput<int> Pressure;
-
-    public readonly ValueOutput<float> NormalizedPressure;
+    public readonly ValueOutput<int> ProgramValue;
 
     private ObjectStore<MIDI_InputDevice> _currentDevice;
 
-    private ObjectStore<MIDI_AftertouchEventHandler> _aftertouch;
+    private ObjectStore<MIDI_ProgramEventHandler> _program;
 
     public override bool CanBeEvaluated => false;
 
@@ -42,50 +38,46 @@ public class MIDI_AftertouchEvent : VoidNode<FrooxEngineContext>
         }
         if (device2 != null)
         {
-            device2.Aftertouch -= _aftertouch.Read(context);
+            device2.Program -= _program.Read(context);
         }
         if (device != null)
         {
             NodeContextPath path = context.CaptureContextPath();
             context.GetEventDispatcher(out var dispatcher);
-            MIDI_AftertouchEventHandler value3 = delegate (MIDI_InputDevice dev, MIDI_AftertouchEventData e)
+            MIDI_ProgramEventHandler value = delegate (MIDI_InputDevice dev, MIDI_ProgramEventData e)
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnAftertouch(dev, in e, c);
+                    OnNoteOn(dev, in e, c);
                 });
             };
             _currentDevice.Write(device, context);
-            _aftertouch.Write(value3, context);
-            device.Aftertouch += value3;
+            _program.Write(value, context);
+            device.Program += value;
         }
         else
         {
             _currentDevice.Clear(context);
-            _aftertouch.Clear(context);
+            _program.Clear(context);
         }
     }
 
-    private void WriteAftertouchEventData(in MIDI_AftertouchEventData eventData, FrooxEngineContext context)
+    private void WriteNoteOnOffEventData(in MIDI_ProgramEventData eventData, FrooxEngineContext context)
     {
         Channel.Write(eventData.channel, context);
-        Note.Write(eventData.note, context);
-        Pressure.Write(eventData.pressure, context);
-        NormalizedPressure.Write(eventData.pressure / 127f, context);
+        ProgramValue.Write(eventData.program, context);
     }
 
-    private void OnAftertouch(MIDI_InputDevice device, in MIDI_AftertouchEventData eventData, FrooxEngineContext context)
+    private void OnNoteOn(MIDI_InputDevice device, in MIDI_ProgramEventData eventData, FrooxEngineContext context)
     {
-        WriteAftertouchEventData(in eventData, context);
-        Aftertouch.Execute(context);
+        WriteNoteOnOffEventData(in eventData, context);
+        Program.Execute(context);
     }
 
-    public MIDI_AftertouchEvent()
+    public MIDI_ProgramEvent()
     {
         Device = new GlobalRef<MIDI_InputDevice>(this, 0);
         Channel = new ValueOutput<int>(this);
-        Note = new ValueOutput<int>(this);
-        Pressure = new ValueOutput<int>(this);
-        NormalizedPressure = new ValueOutput<float>(this);
+        ProgramValue = new ValueOutput<int>(this);
     }
 }

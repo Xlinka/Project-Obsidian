@@ -104,13 +104,18 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
         _localeData.Messages.Add("Settings.MIDI_Settings.Remove", "Remove");
 
         // Sometimes the locale is null in here, so wait a bit I guess
-        RunInUpdates(7, () =>
+
+        RunInUpdates(30, () =>
         {
             UpdateLocale();
             Settings.RegisterValueChanges<LocaleSettings>(UpdateLocale);
+            RefreshDeviceLists();
         });
 
-        RefreshDeviceLists();
+        //MidiAccessManager.Default.StateChanged += (object sender, MidiConnectionEventArgs args) => 
+        //{
+        //    UniLog.Log("midi access state changed");
+        //};
     }
 
     protected override void OnDispose()
