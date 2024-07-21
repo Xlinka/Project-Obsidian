@@ -7,25 +7,27 @@ using Elements.Core;
 using FrooxEngine;
 using FrooxEngine.ProtoFlux;
 using Obsidian.Elements;
-using Obsidian;
+using Components.Devices.MIDI;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Devices;
 
-[NodeName("MIDI Program Event")]
+[NodeName("MIDI Pitch Wheel Event")]
 [NodeCategory("Obsidian/Devices/MIDI")]
-public class MIDI_ProgramEvent : VoidNode<FrooxEngineContext>
+public class MIDI_PitchWheelEvent : VoidNode<FrooxEngineContext>
 {
     public readonly GlobalRef<MIDI_InputDevice> Device;
 
-    public Call Program;
+    public Call PitchWheel;
 
     public readonly ValueOutput<int> Channel;
 
-    public readonly ValueOutput<int> ProgramValue;
+    public readonly ValueOutput<int> Value;
+
+    public readonly ValueOutput<float> NormalizedValue;
 
     private ObjectStore<MIDI_InputDevice> _currentDevice;
 
-    private ObjectStore<MIDI_ProgramEventHandler> _program;
+    private ObjectStore<MIDI_PitchWheelEventHandler> _pitchWheel;
 
     public override bool CanBeEvaluated => false;
 
@@ -38,46 +40,50 @@ public class MIDI_ProgramEvent : VoidNode<FrooxEngineContext>
         }
         if (device2 != null)
         {
-            device2.Program -= _program.Read(context);
+            device2.PitchWheel -= _pitchWheel.Read(context);
         }
         if (device != null)
         {
             NodeContextPath path = context.CaptureContextPath();
             context.GetEventDispatcher(out var dispatcher);
-            MIDI_ProgramEventHandler value = delegate (MIDI_InputDevice dev, MIDI_ProgramEventData e)
+            MIDI_PitchWheelEventHandler value3 = delegate (MIDI_InputDevice dev, MIDI_PitchWheelEventData e)
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnNoteOn(dev, in e, c);
+                    OnPitch(dev, in e, c);
                 });
             };
             _currentDevice.Write(device, context);
-            _program.Write(value, context);
-            device.Program += value;
+            _pitchWheel.Write(value3, context);
+            device.PitchWheel += value3;
         }
         else
         {
             _currentDevice.Clear(context);
-            _program.Clear(context);
+            _pitchWheel.Clear(context);
         }
     }
 
-    private void WriteNoteOnOffEventData(in MIDI_ProgramEventData eventData, FrooxEngineContext context)
+    private void WritePitchEventData(in MIDI_PitchWheelEventData eventData, FrooxEngineContext context)
     {
         Channel.Write(eventData.channel, context);
-        ProgramValue.Write(eventData.program, context);
+        Value.Write(eventData.value, context);
+
+        // should be 1 at 16383, -1 at 0
+        NormalizedValue.Write(eventData.value == 8192 ? 0f : MathX.Remap(eventData.value, 0f, 16383f, -1f, 1f), context);
     }
 
-    private void OnNoteOn(MIDI_InputDevice device, in MIDI_ProgramEventData eventData, FrooxEngineContext context)
+    private void OnPitch(MIDI_InputDevice device, in MIDI_PitchWheelEventData eventData, FrooxEngineContext context)
     {
-        WriteNoteOnOffEventData(in eventData, context);
-        Program.Execute(context);
+        WritePitchEventData(in eventData, context);
+        PitchWheel.Execute(context);
     }
 
-    public MIDI_ProgramEvent()
+    public MIDI_PitchWheelEvent()
     {
         Device = new GlobalRef<MIDI_InputDevice>(this, 0);
         Channel = new ValueOutput<int>(this);
-        ProgramValue = new ValueOutput<int>(this);
+        Value = new ValueOutput<int>(this);
+        NormalizedValue = new ValueOutput<float>(this);
     }
 }

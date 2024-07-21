@@ -9,9 +9,9 @@ using CoreMidi;
 using Commons.Music.Midi;
 using Obsidian.Elements;
 
-namespace Obsidian;
+namespace Components.Devices.MIDI;
 
-[Category(new string[] { "Obsidian/Devices" })]
+[Category(new string[] { "Obsidian/Devices/MIDI" })]
 public class MIDI_CC_Value : Component
 {
     public readonly SyncRef<MIDI_InputDevice> InputDevice;
@@ -53,7 +53,7 @@ public class MIDI_CC_Value : Component
 
     private void OnControl(MIDI_InputDevice device, MIDI_CC_EventData eventData)
     {
-        RunSynchronously(() => 
+        RunSynchronously(() =>
         {
             if (AutoMap.Value)
             {

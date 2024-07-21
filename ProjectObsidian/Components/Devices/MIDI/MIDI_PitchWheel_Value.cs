@@ -10,9 +10,9 @@ using Commons.Music.Midi;
 using Obsidian.Elements;
 using System.Runtime.Remoting.Contexts;
 
-namespace Obsidian;
+namespace Components.Devices.MIDI;
 
-[Category(new string[] { "Obsidian/Devices" })]
+[Category(new string[] { "Obsidian/Devices/MIDI" })]
 public class MIDI_PitchWheel_Value : Component
 {
     public readonly SyncRef<MIDI_InputDevice> InputDevice;

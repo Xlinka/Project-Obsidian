@@ -9,7 +9,6 @@ using CoreMidi;
 using Commons.Music.Midi;
 using Obsidian.Elements;
 using Obsidian;
-using System.Threading;
 
 namespace Components.Devices.MIDI;
 
