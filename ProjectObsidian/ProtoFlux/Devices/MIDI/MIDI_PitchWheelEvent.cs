@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Linq;
-using Newtonsoft.Json.Linq;
 using ProtoFlux.Core;
-using ProtoFlux.Runtimes.Execution;
 using Elements.Core;
 using FrooxEngine;
 using FrooxEngine.ProtoFlux;
 using Obsidian.Elements;
 using Components.Devices.MIDI;
+using ProtoFlux.Runtimes.Execution;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Devices;
 
@@ -70,7 +69,7 @@ public class MIDI_PitchWheelEvent : VoidNode<FrooxEngineContext>
         Value.Write(eventData.value, context);
 
         // should be 1 at 16383, -1 at 0
-        NormalizedValue.Write(eventData.value == 8192 ? 0f : MathX.Remap(eventData.value, 0f, 16383f, -1f, 1f), context);
+        NormalizedValue.Write(eventData.normalizedValue, context);
     }
 
     private void OnPitch(MIDI_InputDevice device, in MIDI_PitchWheelEventData eventData, FrooxEngineContext context)

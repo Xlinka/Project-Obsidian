@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Components.Devices.MIDI;
 using Elements.Core;
+using FrooxEngine;
 
 namespace Obsidian.Elements;
 
@@ -92,6 +93,15 @@ public enum MIDI_CC_Definition
 }
 
 [DataModelType]
+public readonly struct MIDI_SystemRealtimeEventData
+{
+    public MIDI_SystemRealtimeEventData()
+    { 
+        // owo
+    }
+}
+
+[DataModelType]
 public readonly struct MIDI_ProgramEventData
 {
     public readonly int channel;
@@ -112,6 +122,8 @@ public readonly struct MIDI_PitchWheelEventData
 
     public readonly int value;
 
+    public readonly float normalizedValue => value == 8192 ? 0f : MathX.Remap(value, 0f, 16383f, -1f, 1f);
+
     public MIDI_PitchWheelEventData(in int _channel, in int _value)
     {
         channel = _channel;
@@ -128,6 +140,8 @@ public readonly struct MIDI_NoteEventData
 
     public readonly int velocity;
 
+    public readonly float normalizedVelocity => velocity / 127f;
+
     public MIDI_NoteEventData(in int _channel, in int _note, in int _velocity)
     {
         channel = _channel;
@@ -142,6 +156,8 @@ public readonly struct MIDI_ChannelAftertouchEventData
     public readonly int channel;
 
     public readonly int pressure;
+
+    public readonly float normalizedPressure => pressure / 127f;
 
     public MIDI_ChannelAftertouchEventData(in int _channel, in int _pressure)
     {
@@ -158,6 +174,8 @@ public readonly struct MIDI_PolyphonicAftertouchEventData
     public readonly int note;
 
     public readonly int pressure;
+
+    public readonly float normalizedPressure => pressure / 127f;
 
     public MIDI_PolyphonicAftertouchEventData(in int _channel, in int _note, in int _pressure)
     {
@@ -176,11 +194,16 @@ public readonly struct MIDI_CC_EventData
 
     public readonly int value;
 
-    public MIDI_CC_EventData(in int _channel, in int _controller, in int _value)
+    public readonly bool coarse; // is it 7bit (coarse) or 14bit (fine) value?
+
+    public readonly float normalizedValue => coarse ? value / 127f : value / 16383f;
+
+    public MIDI_CC_EventData(in int _channel, in int _controller, in int _value, in bool _coarse)
     {
         channel = _channel;
         controller = _controller;
         value = _value;
+        coarse = _coarse;
     }
 }
 
@@ -201,3 +224,6 @@ public delegate void MIDI_PitchWheelEventHandler(MIDI_InputDevice device, MIDI_P
 
 [DataModelType]
 public delegate void MIDI_ProgramEventHandler(MIDI_InputDevice device, MIDI_ProgramEventData eventData);
+
+[DataModelType]
+public delegate void MIDI_SystemRealtimeEventHandler(MIDI_InputDevice device, MIDI_SystemRealtimeEventData eventData);

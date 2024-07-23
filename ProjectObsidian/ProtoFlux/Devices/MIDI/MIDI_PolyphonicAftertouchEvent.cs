@@ -72,7 +72,7 @@ public class MIDI_PolyphonicAftertouchEvent : VoidNode<FrooxEngineContext>
         Channel.Write(eventData.channel, context);
         Note.Write(eventData.note, context);
         Pressure.Write(eventData.pressure, context);
-        NormalizedPressure.Write(eventData.pressure / 127f, context);
+        NormalizedPressure.Write(eventData.normalizedPressure, context);
     }
 
     private void OnPolyphonicAftertouch(MIDI_InputDevice device, in MIDI_PolyphonicAftertouchEventData eventData, FrooxEngineContext context)

@@ -81,7 +81,7 @@ public class MIDI_CC_Event : VoidNode<FrooxEngineContext>
             ControllerDefinition.Write(MIDI_CC_Definition.UNDEFINED, context);
         }
         Value.Write(eventData.value, context);
-        NormalizedValue.Write(eventData.value / 127f, context);
+        NormalizedValue.Write(eventData.normalizedValue, context);
     }
 
     private void OnControl(MIDI_InputDevice device, in MIDI_CC_EventData eventData, FrooxEngineContext context)

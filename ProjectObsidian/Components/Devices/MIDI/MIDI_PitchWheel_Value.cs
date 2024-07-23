@@ -8,7 +8,6 @@ using Commons.Music.Midi.RtMidi;
 using CoreMidi;
 using Commons.Music.Midi;
 using Obsidian.Elements;
-using System.Runtime.Remoting.Contexts;
 
 namespace Components.Devices.MIDI;
 
@@ -16,6 +15,8 @@ namespace Components.Devices.MIDI;
 public class MIDI_PitchWheel_Value : Component
 {
     public readonly SyncRef<MIDI_InputDevice> InputDevice;
+
+    public readonly Sync<bool> AutoMap;
 
     public readonly Sync<int> Channel;
 
@@ -50,6 +51,11 @@ public class MIDI_PitchWheel_Value : Component
     {
         RunSynchronously(() =>
         {
+            if (AutoMap.Value)
+            {
+                AutoMap.Value = false;
+                Channel.Value = eventData.channel;
+            }
             if (eventData.channel == Channel.Value)
             {
                 Value.Value = eventData.value;

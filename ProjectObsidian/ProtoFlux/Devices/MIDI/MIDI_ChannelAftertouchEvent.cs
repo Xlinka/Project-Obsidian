@@ -69,7 +69,7 @@ public class MIDI_ChannelAftertouchEvent : VoidNode<FrooxEngineContext>
     {
         Channel.Write(eventData.channel, context);
         Pressure.Write(eventData.pressure, context);
-        NormalizedPressure.Write(eventData.pressure / 127f, context);
+        NormalizedPressure.Write(eventData.normalizedPressure, context);
     }
 
     private void OnChannelAftertouch(MIDI_InputDevice device, in MIDI_ChannelAftertouchEventData eventData, FrooxEngineContext context)
