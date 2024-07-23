@@ -58,6 +58,26 @@ public class MIDI_InputDevice : Component
 
     private const bool DEBUG = true;
 
+    private struct TimestampedMidiEvent
+    {
+        public MidiEvent midiEvent;
+        public long timestamp;
+        public TimestampedMidiEvent(MidiEvent _midiEvent, long _timestamp)
+        {
+            midiEvent = _midiEvent;
+            timestamp = _timestamp;
+        }
+    }
+
+    // I am using this like a Queue so it could possibly be turned into a Queue instead...
+    private List<TimestampedMidiEvent> _eventBuffer = new();
+
+    private const long MESSAGE_BUFFER_TIME_MILLISECONDS = 3;
+
+    private long _lastMessageBufferStartTime = 0;
+
+    private int _bufferedMessagesToHandle = 0;
+
     protected override void OnStart()
     {
         base.OnStart();
@@ -91,7 +111,7 @@ public class MIDI_InputDevice : Component
         UniLog.Log("Device released.");
         _inputDevice = null;
         _eventBuffer.Clear();
-        _lastBatchStartTime = 0;
+        _lastMessageBufferStartTime = 0;
     }
 
     private async void ReleaseDeviceAndConnectAsync(IMidiAccess access, string deviceId)
@@ -207,22 +227,6 @@ public class MIDI_InputDevice : Component
         return _14bit;
     }
 
-    private struct TimestampedMidiEvent
-    {
-        public MidiEvent midiEvent;
-        public long timestamp;
-        public TimestampedMidiEvent(MidiEvent _midiEvent, long _timestamp)
-        {
-            midiEvent = _midiEvent;
-            timestamp = _timestamp;
-        }
-    }
-
-    // I am using this like a Queue so it could possibly be turned into a Queue instead...
-    private List<TimestampedMidiEvent> _eventBuffer = new();
-
-    private const long BATCH_TIME_SIZE_MILLISECONDS = 3;
-
     private bool IsCCFineMessage()
     {
         if (_eventBuffer.Count == 0) return false;
@@ -313,11 +317,8 @@ public class MIDI_InputDevice : Component
             // Just in case some messages got lost somehow
             UniLog.Warning("Did not handle all buffered messages! " + _bufferedMessagesToHandle.ToString());
         }
+        _bufferedMessagesToHandle = 0;
     }
-
-    private long _lastBatchStartTime = 0;
-
-    private int _bufferedMessagesToHandle = 0;
 
     private async void OnMessageReceived(object sender, MidiReceivedEventArgs args)
     {
@@ -326,8 +327,6 @@ public class MIDI_InputDevice : Component
         if (DEBUG) UniLog.Log($"* Timestamp: {args.Timestamp}");
 
         var events = MidiEvent.Convert(args.Data, args.Start, args.Length);
-
-        //if (events.Count() == 0) return;
 
         if (args.Length == 1)
         {
@@ -417,11 +416,11 @@ public class MIDI_InputDevice : Component
             _bufferedMessagesToHandle += 1;
         }
 
-        if (events.Count() > 0 && args.Timestamp - _lastBatchStartTime > BATCH_TIME_SIZE_MILLISECONDS)
+        if (events.Count() > 0 && args.Timestamp - _lastMessageBufferStartTime > MESSAGE_BUFFER_TIME_MILLISECONDS)
         {
-            _lastBatchStartTime = args.Timestamp;
+            _lastMessageBufferStartTime = args.Timestamp;
             if (DEBUG) UniLog.Log("* New message batch created: " + args.Timestamp.ToString());
-            await Task.Delay((int)BATCH_TIME_SIZE_MILLISECONDS);
+            await Task.Delay((int)MESSAGE_BUFFER_TIME_MILLISECONDS);
             FlushMessageBuffer();
         }
     }
