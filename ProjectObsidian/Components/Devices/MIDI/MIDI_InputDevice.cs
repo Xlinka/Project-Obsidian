@@ -56,7 +56,7 @@ public class MIDI_InputDevice : Component
 
     public event MIDI_SystemRealtimeEventHandler Reset;
 
-    private const bool DEBUG = true;
+    private const bool DEBUG = false;
 
     private struct TimestampedMidiEvent
     {
