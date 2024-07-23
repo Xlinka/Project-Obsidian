@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using Newtonsoft.Json.Linq;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using Elements.Core;
@@ -86,7 +85,7 @@ public class MIDI_NoteEvents : VoidNode<FrooxEngineContext>
         Channel.Write(eventData.channel, context);
         Note.Write(eventData.note, context);
         Velocity.Write(eventData.velocity, context);
-        NormalizedVelocity.Write(eventData.velocity / 127f, context);
+        NormalizedVelocity.Write(eventData.normalizedVelocity, context);
     }
 
     private void OnNoteOn(MIDI_InputDevice device, in MIDI_NoteEventData eventData, FrooxEngineContext context)

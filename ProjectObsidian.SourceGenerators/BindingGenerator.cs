@@ -148,6 +148,7 @@ using {_currentNameSpace};
 namespace {BindingPrefix}{_currentNameSpace};
 
 {_genericTypesAttribute}
+{_oldTypeNameAttribute}
 [Category(new string[] {{""ProtoFlux/Runtimes/Execution/Nodes/{_category}""}})]
 public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execution.{_baseType} {_constraints}
 {{
@@ -189,6 +190,7 @@ public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execut
         private bool _isValidGenericTypeMethod;
         private string _constraints = "";
         private string _genericTypesAttribute;
+        private string _oldTypeNameAttribute;
 
         private bool TypedFieldDetection(string type, string name, string targetTypeName, string declarationFormat, OrderedCount counter)
         {
@@ -316,6 +318,8 @@ public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execut
                 .FirstOrDefault(i => i.Name.ToString() == "NodeCategory");
 
             _genericTypesAttribute = node.AttributeLists.FirstOrDefault(attrList => attrList.Attributes.Any(attr => attr.Name.ToString() == "GenericTypes"))?.ToString();
+
+            _oldTypeNameAttribute = node.AttributeLists.FirstOrDefault(attrList => attrList.Attributes.Any(attr => attr.Name.ToString() == "OldTypeName"))?.ToString();
 
             if (find?.ArgumentList is null)
             {

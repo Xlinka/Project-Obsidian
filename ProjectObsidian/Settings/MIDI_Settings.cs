@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FrooxEngine;
 using Elements.Core;
 using Elements.Assets;
@@ -104,13 +102,13 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
         _localeData.Messages.Add("Settings.MIDI_Settings.Remove", "Remove");
 
         // Sometimes the locale is null in here, so wait a bit I guess
-        RunInUpdates(7, () =>
+
+        RunInUpdates(15, () =>
         {
             UpdateLocale();
             Settings.RegisterValueChanges<LocaleSettings>(UpdateLocale);
+            RefreshDeviceLists();
         });
-
-        RefreshDeviceLists();
     }
 
     protected override void OnDispose()
