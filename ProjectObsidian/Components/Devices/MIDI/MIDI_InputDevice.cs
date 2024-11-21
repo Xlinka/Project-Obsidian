@@ -27,8 +27,6 @@ public class MIDI_InputDevice : Component, IMidiInputListener
 
     private MIDI_Settings _settings => Settings.GetActiveSetting<MIDI_Settings>();
 
-    private const bool DEBUG = true;
-
     public event MIDI_NoteEventHandler NoteOn;
     public event MIDI_NoteEventHandler NoteOff;
 
