@@ -49,11 +49,11 @@ public class MIDI_PolyphonicAftertouchEvent : VoidNode<FrooxEngineContext>
         {
             NodeContextPath path = context.CaptureContextPath();
             context.GetEventDispatcher(out var dispatcher);
-            MIDI_PolyphonicAftertouchEventHandler value3 = delegate (MIDI_InputDevice dev, MIDI_PolyphonicAftertouchEventData e)
+            MIDI_PolyphonicAftertouchEventHandler value3 = delegate (IMidiInputListener sender, MIDI_PolyphonicAftertouchEventData e)
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnPolyphonicAftertouch(dev, in e, c);
+                    OnPolyphonicAftertouch(sender, in e, c);
                 });
             };
             _currentDevice.Write(device, context);
@@ -75,7 +75,7 @@ public class MIDI_PolyphonicAftertouchEvent : VoidNode<FrooxEngineContext>
         NormalizedPressure.Write(eventData.normalizedPressure, context);
     }
 
-    private void OnPolyphonicAftertouch(MIDI_InputDevice device, in MIDI_PolyphonicAftertouchEventData eventData, FrooxEngineContext context)
+    private void OnPolyphonicAftertouch(IMidiInputListener sender, in MIDI_PolyphonicAftertouchEventData eventData, FrooxEngineContext context)
     {
         WritePolyphonicAftertouchEventData(in eventData, context);
         PolyphonicAftertouch.Execute(context);

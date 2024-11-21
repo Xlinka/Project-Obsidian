@@ -45,11 +45,11 @@ public class MIDI_PitchWheelEvent : VoidNode<FrooxEngineContext>
         {
             NodeContextPath path = context.CaptureContextPath();
             context.GetEventDispatcher(out var dispatcher);
-            MIDI_PitchWheelEventHandler value3 = delegate (MIDI_InputDevice dev, MIDI_PitchWheelEventData e)
+            MIDI_PitchWheelEventHandler value3 = delegate (IMidiInputListener sender, MIDI_PitchWheelEventData e)
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnPitch(dev, in e, c);
+                    OnPitch(sender, in e, c);
                 });
             };
             _currentDevice.Write(device, context);
@@ -72,7 +72,7 @@ public class MIDI_PitchWheelEvent : VoidNode<FrooxEngineContext>
         NormalizedValue.Write(eventData.normalizedValue, context);
     }
 
-    private void OnPitch(MIDI_InputDevice device, in MIDI_PitchWheelEventData eventData, FrooxEngineContext context)
+    private void OnPitch(IMidiInputListener sender, in MIDI_PitchWheelEventData eventData, FrooxEngineContext context)
     {
         WritePitchEventData(in eventData, context);
         PitchWheel.Execute(context);

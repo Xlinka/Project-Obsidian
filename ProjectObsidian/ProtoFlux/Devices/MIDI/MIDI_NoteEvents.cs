@@ -52,18 +52,18 @@ public class MIDI_NoteEvents : VoidNode<FrooxEngineContext>
         {
             NodeContextPath path = context.CaptureContextPath();
             context.GetEventDispatcher(out var dispatcher);
-            MIDI_NoteEventHandler value = delegate (MIDI_InputDevice dev, MIDI_NoteEventData e)
+            MIDI_NoteEventHandler value = delegate (IMidiInputListener sender, MIDI_NoteEventData e)
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnNoteOn(dev, in e, c);
+                    OnNoteOn(sender, in e, c);
                 });
             };
-            MIDI_NoteEventHandler value2 = delegate (MIDI_InputDevice dev, MIDI_NoteEventData e)
+            MIDI_NoteEventHandler value2 = delegate (IMidiInputListener sender, MIDI_NoteEventData e)
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnNoteOff(dev, in e, c);
+                    OnNoteOff(sender, in e, c);
                 });
             };
             _currentDevice.Write(device, context);
@@ -88,13 +88,13 @@ public class MIDI_NoteEvents : VoidNode<FrooxEngineContext>
         NormalizedVelocity.Write(eventData.normalizedVelocity, context);
     }
 
-    private void OnNoteOn(MIDI_InputDevice device, in MIDI_NoteEventData eventData, FrooxEngineContext context)
+    private void OnNoteOn(IMidiInputListener sender, in MIDI_NoteEventData eventData, FrooxEngineContext context)
     {
         WriteNoteOnOffEventData(in eventData, context);
         NoteOn.Execute(context);
     }
 
-    private void OnNoteOff(MIDI_InputDevice device, in MIDI_NoteEventData eventData, FrooxEngineContext context)
+    private void OnNoteOff(IMidiInputListener sender, in MIDI_NoteEventData eventData, FrooxEngineContext context)
     {
         WriteNoteOnOffEventData(in eventData, context);
         NoteOff.Execute(context);
