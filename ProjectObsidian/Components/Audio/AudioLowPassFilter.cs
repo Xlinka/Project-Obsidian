@@ -12,13 +12,11 @@ public class AudioLowPassFilter : Component, IAudioSource, IWorldElement
 
     public readonly SyncRef<IAudioSource> Source;
 
-    private double lastAudioTime;
-
     public bool IsActive
     {
         get
         {
-            return Source.Target.IsActive;
+            return Source.Target != null && Source.Target.IsActive;
         }
     }
 
@@ -26,25 +24,18 @@ public class AudioLowPassFilter : Component, IAudioSource, IWorldElement
 
     public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
     {
-        double dSPTime = base.Engine.AudioSystem.DSPTime;
-        if (lastAudioTime != dSPTime)
-        {
-            lastAudioTime = dSPTime;
-        }
-
-        Span<S> span = stackalloc S[buffer.Length];
-
         if (!IsActive)
         {
             return;
         }
 
-        Span<S> span2 = span;
-        span2 = buffer;
+        Span<S> span = stackalloc S[buffer.Length];
 
-        Source.Target.Read(span2);
+        span = buffer;
 
-        EMAIIRSmoothSignal(ref span2, span2.Length, SmoothingFactor);
+        Source.Target.Read(span);
+
+        EMAIIRSmoothSignal(ref span, span.Length, SmoothingFactor);
     }
 
     // smoothingFactor is between 0.0 (no smoothing) and 0.9999.. (almost smoothing to DC) - *kind* of the inverse of cutoff frequency
