@@ -4,7 +4,7 @@ using Elements.Assets;
 
 namespace Obsidian.Components.Audio;
 
-[Category(new string[] { "Audio" })]
+[Category(new string[] { "Obsidian/Audio" })]
 public class EMA_IIR_SmoothSignal : Component, IAudioSource, IWorldElement
 {
     [Range(0f, 1f, "0.00")]

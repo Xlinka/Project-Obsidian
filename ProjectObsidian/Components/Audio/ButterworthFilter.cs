@@ -4,7 +4,7 @@ using Elements.Assets;
 
 namespace Obsidian.Components.Audio;
 
-[Category(new string[] { "Audio" })]
+[Category(new string[] { "Obsidian/Audio" })]
 public class ButterworthFilter : Component, IAudioSource, IWorldElement
 {
     [Range(0f, 10000f, "0.00")]
