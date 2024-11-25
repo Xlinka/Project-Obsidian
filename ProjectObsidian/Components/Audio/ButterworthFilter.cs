@@ -7,7 +7,7 @@ namespace Obsidian.Components.Audio;
 [Category(new string[] { "Obsidian/Audio" })]
 public class ButterworthFilter : Component, IAudioSource, IWorldElement
 {
-    [Range(0f, 10000f, "0.00")]
+    [Range(20f, 20000f, "0.00")]
     public readonly Sync<float> Frequency;
 
     [Range(0.1f, 1.41f, "0.00")]
@@ -30,7 +30,9 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
     protected override void OnAwake()
     {
         base.OnAwake();
-        lastTime = -1;
+        lastTime = Engine.Current.AudioSystem.DSPTime;
+        Frequency.Value = 20f;
+        Resonance.Value = 1.41f;
     }
 
     public int ChannelCount => Source.Target?.ChannelCount ?? 0;
