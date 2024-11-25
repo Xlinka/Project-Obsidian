@@ -19,6 +19,8 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
 
     private double lastTime;
 
+    private object filter = null;
+
     public bool IsActive
     {
         get
@@ -33,6 +35,15 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
         lastTime = Engine.Current.AudioSystem.DSPTime;
         Frequency.Value = 20f;
         Resonance.Value = 1.41f;
+    }
+
+    protected override void OnChanges()
+    {
+        base.OnChanges();
+        if (Source.GetWasChangedAndClear())
+        {
+            filter = null;
+        }
     }
 
     public int ChannelCount => Source.Target?.ChannelCount ?? 0;
@@ -50,11 +61,16 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
 
         Source.Target.Read(span);
 
-        var filter = new FilterButterworth<S>(Frequency, (int)(span.Length / (Engine.Current.AudioSystem.DSPTime - lastTime)), LowPass ? FilterButterworth<S>.PassType.Lowpass : FilterButterworth<S>.PassType.Highpass, Resonance);
+        if (filter == null)
+        {
+            filter = new FilterButterworth<S>();
+        }
+
+        ((FilterButterworth<S>)filter).UpdateCoefficients(Frequency, (int)(span.Length / (Engine.Current.AudioSystem.DSPTime - lastTime)), LowPass ? FilterButterworth<S>.PassType.Lowpass : FilterButterworth<S>.PassType.Highpass, Resonance);
 
         for (int i = 0; i < span.Length; i++)
         {
-            filter.Update(ref span[i]);
+            ((FilterButterworth<S>)filter).Update(ref span[i]);
         }
 
         lastTime = Engine.Current.AudioSystem.DSPTime;
@@ -71,7 +87,7 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
         private readonly int sampleRate;
         private readonly PassType passType;
 
-        private readonly float c, a1, a2, a3, b1, b2;
+        private float c, a1, a2, a3, b1, b2;
 
         /// <summary>
         /// Array of input values, latest are in front
@@ -83,13 +99,8 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
         /// </summary>
         private S[] outputHistory = new S[3];
 
-        public FilterButterworth(float frequency, int sampleRate, PassType passType, float resonance)
+        public void UpdateCoefficients(float frequency, int sampleRate, PassType passType, float resonance)
         {
-            this.resonance = resonance;
-            this.frequency = frequency;
-            this.sampleRate = sampleRate;
-            this.passType = passType;
-
             switch (passType)
             {
                 case PassType.Lowpass:

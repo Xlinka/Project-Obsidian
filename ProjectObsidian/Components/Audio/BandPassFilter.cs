@@ -22,6 +22,9 @@ namespace Obsidian.Components.Audio
 
         private double lastTime;
 
+        private object lowFilter = null;
+        private object highFilter = null;
+
         public bool IsActive
         {
             get => Source.Target != null && Source.Target.IsActive;
@@ -40,13 +43,22 @@ namespace Obsidian.Components.Audio
             tempBuffer = buffer;
             Source.Target.Read(tempBuffer);
 
-            var LowPass = new ButterworthFilter.FilterButterworth<S>(HighFrequency, (int)(tempBuffer.Length / (Engine.Current.AudioSystem.DSPTime - lastTime)), ButterworthFilter.FilterButterworth<S>.PassType.Lowpass, Resonance);
-            var HighPass = new ButterworthFilter.FilterButterworth<S>(LowFrequency, (int)(tempBuffer.Length / (Engine.Current.AudioSystem.DSPTime - lastTime)), ButterworthFilter.FilterButterworth<S>.PassType.Highpass, Resonance);
+            if (lowFilter == null)
+            {
+                lowFilter = new ButterworthFilter.FilterButterworth<S>();
+            }
+            if (highFilter == null)
+            {
+                highFilter = new ButterworthFilter.FilterButterworth<S>();
+            }
+
+            ((ButterworthFilter.FilterButterworth<S>)lowFilter).UpdateCoefficients(HighFrequency, (int)(tempBuffer.Length / (Engine.Current.AudioSystem.DSPTime - lastTime)), ButterworthFilter.FilterButterworth<S>.PassType.Lowpass, Resonance);
+            ((ButterworthFilter.FilterButterworth<S>)highFilter).UpdateCoefficients(LowFrequency, (int)(tempBuffer.Length / (Engine.Current.AudioSystem.DSPTime - lastTime)), ButterworthFilter.FilterButterworth<S>.PassType.Highpass, Resonance);
 
             for (int i = 0; i < tempBuffer.Length; i++)
             {
-                LowPass.Update(ref tempBuffer[i]);
-                HighPass.Update(ref tempBuffer[i]);
+                ((ButterworthFilter.FilterButterworth<S>)lowFilter).Update(ref tempBuffer[i]);
+                ((ButterworthFilter.FilterButterworth<S>)highFilter).Update(ref tempBuffer[i]);
             }
 
             lastTime = Engine.Current.AudioSystem.DSPTime;
@@ -59,6 +71,16 @@ namespace Obsidian.Components.Audio
             LowFrequency.Value = 20f;
             HighFrequency.Value = 20000f;
             lastTime = Engine.Current.AudioSystem.DSPTime;
+        }
+
+        protected override void OnChanges()
+        {
+            base.OnChanges();
+            if (Source.GetWasChangedAndClear())
+            {
+                lowFilter = null;
+                highFilter = null;
+            }
         }
     }
 }
