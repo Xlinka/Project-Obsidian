@@ -10,11 +10,7 @@ public class AudioLowPassFilter : Component, IAudioSource, IWorldElement
     [Range(0f, 1f, "0.00")]
     public readonly Sync<float> SmoothingFactor;
 
-    public readonly AssetRef<AudioClip> Clip;
-
-    private double lastPos;
-
-    private double nextPos;
+    public readonly SyncRef<IAudioSource> Source;
 
     private double lastAudioTime;
 
@@ -22,53 +18,33 @@ public class AudioLowPassFilter : Component, IAudioSource, IWorldElement
     {
         get
         {
-            return Clip.IsAssetAvailable;
+            return Source.Target.IsActive;
         }
     }
 
-    public int ChannelCount => (Clip.Asset?.Data?.ChannelCount).GetValueOrDefault();
+    public int ChannelCount => Source.Target?.ChannelCount ?? 0;
 
     public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
     {
-        var clipData = Clip.Asset?.Data;
-        if (clipData == null)
-        {
-            buffer.Fill(default(S));
-            return;
-        }
         double dSPTime = base.Engine.AudioSystem.DSPTime;
         if (lastAudioTime != dSPTime)
         {
-            lastPos = nextPos;
             lastAudioTime = dSPTime;
         }
-        bool flag = false;
+
         Span<S> span = stackalloc S[buffer.Length];
+
         if (!IsActive)
         {
             return;
         }
-        Span<S> span2 = span;
-        if (!flag)
-        {
-            span2 = buffer;
-        }
 
-        int num = Clip.Asset.Data.Read(span2, lastPos * (double)Clip.Asset.Data.SampleRate, 1f, loop: true);
+        Span<S> span2 = span;
+        span2 = buffer;
+
+        Source.Target.Read(span2);
 
         EMAIIRSmoothSignal(ref span2, span2.Length, SmoothingFactor);
-
-        nextPos = (lastPos + (double)num * base.Engine.AudioSystem.InvSampleRate * (double)1f) % Clip.Asset.Data.Duration;
-
-        if (flag)
-        {
-            buffer.Add(span2);
-        }
-        flag = true;
-        if (!flag)
-        {
-            buffer.Fill(default(S));
-        }
     }
 
     // smoothingFactor is between 0.0 (no smoothing) and 0.9999.. (almost smoothing to DC) - *kind* of the inverse of cutoff frequency
