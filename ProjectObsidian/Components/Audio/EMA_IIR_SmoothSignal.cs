@@ -5,7 +5,7 @@ using Elements.Assets;
 namespace Obsidian.Components.Audio;
 
 [Category(new string[] { "Audio" })]
-public class AudioLowPassFilter : Component, IAudioSource, IWorldElement
+public class EMA_IIR_SmoothSignal : Component, IAudioSource, IWorldElement
 {
     [Range(0f, 1f, "0.00")]
     public readonly Sync<float> SmoothingFactor;
