@@ -13,8 +13,6 @@ namespace Obsidian.Components.Audio
         public readonly SyncRef<IAudioSource> CarrierSource;
         public readonly SyncRef<IAudioSource> ModulatorSource;
 
-        private double dspTimeLastUpdate;
-
         public bool IsActive
         {
             get
@@ -37,7 +35,6 @@ namespace Obsidian.Components.Audio
         protected override void OnAwake()
         {
             base.OnAwake();
-            dspTimeLastUpdate = Engine.Current.AudioSystem.DSPTime;
             ModulationIndex.Value = 100f; // Default modulation index
         }
 
