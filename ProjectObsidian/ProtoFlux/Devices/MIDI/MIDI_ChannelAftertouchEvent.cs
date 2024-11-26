@@ -47,11 +47,11 @@ public class MIDI_ChannelAftertouchEvent : VoidNode<FrooxEngineContext>
         {
             NodeContextPath path = context.CaptureContextPath();
             context.GetEventDispatcher(out var dispatcher);
-            MIDI_ChannelAftertouchEventHandler value3 = delegate (MIDI_InputDevice dev, MIDI_ChannelAftertouchEventData e)
+            MIDI_ChannelAftertouchEventHandler value3 = delegate (IMidiInputListener sender, MIDI_ChannelAftertouchEventData e)
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnChannelAftertouch(dev, in e, c);
+                    OnChannelAftertouch(sender, in e, c);
                 });
             };
             _currentDevice.Write(device, context);
@@ -72,7 +72,7 @@ public class MIDI_ChannelAftertouchEvent : VoidNode<FrooxEngineContext>
         NormalizedPressure.Write(eventData.normalizedPressure, context);
     }
 
-    private void OnChannelAftertouch(MIDI_InputDevice device, in MIDI_ChannelAftertouchEventData eventData, FrooxEngineContext context)
+    private void OnChannelAftertouch(IMidiInputListener sender, in MIDI_ChannelAftertouchEventData eventData, FrooxEngineContext context)
     {
         WriteChannelAftertouchEventData(in eventData, context);
         ChannelAftertouch.Execute(context);

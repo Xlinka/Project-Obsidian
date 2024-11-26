@@ -51,7 +51,7 @@ public class MIDI_CC_Value : Component
         }
     }
 
-    private void OnControl(MIDI_InputDevice device, MIDI_CC_EventData eventData)
+    private void OnControl(IMidiInputListener sender, MIDI_CC_EventData eventData)
     {
         RunSynchronously(() =>
         {

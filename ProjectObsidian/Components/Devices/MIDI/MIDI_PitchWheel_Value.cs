@@ -47,7 +47,7 @@ public class MIDI_PitchWheel_Value : Component
         }
     }
 
-    private void OnPitchWheel(MIDI_InputDevice device, MIDI_PitchWheelEventData eventData)
+    private void OnPitchWheel(IMidiInputListener sender, MIDI_PitchWheelEventData eventData)
     {
         RunSynchronously(() =>
         {

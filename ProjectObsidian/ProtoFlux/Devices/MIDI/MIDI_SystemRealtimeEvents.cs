@@ -70,53 +70,53 @@ public class MIDI_SystemRealtimeEvents : VoidNode<FrooxEngineContext>
         {
             NodeContextPath path = context.CaptureContextPath();
             context.GetEventDispatcher(out var dispatcher);
-            MIDI_SystemRealtimeEventHandler value = delegate (MIDI_InputDevice dev, MIDI_SystemRealtimeEventData e)
+            MIDI_SystemRealtimeEventHandler value = delegate (IMidiInputListener sender, MIDI_SystemRealtimeEventData e)
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnClock(dev, in e, c);
+                    OnClock(sender, in e, c);
                 });
             };
-            MIDI_SystemRealtimeEventHandler value2 = delegate (MIDI_InputDevice dev, MIDI_SystemRealtimeEventData e)
+            MIDI_SystemRealtimeEventHandler value2 = delegate (IMidiInputListener sender, MIDI_SystemRealtimeEventData e)
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnTick(dev, in e, c);
+                    OnTick(sender, in e, c);
                 });
             };
-            MIDI_SystemRealtimeEventHandler value3 = delegate (MIDI_InputDevice dev, MIDI_SystemRealtimeEventData e)
+            MIDI_SystemRealtimeEventHandler value3 = delegate (IMidiInputListener sender, MIDI_SystemRealtimeEventData e)
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnStart(dev, in e, c);
+                    OnStart(sender, in e, c);
                 });
             };
-            MIDI_SystemRealtimeEventHandler value4 = delegate (MIDI_InputDevice dev, MIDI_SystemRealtimeEventData e)
+            MIDI_SystemRealtimeEventHandler value4 = delegate (IMidiInputListener sender, MIDI_SystemRealtimeEventData e)
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnStop(dev, in e, c);
+                    OnStop(sender, in e, c);
                 });
             };
-            MIDI_SystemRealtimeEventHandler value5 = delegate (MIDI_InputDevice dev, MIDI_SystemRealtimeEventData e)
+            MIDI_SystemRealtimeEventHandler value5 = delegate (IMidiInputListener sender, MIDI_SystemRealtimeEventData e)
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnContinue(dev, in e, c);
+                    OnContinue(sender, in e, c);
                 });
             };
-            MIDI_SystemRealtimeEventHandler value6 = delegate (MIDI_InputDevice dev, MIDI_SystemRealtimeEventData e)
+            MIDI_SystemRealtimeEventHandler value6 = delegate (IMidiInputListener sender, MIDI_SystemRealtimeEventData e)
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnActiveSense(dev, in e, c);
+                    OnActiveSense(sender, in e, c);
                 });
             };
-            MIDI_SystemRealtimeEventHandler value7 = delegate (MIDI_InputDevice dev, MIDI_SystemRealtimeEventData e)
+            MIDI_SystemRealtimeEventHandler value7 = delegate (IMidiInputListener sender, MIDI_SystemRealtimeEventData e)
             {
                 dispatcher.ScheduleEvent(path, delegate (FrooxEngineContext c)
                 {
-                    OnReset(dev, in e, c);
+                    OnReset(sender, in e, c);
                 });
             };
             _currentDevice.Write(device, context);
@@ -152,43 +152,43 @@ public class MIDI_SystemRealtimeEvents : VoidNode<FrooxEngineContext>
     {
     }
 
-    private void OnClock(MIDI_InputDevice device, in MIDI_SystemRealtimeEventData eventData, FrooxEngineContext context)
+    private void OnClock(IMidiInputListener sender, in MIDI_SystemRealtimeEventData eventData, FrooxEngineContext context)
     {
         WriteSystemRealtimeEventData(eventData, context);
         Clock.Execute(context);
     }
 
-    private void OnTick(MIDI_InputDevice device, in MIDI_SystemRealtimeEventData eventData, FrooxEngineContext context)
+    private void OnTick(IMidiInputListener sender, in MIDI_SystemRealtimeEventData eventData, FrooxEngineContext context)
     {
         WriteSystemRealtimeEventData(eventData, context);
         Tick.Execute(context);
     }
 
-    private void OnStart(MIDI_InputDevice device, in MIDI_SystemRealtimeEventData eventData, FrooxEngineContext context)
+    private void OnStart(IMidiInputListener sender, in MIDI_SystemRealtimeEventData eventData, FrooxEngineContext context)
     {
         WriteSystemRealtimeEventData(eventData, context);
         Start.Execute(context);
     }
 
-    private void OnStop(MIDI_InputDevice device, in MIDI_SystemRealtimeEventData eventData, FrooxEngineContext context)
+    private void OnStop(IMidiInputListener sender, in MIDI_SystemRealtimeEventData eventData, FrooxEngineContext context)
     {
         WriteSystemRealtimeEventData(eventData, context);
         Stop.Execute(context);
     }
 
-    private void OnContinue(MIDI_InputDevice device, in MIDI_SystemRealtimeEventData eventData, FrooxEngineContext context)
+    private void OnContinue(IMidiInputListener sender, in MIDI_SystemRealtimeEventData eventData, FrooxEngineContext context)
     {
         WriteSystemRealtimeEventData(eventData, context);
         Continue.Execute(context);
     }
 
-    private void OnActiveSense(MIDI_InputDevice device, in MIDI_SystemRealtimeEventData eventData, FrooxEngineContext context)
+    private void OnActiveSense(IMidiInputListener sender, in MIDI_SystemRealtimeEventData eventData, FrooxEngineContext context)
     {
         WriteSystemRealtimeEventData(eventData, context);
         ActiveSense.Execute(context);
     }
 
-    private void OnReset(MIDI_InputDevice device, in MIDI_SystemRealtimeEventData eventData, FrooxEngineContext context)
+    private void OnReset(IMidiInputListener sender, in MIDI_SystemRealtimeEventData eventData, FrooxEngineContext context)
     {
         WriteSystemRealtimeEventData(eventData, context);
         Reset.Execute(context);
