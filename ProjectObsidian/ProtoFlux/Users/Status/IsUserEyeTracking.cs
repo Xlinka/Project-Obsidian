@@ -1,6 +1,5 @@
 ﻿using FrooxEngine;
 using FrooxEngine.ProtoFlux;
-using FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 
@@ -11,7 +10,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Users.Status
     public class IsUserEyeTracking : ValueFunctionNode<FrooxEngineContext, bool>
     {
         public readonly ObjectInput<User> User;
-        public readonly ObjectInput<EyeSide> Side;
+        public readonly ValueInput<EyeSide> Side;
 
         protected override bool Compute(FrooxEngineContext context)
         {
