@@ -25,6 +25,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Users.Status
                     {
                         return eyeTrackingStreamManager.GetIsTracking(side);
                     }
+                    else
+                    {
+                        return eyeTrackingStreamManager.GetIsTracking(EyeSide.Left) && eyeTrackingStreamManager.GetIsTracking(EyeSide.Right);
+                    }
                 }
             }
             return false;
