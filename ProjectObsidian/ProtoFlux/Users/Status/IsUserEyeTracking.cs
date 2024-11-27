@@ -22,7 +22,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Users.Status
                 if (eyeTrackingStreamManager != null)
                 {
                     EyeSide side = Side.Evaluate(context);
-                    return eyeTrackingStreamManager.GetIsTracking(side);
+                    if (side != EyeSide.Combined)
+                    {
+                        return eyeTrackingStreamManager.GetIsTracking(side);
+                    }
                 }
             }
             return false;
