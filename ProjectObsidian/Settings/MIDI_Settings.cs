@@ -88,7 +88,6 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
         _localeData.LocaleCode = "en";
         _localeData.Authors = new List<string>() { "Nytra" };
         _localeData.Messages = new Dictionary<string, string>();
-        _localeData.Messages.Add("Settings.Category.Obsidian", "Obsidian");
         _localeData.Messages.Add("Settings.MIDI_Settings", "MIDI Settings");
         _localeData.Messages.Add("Settings.MIDI_Settings.RefreshDeviceLists", "Refresh Devices");
         _localeData.Messages.Add("Settings.MIDI_Settings.InputDevices", "Input Devices");
