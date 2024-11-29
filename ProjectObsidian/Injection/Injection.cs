@@ -22,8 +22,8 @@ namespace Obsidian
             {
                 Engine.Current.OnReady += () =>
                 {
-                   ShaderInjection.AppendShaders();
-                    
+                    ShaderInjection.AppendShaders();
+                    Settings.GetActiveSetting<PluginSettings>();
                 };
             }
             catch (Exception e)
