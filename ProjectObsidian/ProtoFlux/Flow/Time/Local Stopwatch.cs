@@ -47,15 +47,11 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Time
             // Update elapsed time if running
             if (_isRunning)
             {
-                if (_startTime > 0)
+                if (_startTime >= 0)  // Only update if startTime is initialized
                 {
                     _elapsedTime += currentTime - _startTime;
                 }
-                _startTime = currentTime;
-            }
-            else
-            {
-                _startTime = -1.0;
+                _startTime = currentTime;  
             }
 
             // Write outputs
@@ -66,7 +62,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Time
         private IOperation DoStart(FrooxEngineContext context)
         {
             _isRunning = true;
-            if (_startTime < 0)
+            if (_startTime < 0) 
             {
                 _startTime = context.World.Time.WorldTime;
             }
@@ -81,9 +77,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Time
 
         private IOperation DoReset(FrooxEngineContext context)
         {
-            _isRunning = false;
             _elapsedTime = 0.0;
-            _startTime = -1.0;
+            _startTime = -1.0;  
             return OnReset.Target;
         }
     }
