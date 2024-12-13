@@ -1,0 +1,101 @@
+﻿using FrooxEngine.ProtoFlux;
+using ProtoFlux.Core;
+using ProtoFlux.Runtimes.Execution;
+
+namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Time
+{
+    [NodeCategory("Obsidian/Time")]
+    [NodeName("Local Stopwatch")]
+    public class LocalStopwatch : VoidNode<FrooxEngineContext>
+    {
+        [ContinuouslyChanging]
+        public readonly ValueOutput<float> ElapsedTime;
+
+        [ContinuouslyChanging]
+        public readonly ValueOutput<bool> IsRunning;
+
+        [PossibleContinuations(new string[] { "OnStart" })]
+        public readonly Operation Start;
+
+        [PossibleContinuations(new string[] { "OnStop" })]
+        public readonly Operation Stop;
+
+        [PossibleContinuations(new string[] { "OnReset" })]
+        public readonly Operation Reset;
+
+        public Continuation OnStart;
+        public Continuation OnStop;
+        public Continuation OnReset;
+
+        private double _startTime = -1.0;
+        private double _elapsedTime = 0.0;
+        private bool _isRunning = false;
+
+        public readonly ValueInput<bool> Condition;
+
+        public LocalStopwatch()
+        {
+            ElapsedTime = new ValueOutput<float>(this);
+            IsRunning = new ValueOutput<bool>(this);
+            Start = new Operation(this, 0);
+            Stop = new Operation(this, 1);
+            Reset = new Operation(this, 2);
+        }
+
+        protected override void ComputeOutputs(FrooxEngineContext context)
+        {
+            double currentTime = context.World.Time.WorldTime;
+
+            // Check if Condition is true
+            bool conditionMet = Condition.Evaluate(context); // Directly read the value of Condition
+
+            // Update elapsed time if running and condition is true
+            if (_isRunning && conditionMet)
+            {
+                if (_startTime > 0)
+                {
+                    _elapsedTime += currentTime - _startTime;
+                }
+                _startTime = currentTime;
+            }
+            else
+            {
+                _startTime = -1.0;
+            }
+
+            // Write outputs
+            ElapsedTime.Write((float)_elapsedTime, context);
+            IsRunning.Write(_isRunning, context);
+        }
+
+
+
+
+
+
+
+        private IOperation DoStart(FrooxEngineContext context)
+        {
+            _isRunning = true;
+            if (_startTime < 0)
+            {
+                _startTime = context.World.Time.WorldTime;
+            }
+            return OnStart.Target;
+        }
+
+        private IOperation DoStop(FrooxEngineContext context)
+        {
+            _isRunning = false;
+            return OnStop.Target;
+        }
+
+        private IOperation DoReset(FrooxEngineContext context)
+        {
+            _isRunning = false;
+            _elapsedTime = 0.0;
+            _startTime = -1.0;
+            return OnReset.Target;
+        }
+    }
+}
