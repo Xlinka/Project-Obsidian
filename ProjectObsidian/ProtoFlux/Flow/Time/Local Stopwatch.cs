@@ -31,8 +31,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Time
         private double _elapsedTime = 0.0;
         private bool _isRunning = false;
 
-        public readonly ValueInput<bool> Condition;
-
         public LocalStopwatch()
         {
             ElapsedTime = new ValueOutput<float>(this);
@@ -46,11 +44,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Time
         {
             double currentTime = context.World.Time.WorldTime;
 
-            // Check if Condition is true
-            bool conditionMet = Condition.Evaluate(context); // Directly read the value of Condition
-
-            // Update elapsed time if running and condition is true
-            if (_isRunning && conditionMet)
+            // Update elapsed time if running
+            if (_isRunning)
             {
                 if (_startTime > 0)
                 {
@@ -67,12 +62,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Time
             ElapsedTime.Write((float)_elapsedTime, context);
             IsRunning.Write(_isRunning, context);
         }
-
-
-
-
-
-
 
         private IOperation DoStart(FrooxEngineContext context)
         {
