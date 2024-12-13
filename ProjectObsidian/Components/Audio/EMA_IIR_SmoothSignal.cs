@@ -26,6 +26,7 @@ public class EMA_IIR_SmoothSignal : Component, IAudioSource, IWorldElement
     {
         if (!IsActive)
         {
+            buffer.Fill(default(S));
             return;
         }
 
