@@ -3,49 +3,55 @@ using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
+using Elements.Assets;
+using Elements.Core;
+using System.Runtime.InteropServices;
+using System.Linq.Expressions;
+using FrooxEngine.FrooxEngine.ProtoFlux.CoreNodes;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class TestAudioProxy : ProtoFluxEngineProxy
+    public class SineGeneratorProxy : ProtoFluxEngineProxy, IAudioSource
     {
-        private AudioOutput _output;
-        private SineWaveClip _clip;
-        private AudioClipPlayer _player;
-        public readonly FieldDrive<float> FreqDrive;
-        public readonly FieldDrive<float> AmpDrive;
-        public bool Active
+        public float Frequency;
+
+        public float Amplitude;
+
+        public float Phase;
+
+        private float time;
+
+        private float[] tempBuffer;
+
+        public bool IsActive => true;
+
+        public int ChannelCount => 1;
+
+        protected override void OnAwake()
         {
-            get { return _output.Enabled; }
-            set { _output.Enabled = value; }
+            base.OnAwake();
+            Frequency = 440f;
+            Amplitude = 1f;
+            Phase = 0f;
         }
-        public bool IsValid => _clip.FilterWorldElement() != null && FreqDrive.Target != null && FreqDrive.IsLinkValid && AmpDrive.Target != null && AmpDrive.IsLinkValid;
-        public float Frequency
+
+        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
-            get { return FreqDrive.Target.Value; }
-            set { FreqDrive.Target.Value = value; }
-        }
-        public float Amplitude
-        {
-            get { return AmpDrive.Target.Value; }
-            set { AmpDrive.Target.Value = value; }
-        }
-        protected override void OnAttach()
-        {
-            _output = Slot.AttachComponent<AudioOutput>();
-            _clip = Slot.AttachComponent<SineWaveClip>();
-            _player = Slot.AttachComponent<AudioClipPlayer>();
-            _player.Play();
-            _player.Loop = true;
-            _player.Clip.Target = _clip;
-            _output.Source.Target = _player;
-            FreqDrive.Target = _clip.Frequency;
-            FreqDrive.Target.Value = 440f;
-            AmpDrive.Target = _clip.Amplitude;
-            AmpDrive.Target.Value = 1f;
+            tempBuffer = tempBuffer.EnsureSize(buffer.Length);
+            time %= MathX.PI * 2f + Phase;
+            float advance = 1f / (float)base.Engine.AudioSystem.SampleRate * (MathX.PI * 2f) * (float)Frequency;
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                tempBuffer[i] = MathX.Sin(time) * MathX.Clamp01(Amplitude);
+                time += advance;
+            }
+            double position = 0.0;
+            MonoSample lastSample = default(MonoSample);
+            MemoryMarshal.Cast<float, MonoSample>(MemoryExtensions.AsSpan(tempBuffer)).CopySamples(buffer, ref position, ref lastSample);
         }
     }
     [NodeCategory("Obsidian/Audio")]
-    public class TestAudio : ProxyVoidNode<FrooxEngineContext, TestAudioProxy>, IExecutionChangeListener<FrooxEngineContext>
+    public class SineGenerator : ProxyVoidNode<FrooxEngineContext, SineGeneratorProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
         [@DefaultValue(440f)]
@@ -55,13 +61,19 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         [@DefaultValue(1f)]
         public readonly ValueInput<float> Amplitude;
 
+        [ChangeListener]
+        [@DefaultValue(0f)]
+        public readonly ValueInput<float> Phase;
+
+        public readonly ObjectOutput<IAudioSource> AudioOutput;
+
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
         private ObjectStore<SlotEvent> _activeChangedHandler;
 
         public bool ValueListensToChanges { get; private set; }
 
-        private bool ShouldListen(TestAudioProxy proxy)
+        private bool ShouldListen(SineGeneratorProxy proxy)
         {
             if (proxy.Enabled)
             {
@@ -70,7 +82,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             return false;
         }
 
-        protected override void ProxyAdded(TestAudioProxy proxy, FrooxEngineContext context)
+        protected override void ProxyAdded(SineGeneratorProxy proxy, FrooxEngineContext context)
         {
             base.ProxyAdded(proxy, context);
             NodeContextPath path = context.CaptureContextPath();
@@ -97,7 +109,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             ValueListensToChanges = ShouldListen(proxy);
         }
 
-        protected override void ProxyRemoved(TestAudioProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
+        protected override void ProxyRemoved(SineGeneratorProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
         {
             if (!inUseByAnotherInstance)
             {
@@ -110,7 +122,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         protected void UpdateListenerState(FrooxEngineContext context)
         {
-            TestAudioProxy proxy = GetProxy(context);
+            SineGeneratorProxy proxy = GetProxy(context);
             if (proxy != null)
             {
                 bool shouldListen = ShouldListen(proxy);
@@ -118,14 +130,13 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 {
                     ValueListensToChanges = shouldListen;
                     context.Group.MarkChangeTrackingDirty();
-                    proxy.Active = shouldListen;
                 }
             }
         }
 
         public void Changed(FrooxEngineContext context)
         {
-            TestAudioProxy proxy = GetProxy(context);
+            SineGeneratorProxy proxy = GetProxy(context);
             if (proxy == null)
             {
                 return;
@@ -139,11 +150,23 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 context.World.UpdateManager.NestCurrentlyUpdating(proxy);
                 proxy.Frequency = Frequency.Evaluate(context);
                 proxy.Amplitude = Amplitude.Evaluate(context);
+                proxy.Phase = Phase.Evaluate(context);
             }
             finally
             {
                 context.World.UpdateManager.PopCurrentlyUpdating(proxy);
             }
+        }
+
+        protected override void ComputeOutputs(FrooxEngineContext context)
+        {
+            SineGeneratorProxy proxy = GetProxy(context);
+            AudioOutput.Write(proxy, context);
+        }
+
+        public SineGenerator()
+        {
+            AudioOutput = new ObjectOutput<IAudioSource>(this);
         }
     }
 }
