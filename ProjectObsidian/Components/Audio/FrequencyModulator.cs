@@ -42,12 +42,14 @@ namespace Obsidian.Components.Audio
         {
             if (!IsActive)
             {
+                buffer.Fill(default(S));
                 return;
             }
 
             int channelCount = ChannelCount;
             if (channelCount == 0)
             {
+                buffer.Fill(default(S));
                 return;
             }
 
