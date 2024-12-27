@@ -107,6 +107,8 @@ namespace SourceGenerators
             "AsyncActionNode", 
             "AsyncActionFlowNode", 
             "AsyncActionBreakableFlowNode",
+
+            "ProxyVoidNode"
         };
 
         private string UsingEnumerate =>
@@ -150,7 +152,7 @@ namespace {BindingPrefix}{_currentNameSpace};
 {_genericTypesAttribute}
 {_oldTypeNameAttribute}
 [Category(new string[] {{""ProtoFlux/Runtimes/Execution/Nodes/{_category}""}})]
-public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execution.{_baseType} {_constraints}
+public partial class {_fullName} : global::{_baseTypeNamespace}{_baseType} {_constraints}
 {{
 {(string.IsNullOrEmpty(_debug) ? "" : "//")}{_debug}
 {Declarations}
@@ -182,6 +184,7 @@ public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execut
         private string _additionalName = "";
         public string BaseName;
         private string _baseType;
+        private string _baseTypeNamespace = "FrooxEngine.ProtoFlux.Runtimes.Execution.";
         private string _fullBaseType;
         private string _match;
         private string _category;
@@ -307,6 +310,10 @@ public partial class {_fullName} : global::FrooxEngine.ProtoFlux.Runtimes.Execut
             var baseTypeName = firstBaseType.Type.ToString();
             
             _baseType = baseTypeName;
+            if (baseTypeName.Contains("ProxyVoidNode"))
+            {
+                _baseTypeNamespace = "FrooxEngine.FrooxEngine.ProtoFlux.";
+            }
 
             if (!node.AttributeLists.Any())
             {

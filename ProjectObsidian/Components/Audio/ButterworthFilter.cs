@@ -52,6 +52,7 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
     {
         if (!IsActive)
         {
+            buffer.Fill(default(S));
             return;
         }
 

@@ -36,6 +36,7 @@ namespace Obsidian.Components.Audio
         {
             if (!IsActive)
             {
+                buffer.Fill(default(S));
                 return;
             }
 
