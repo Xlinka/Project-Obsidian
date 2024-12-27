@@ -13,7 +13,9 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public IAudioSource AudioInput2;
 
-        public bool IsActive => true;
+        public bool Active;
+
+        public bool IsActive => Active;
 
         public int ChannelCount => 1;
 
@@ -118,6 +120,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 {
                     ValueListensToChanges = shouldListen;
                     context.Group.MarkChangeTrackingDirty();
+                    proxy.Active = shouldListen;
                 }
             }
         }

@@ -23,7 +23,9 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         private float[] tempBuffer;
 
-        public bool IsActive => true;
+        public bool Active;
+
+        public bool IsActive => Active;
 
         public int ChannelCount => 1;
 
@@ -130,6 +132,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 {
                     ValueListensToChanges = shouldListen;
                     context.Group.MarkChangeTrackingDirty();
+                    proxy.Active = shouldListen;
                 }
             }
         }
