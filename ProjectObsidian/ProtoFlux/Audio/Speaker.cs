@@ -89,6 +89,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             _enabledChangedHandler.Write(enabledHandler, context);
             _activeChangedHandler.Write(activeHandler, context);
             ValueListensToChanges = ShouldListen(proxy);
+            proxy.Active = ValueListensToChanges;
         }
 
         protected override void ProxyRemoved(SpeakerProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
