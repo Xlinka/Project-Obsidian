@@ -8,36 +8,31 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
     public class SpeakerProxy : ProtoFluxEngineProxy
     {
-        private AudioOutput _output;
+        public readonly FieldDrive<bool> ActiveDrive;
+        public readonly FieldDrive<float> VolDrive;
+        public readonly DriveRef<SyncRef<IAudioSource>> SourceDrive;
         public bool Active
         {
-            get { return Output?.Enabled ?? false; }
-            set { if (Output != null) Output.Enabled = value; }
+            get { return ActiveDrive.Target?.Value ?? false; }
+            set { if (ActiveDrive.Target != null && ActiveDrive.IsLinkValid) ActiveDrive.Target.Value = value; }
         }
         public float Volume
         {
-            get { return Output?.Volume.Value ?? 0f; }
-            set { if (Output != null) Output.Volume.Value = value; }
+            get { return VolDrive.Target?.Value ?? 0f; }
+            set { if (VolDrive.Target != null && VolDrive.IsLinkValid) VolDrive.Target.Value = value; }
         }
         public IAudioSource Source
         {
-            get { return Output?.Source.Target; }
-            set { if (Output != null) Output.Source.Target = value; }
-        }
-        public AudioOutput Output
-        {
-            get 
-            {
-                if (_output == null)
-                {
-                    _output = Slot.GetComponent<AudioOutput>();
-                }
-                return _output;
-            }
+            get { return SourceDrive.Target?.Target; }
+            set { if (SourceDrive.Target != null && SourceDrive.IsLinkValid) SourceDrive.Target.Target = value; }
         }
         protected override void OnAttach()
         {
-            _output = Slot.AttachComponent<AudioOutput>();
+            var output = Slot.AttachComponent<AudioOutput>();
+            ActiveDrive.Target = output.EnabledField;
+            VolDrive.Target = output.Volume;
+            SourceDrive.Target = output.Source;
+            VolDrive.Target.Value = 1f;
         }
     }
     [NodeCategory("Obsidian/Audio")]
@@ -47,6 +42,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         public readonly ObjectInput<IAudioSource> Source;
 
         [ChangeListener]
+        [DefaultValueAttribute(1f)]
         public readonly ValueInput<float> Volume;
 
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
@@ -89,7 +85,15 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             _enabledChangedHandler.Write(enabledHandler, context);
             _activeChangedHandler.Write(activeHandler, context);
             ValueListensToChanges = ShouldListen(proxy);
-            proxy.Active = ValueListensToChanges;
+            try
+            {
+                context.World.UpdateManager.NestCurrentlyUpdating(proxy);
+                proxy.Active = ValueListensToChanges;
+            }
+            finally
+            {
+                context.World.UpdateManager.PopCurrentlyUpdating(proxy);
+            }
         }
 
         protected override void ProxyRemoved(SpeakerProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
@@ -100,6 +104,15 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 proxy.Slot.ActiveChanged -= _activeChangedHandler.Read(context);
                 _enabledChangedHandler.Clear(context);
                 _activeChangedHandler.Clear(context);
+                try
+                {
+                    context.World.UpdateManager.NestCurrentlyUpdating(proxy);
+                    proxy.Active = false;
+                }
+                finally
+                {
+                    context.World.UpdateManager.PopCurrentlyUpdating(proxy);
+                }
             }
         }
 
@@ -113,7 +126,15 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 {
                     ValueListensToChanges = shouldListen;
                     context.Group.MarkChangeTrackingDirty();
-                    proxy.Active = shouldListen;
+                    try
+                    {
+                        context.World.UpdateManager.NestCurrentlyUpdating(proxy);
+                        proxy.Active = shouldListen;
+                    }
+                    finally
+                    {
+                        context.World.UpdateManager.PopCurrentlyUpdating(proxy);
+                    }
                 }
             }
         }
@@ -125,15 +146,11 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             {
                 return;
             }
-            if (!proxy.IsValid)
-            {
-                return;
-            }
             try
             {
                 context.World.UpdateManager.NestCurrentlyUpdating(proxy);
                 proxy.Source = Source.Evaluate(context);
-                proxy.Volume = Volume.Evaluate(context);
+                proxy.Volume = Volume.Evaluate(context, 1f);
             }
             finally
             {

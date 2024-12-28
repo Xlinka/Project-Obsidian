@@ -19,7 +19,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public float Phase;
 
-        private float time;
+        public float time;
 
         private float[] tempBuffer;
 
@@ -29,22 +29,16 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public int ChannelCount => 1;
 
-        protected override void OnAwake()
-        {
-            base.OnAwake();
-            Frequency = 440f;
-            Amplitude = 1f;
-            Phase = 0f;
-        }
-
+        // TODO: Make this not advance time on each read
+        // If two things are reading this generator, it advances twice as fast
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
             tempBuffer = tempBuffer.EnsureSize(buffer.Length);
-            time %= MathX.PI * 2f + Phase;
+            time %= MathX.PI * 2f;
             float advance = 1f / (float)base.Engine.AudioSystem.SampleRate * (MathX.PI * 2f) * (float)Frequency;
             for (int i = 0; i < buffer.Length; i++)
             {
-                tempBuffer[i] = MathX.Sin(time) * MathX.Clamp01(Amplitude);
+                tempBuffer[i] = MathX.Sin(time + Phase) * MathX.Clamp01(Amplitude);
                 time += advance;
             }
             double position = 0.0;
@@ -56,16 +50,21 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     public class SineGenerator : ProxyVoidNode<FrooxEngineContext, SineGeneratorProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        [@DefaultValue(440f)]
+        [DefaultValueAttribute(440f)]
         public readonly ValueInput<float> Frequency;
 
         [ChangeListener]
-        [@DefaultValue(1f)]
+        [DefaultValueAttribute(1f)]
         public readonly ValueInput<float> Amplitude;
 
         [ChangeListener]
-        [@DefaultValue(0f)]
+        [DefaultValueAttribute(0f)]
         public readonly ValueInput<float> Phase;
+
+        [PossibleContinuations(new string[] { "OnReset" })]
+        public readonly Operation Reset;
+
+        public Continuation OnReset;
 
         public readonly ObjectOutput<IAudioSource> AudioOutput;
 
@@ -120,6 +119,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 proxy.Slot.ActiveChanged -= _activeChangedHandler.Read(context);
                 _enabledChangedHandler.Clear(context);
                 _activeChangedHandler.Clear(context);
+                proxy.Active = false;
             }
         }
 
@@ -145,21 +145,9 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             {
                 return;
             }
-            if (!proxy.IsValid)
-            {
-                return;
-            }
-            try
-            {
-                context.World.UpdateManager.NestCurrentlyUpdating(proxy);
-                proxy.Frequency = Frequency.Evaluate(context);
-                proxy.Amplitude = Amplitude.Evaluate(context);
-                proxy.Phase = Phase.Evaluate(context);
-            }
-            finally
-            {
-                context.World.UpdateManager.PopCurrentlyUpdating(proxy);
-            }
+            proxy.Frequency = Frequency.Evaluate(context, 440f);
+            proxy.Amplitude = Amplitude.Evaluate(context, 1f);
+            proxy.Phase = Phase.Evaluate(context, 0f);
         }
 
         protected override void ComputeOutputs(FrooxEngineContext context)
@@ -168,9 +156,21 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             AudioOutput.Write(proxy, context);
         }
 
+        private IOperation DoReset(FrooxEngineContext context)
+        {
+            SineGeneratorProxy proxy = GetProxy(context);
+            if (proxy == null)
+            {
+                return null;
+            }
+            proxy.time = 0f;
+            return OnReset.Target;
+        }
+
         public SineGenerator()
         {
             AudioOutput = new ObjectOutput<IAudioSource>(this);
+            Reset = new Operation(this, 0);
         }
     }
 }
