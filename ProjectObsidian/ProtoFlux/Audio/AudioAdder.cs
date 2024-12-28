@@ -108,6 +108,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 proxy.Slot.ActiveChanged -= _activeChangedHandler.Read(context);
                 _enabledChangedHandler.Clear(context);
                 _activeChangedHandler.Clear(context);
+                proxy.Active = false;
             }
         }
 
@@ -133,20 +134,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             {
                 return;
             }
-            if (!proxy.IsValid)
-            {
-                return;
-            }
-            try
-            {
-                context.World.UpdateManager.NestCurrentlyUpdating(proxy);
-                proxy.AudioInput = AudioInput.Evaluate(context);
-                proxy.AudioInput2 = AudioInput2.Evaluate(context);
-            }
-            finally
-            {
-                context.World.UpdateManager.PopCurrentlyUpdating(proxy);
-            }
+            proxy.AudioInput = AudioInput.Evaluate(context);
+            proxy.AudioInput2 = AudioInput2.Evaluate(context);
         }
 
         protected override void ComputeOutputs(FrooxEngineContext context)
