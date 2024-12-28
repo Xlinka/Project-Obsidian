@@ -38,7 +38,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             float advance = 1f / (float)base.Engine.AudioSystem.SampleRate * (MathX.PI * 2f) * (float)Frequency;
             for (int i = 0; i < buffer.Length; i++)
             {
-                tempBuffer[i] = (float)MathX.Sin(time + Phase) * MathX.Clamp01(Amplitude);
+                tempBuffer[i] = MathX.Sin(time + Phase) * MathX.Clamp01(Amplitude);
                 time += advance;
             }
             double position = 0.0;
