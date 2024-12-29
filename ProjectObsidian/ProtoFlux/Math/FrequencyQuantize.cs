@@ -115,15 +115,29 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math
             {
                 if (RoundToNearest.Evaluate(context))
                 {
+                    int scaleDegree = (midi - rootNote) % 12;
+                    if (scaleDegree < 0)
+                        scaleDegree += 12;
+
                     int closestSemitone = scaleList[0];
-                    var scaleDegree = (midi - rootNote) % 12;
-                    if (scaleDegree < 0) scaleDegree += 12;
+                    int minDifference = int.MaxValue;
+
                     foreach (int scaleSemitone in scaleList)
                     {
-                        if (MathX.Abs(scaleDegree - scaleSemitone) < MathX.Abs(scaleDegree - closestSemitone))
+                        int difference = MathX.Abs(scaleDegree - scaleSemitone);
+                        if (difference < minDifference)
+                        {
+                            minDifference = difference;
                             closestSemitone = scaleSemitone;
+                        }
                     }
-                    midi += (scaleDegree - closestSemitone);
+
+                    int octave = (midi - rootNote) / 12;
+
+                    midi += closestSemitone - scaleDegree;
+
+                    //UniLog.Log($"midi: {midi} octave: {octave} rootNote: {rootNote} closestSemitone: {closestSemitone} scaleDegree: {scaleDegree}");
+
                     inScale = true;
                 }
             }
