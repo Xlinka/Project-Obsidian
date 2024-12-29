@@ -31,8 +31,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math
         public readonly ValueInput<NoteScale> Scale;
         public readonly ValueInput<bool> RoundToNearest;
 
-        [DefaultValueAttribute(440f)]
-        public readonly ValueInput<float> ReferenceFrequency;
+        public readonly ValueInput<int> Offset;
 
         public readonly ValueOutput<float> QuantizedFrequency;
         public readonly ValueOutput<bool> InScale;
@@ -46,25 +45,26 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math
         public static readonly List<int> LydianScale = [0, 2, 4, 6, 7, 9, 11];
         public static readonly List<int> MixolydianScale = [0, 2, 4, 5, 7, 9, 10];
         public static readonly List<int> LocrianScale = [0, 1, 3, 5, 6, 8, 10];
+
         private static int FreqToNearestMidi(float freq)
         {
             var n = 12f * (float)System.Math.Log(freq / 440f, 2f) + 69f;
             return (int)MathX.Round(n, MidpointRounding.AwayFromZero);
         }
+
         private static float MidiToFreq(int midi)
         {
             return 440f * MathX.Pow(2, (midi - 69f) / 12f);
         }
+
         protected override void ComputeOutputs(FrooxEngineContext context)
         {
             var freq = Frequency.Evaluate(context);
-            var refFreq = ReferenceFrequency.Evaluate(context, 440f);
             
-            //var offset = FreqToNearestMidi(refFreq) - 69; // offset from A4
-            var midi = FreqToNearestMidi(freq);
+            var offset = Offset.Evaluate(context);
+            var rootNote = 69 + offset;
 
-            //UniLog.Log($"refFreq: {refFreq} offset: {offset}");
-            //UniLog.Log($"freq: {freq} midi: {midi} rawmidi: {FreqToNearestMidi(freq)}");
+            var midi = FreqToNearestMidi(freq);
 
             bool inScale = false;
             List<int> scaleList;
@@ -103,7 +103,9 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math
             }
             foreach (var note in scaleList)
             {
-                if (note == midi % 12)
+                var scaleDegree = (midi - rootNote) % 12;
+                if (scaleDegree < 0) scaleDegree += 12;
+                if (note == scaleDegree)
                 {
                     inScale = true;
                     break;
@@ -113,14 +115,15 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math
             {
                 if (RoundToNearest.Evaluate(context))
                 {
-                    int octave = (int)(midi / 12f);
                     int closestSemitone = scaleList[0];
+                    var scaleDegree = (midi - rootNote) % 12;
+                    if (scaleDegree < 0) scaleDegree += 12;
                     foreach (int scaleSemitone in scaleList)
                     {
-                        if (MathX.Abs(midi % 12 - scaleSemitone) < MathX.Abs(midi % 12 - closestSemitone))
+                        if (MathX.Abs(scaleDegree - scaleSemitone) < MathX.Abs(scaleDegree - closestSemitone))
                             closestSemitone = scaleSemitone;
                     }
-                    midi = closestSemitone + octave * 12;
+                    midi += (scaleDegree - closestSemitone);
                     inScale = true;
                 }
             }
@@ -135,6 +138,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math
                 QuantizedFrequency.Write(0f, context);
             }
         }
+
         public FrequencyQuantize()
         {
             QuantizedFrequency = new ValueOutput<float>(this);
