@@ -5,12 +5,11 @@ using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
 using Elements.Core;
-using CoreMidi;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math
 {
     [NodeCategory("Obsidian/Math")]
-    public class NoteFrequency : ValueFunctionNode<FrooxEngineContext, float>
+    public class MIDI_NoteFrequency : ValueFunctionNode<FrooxEngineContext, float>
     {
         public readonly ValueInput<int> NoteNumber;
         protected override float Compute(FrooxEngineContext context)
