@@ -132,11 +132,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math
                         }
                     }
 
-                    int octave = (midi - rootNote) / 12;
-
                     midi += closestSemitone - scaleDegree;
-
-                    //UniLog.Log($"midi: {midi} octave: {octave} rootNote: {rootNote} closestSemitone: {closestSemitone} scaleDegree: {scaleDegree}");
 
                     inScale = true;
                 }
