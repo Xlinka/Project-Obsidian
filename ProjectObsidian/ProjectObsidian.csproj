@@ -3,7 +3,7 @@
     <RootNamespace>Project-Obsidian</RootNamespace>
     <AssemblyName>Project-Obsidian</AssemblyName>
     <TargetFramework>net48</TargetFramework>
-    <LangVersion>11</LangVersion>
+    <LangVersion>12</LangVersion>
     <Copyright>Copyright ©  2024</Copyright>
     <Product>Project-Obsidian</Product>
   </PropertyGroup>
