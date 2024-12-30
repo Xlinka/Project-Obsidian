@@ -7,7 +7,7 @@ namespace Obsidian.Components.Audio
     [Category(new string[] { "Obsidian/Audio" })]
     public class FrequencyModulator : Component, IAudioSource, IWorldElement
     {
-        [Range(0f, 1000f, "0.00")]
+        [Range(0f, 5f, "0.00")]
         public readonly Sync<float> ModulationIndex;
 
         public readonly SyncRef<IAudioSource> CarrierSource;
@@ -35,7 +35,7 @@ namespace Obsidian.Components.Audio
         protected override void OnAwake()
         {
             base.OnAwake();
-            ModulationIndex.Value = 100f; // Default modulation index
+            ModulationIndex.Value = 1f; // Default modulation index
         }
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
@@ -74,7 +74,7 @@ namespace Obsidian.Components.Audio
                 float modulatedValue = (float)(carrierValue * Math.Sin(2 * Math.PI * modulationIndex * modulatorValue));
 
                 // Write modulated value to the buffer
-                buffer[i] = buffer[i].Bias(buffer[i].AbsoluteAmplitude -  modulatedValue);
+                buffer[i] = buffer[i].Bias(buffer[i].AbsoluteAmplitude - modulatedValue);
             }
         }
     }
