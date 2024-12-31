@@ -138,6 +138,12 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
             S fifth = this.outputHistory[1].Multiply(b2);
             S final = first.Add(second).Add(third).Subtract(fourth).Subtract(fifth);
 
+            for (int i = 0; i < final.ChannelCount; i++)
+            {
+                if (final[i] > 1) final = final.SetChannel(i, 1f);
+                if (final[i] < -1) final = final.SetChannel(i, -1f);
+            }
+
             this.inputHistory[1] = this.inputHistory[0];
             this.inputHistory[0] = newInput;
 

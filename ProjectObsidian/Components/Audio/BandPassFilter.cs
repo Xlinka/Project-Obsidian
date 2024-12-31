@@ -42,6 +42,7 @@ namespace Obsidian.Components.Audio
 
             Span<S> tempBuffer = stackalloc S[buffer.Length];
             tempBuffer = buffer;
+
             Source.Target.Read(tempBuffer);
 
             if (lowFilter == null)

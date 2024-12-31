@@ -66,15 +66,18 @@ namespace Obsidian.Components.Audio
             // Apply FM synthesis
             for (int i = 0; i < buffer.Length; i++)
             {
-                // Get carrier and modulator values
-                float carrierValue = carrierBuffer[i].AbsoluteAmplitude;
-                float modulatorValue = modulatorBuffer[i].AbsoluteAmplitude;
+                for (int j = 0; j < buffer[i].ChannelCount; j++)
+                {
+                    float carrierValue = carrierBuffer[i][j];
+                    float modulatorValue = modulatorBuffer[i][j];
 
-                // Compute frequency modulation
-                float modulatedValue = (float)(carrierValue * Math.Sin(2 * Math.PI * modulationIndex * modulatorValue));
+                    float modulatedValue = (float)(carrierValue * Math.Sin(2 * Math.PI * modulationIndex * modulatorValue));
 
-                // Write modulated value to the buffer
-                buffer[i] = buffer[i].Bias(buffer[i].AbsoluteAmplitude - modulatedValue);
+                    buffer[i] = buffer[i].SetChannel(j, modulatedValue);
+
+                    if (buffer[i][j] > 1f) buffer[i] = buffer[i].SetChannel(j, 1f);
+                    if (buffer[i][j] < -1f) buffer[i] = buffer[i].SetChannel(j, -1f);
+                }
             }
         }
     }
