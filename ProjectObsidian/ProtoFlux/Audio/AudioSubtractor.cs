@@ -21,6 +21,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
+            if (!IsActive)
+            {
+                buffer.Fill(default(S));
+                return;
+            }
+
             Span<S> newBuffer = stackalloc S[buffer.Length];
             newBuffer = buffer;
             Span<S> newBuffer2 = stackalloc S[buffer.Length];
@@ -43,6 +49,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             for (int i = 0; i < buffer.Length; i++)
             {
                 newBuffer[i] = newBuffer[i].Subtract(newBuffer2[i]);
+
+                for (int j = 0; j < newBuffer[i].ChannelCount; j++)
+                {
+                    if (newBuffer[i][j] > 1f) newBuffer[i] = newBuffer[i].SetChannel(j, 1f);
+                    else if (newBuffer[i][j] < -1f) newBuffer[i] = newBuffer[i].SetChannel(j, -1f);
+                }
             }
         }
     }

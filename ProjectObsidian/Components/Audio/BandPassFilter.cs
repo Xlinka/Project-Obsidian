@@ -3,6 +3,7 @@ using FrooxEngine;
 using Elements.Assets;
 using System.Net;
 using ProtoFlux.Runtimes.Execution;
+using System.Collections.Generic;
 
 namespace Obsidian.Components.Audio
 {
@@ -22,8 +23,8 @@ namespace Obsidian.Components.Audio
 
         private double lastTime;
 
-        private object lowFilter = null;
-        private object highFilter = null;
+        private Dictionary<Type, object> lowFilters = new();
+        private Dictionary<Type, object> highFilters = new();
 
         public bool IsActive
         {
@@ -37,24 +38,29 @@ namespace Obsidian.Components.Audio
             if (!IsActive)
             {
                 buffer.Fill(default(S));
+                lowFilters.Clear();
+                highFilters.Clear();
                 return;
             }
 
             Span<S> tempBuffer = stackalloc S[buffer.Length];
             tempBuffer = buffer;
+
             Source.Target.Read(tempBuffer);
 
-            if (lowFilter == null)
+            if (!lowFilters.TryGetValue(typeof(S), out object lowFilter))
             {
                 lowFilter = new ButterworthFilter.FilterButterworth<S>();
+                lowFilters.Add(typeof(S), lowFilter);
             }
-            if (highFilter == null)
+            if (!highFilters.TryGetValue(typeof(S), out object highFilter))
             {
                 highFilter = new ButterworthFilter.FilterButterworth<S>();
+                highFilters.Add(typeof(S), highFilter);
             }
 
-            ((ButterworthFilter.FilterButterworth<S>)lowFilter).UpdateCoefficients(HighFrequency, (int)(tempBuffer.Length / (Engine.Current.AudioSystem.DSPTime - lastTime)), ButterworthFilter.FilterButterworth<S>.PassType.Lowpass, Resonance);
-            ((ButterworthFilter.FilterButterworth<S>)highFilter).UpdateCoefficients(LowFrequency, (int)(tempBuffer.Length / (Engine.Current.AudioSystem.DSPTime - lastTime)), ButterworthFilter.FilterButterworth<S>.PassType.Highpass, Resonance);
+            ((ButterworthFilter.FilterButterworth<S>)lowFilter).UpdateCoefficients(HighFrequency, Engine.AudioSystem.SampleRate, ButterworthFilter.FilterButterworth<S>.PassType.Lowpass, Resonance);
+            ((ButterworthFilter.FilterButterworth<S>)highFilter).UpdateCoefficients(LowFrequency, Engine.AudioSystem.SampleRate, ButterworthFilter.FilterButterworth<S>.PassType.Highpass, Resonance);
 
             for (int i = 0; i < tempBuffer.Length; i++)
             {
@@ -79,8 +85,8 @@ namespace Obsidian.Components.Audio
             base.OnChanges();
             if (Source.GetWasChangedAndClear())
             {
-                lowFilter = null;
-                highFilter = null;
+                lowFilters.Clear();
+                highFilters.Clear();
             }
         }
     }
