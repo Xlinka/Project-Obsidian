@@ -6,8 +6,6 @@ using FrooxEngine;
 using Elements.Assets;
 using Elements.Core;
 using System.Runtime.InteropServices;
-using System.Linq.Expressions;
-using FrooxEngine.FrooxEngine.ProtoFlux.CoreNodes;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
@@ -19,7 +17,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public float Phase;
 
-        public float time;
+        public double time;
 
         private float[] tempBuffer;
 
@@ -29,21 +27,42 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public int ChannelCount => 1;
 
-        // TODO: Make this not advance time on each read
-        // If two things are reading this generator, it advances twice as fast
+        private bool updateTime;
+
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
+            if (!IsActive)
+            {
+                buffer.Fill(default(S));
+                return;
+            }
+
             tempBuffer = tempBuffer.EnsureSize(buffer.Length);
-            time %= MathX.PI * 2f;
-            float advance = 1f / (float)base.Engine.AudioSystem.SampleRate * (MathX.PI * 2f) * (float)Frequency;
+            var temptime = time;
+            temptime %= MathX.PI * 2f;
+            var clampedAmplitude = MathX.Clamp01(Amplitude);
+            float advance = (1f / (float)base.Engine.AudioSystem.SampleRate) * (MathX.PI * 2f) * (float)Frequency;
             for (int i = 0; i < buffer.Length; i++)
             {
-                tempBuffer[i] = MathX.Sin(time + Phase) * MathX.Clamp01(Amplitude);
-                time += advance;
+                tempBuffer[i] = (float)MathX.Sin(temptime + Phase) * clampedAmplitude;
+                temptime += advance;
+            }
+            if (updateTime)
+            {
+                time = temptime;
+                updateTime = false;
             }
             double position = 0.0;
             MonoSample lastSample = default(MonoSample);
             MemoryMarshal.Cast<float, MonoSample>(MemoryExtensions.AsSpan(tempBuffer)).CopySamples(buffer, ref position, ref lastSample);
+        }
+
+        protected override void OnStart()
+        {
+            Engine.AudioSystem.AudioUpdate += () => 
+            {
+                updateTime = true;
+            };
         }
     }
     [NodeCategory("Obsidian/Audio")]
@@ -145,9 +164,9 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             {
                 return;
             }
-            proxy.Frequency = Frequency.Evaluate(context, 440f);
             proxy.Amplitude = Amplitude.Evaluate(context, 1f);
             proxy.Phase = Phase.Evaluate(context, 0f);
+            proxy.Frequency = Frequency.Evaluate(context, 440f);
         }
 
         protected override void ComputeOutputs(FrooxEngineContext context)

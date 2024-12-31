@@ -1,6 +1,7 @@
 ﻿using System;
 using FrooxEngine;
 using Elements.Assets;
+using System.Collections.Generic;
 
 namespace Obsidian.Components.Audio;
 
@@ -19,7 +20,7 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
 
     private double lastTime;
 
-    private object filter = null;
+    private Dictionary<Type, object> filters = new();
 
     public bool IsActive
     {
@@ -42,7 +43,7 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
         base.OnChanges();
         if (Source.GetWasChangedAndClear())
         {
-            filter = null;
+            filters.Clear();
         }
     }
 
@@ -53,6 +54,7 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
         if (!IsActive)
         {
             buffer.Fill(default(S));
+            filters.Clear();
             return;
         }
 
@@ -62,19 +64,17 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
 
         Source.Target.Read(span);
 
-        if (filter == null)
-        {
+        if (!filters.TryGetValue(typeof(S), out object filter)) {
             filter = new FilterButterworth<S>();
+            filters.Add(typeof(S), filter);
         }
 
-        ((FilterButterworth<S>)filter).UpdateCoefficients(Frequency, (int)(span.Length / (Engine.Current.AudioSystem.DSPTime - lastTime)), LowPass ? FilterButterworth<S>.PassType.Lowpass : FilterButterworth<S>.PassType.Highpass, Resonance);
+        ((FilterButterworth<S>)filter).UpdateCoefficients(Frequency, Engine.AudioSystem.SampleRate, LowPass ? FilterButterworth<S>.PassType.Lowpass : FilterButterworth<S>.PassType.Highpass, Resonance);
 
         for (int i = 0; i < span.Length; i++)
         {
             ((FilterButterworth<S>)filter).Update(ref span[i]);
         }
-
-        lastTime = Engine.Current.AudioSystem.DSPTime;
     }
 
     public class FilterButterworth<S> where S: unmanaged, IAudioSample<S>
@@ -140,8 +140,8 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
 
             for (int i = 0; i < final.ChannelCount; i++)
             {
-                if (final[i] > 1) final = final.SetChannel(i, 1f);
-                if (final[i] < -1) final = final.SetChannel(i, -1f);
+                if (final[i] > 1f) final = final.SetChannel(i, 1f);
+                else if (final[i] < -1f) final = final.SetChannel(i, -1f);
             }
 
             this.inputHistory[1] = this.inputHistory[0];
