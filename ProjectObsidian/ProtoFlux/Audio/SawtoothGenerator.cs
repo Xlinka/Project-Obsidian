@@ -39,7 +39,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             tempBuffer = tempBuffer.EnsureSize(buffer.Length);
             var temptime = time;
-            temptime %= (float)base.Engine.AudioSystem.SampleRate;
+            temptime %= (1f / Frequency);
             var clampedAmplitude = MathX.Clamp01(Amplitude);
             float advance = (1f / (float)base.Engine.AudioSystem.SampleRate);
             for (int i = 0; i < buffer.Length; i++)
