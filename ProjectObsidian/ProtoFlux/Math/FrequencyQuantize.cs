@@ -64,7 +64,9 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math
             var offset = Offset.Evaluate(context);
             var rootNote = 69 + offset;
 
-            var midi = FreqToNearestMidi(freq);
+            int midi;
+            if (freq == 0) midi = 0;
+            else midi = FreqToNearestMidi(freq);
 
             bool inScale = false;
             List<int> scaleList;
