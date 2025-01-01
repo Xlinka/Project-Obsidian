@@ -64,7 +64,7 @@ namespace Obsidian.Components.Audio
 
             float modulationIndex = ModulationIndex.Value;
 
-            // Apply sine-shaped ring modulation
+            // Apply ring modulation
             for (int i = 0; i < buffer.Length; i++)
             {
                 for (int j = 0; j < buffer[i].ChannelCount; j++)
