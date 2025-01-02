@@ -1,11 +1,13 @@
 ﻿using System;
 using FrooxEngine;
 using Elements.Assets;
+using Elements.Core;
 
 namespace Obsidian.Components.Audio
 {
     [Category(new string[] { "Obsidian/Audio" })]
-    public class FrequencyModulator : Component, IAudioSource, IWorldElement
+    [OldTypeName("Obsidian.Components.Audio.FrequencyModulator")]
+    public class SineShapedRingModulator : Component, IAudioSource, IWorldElement
     {
         [Range(0f, 5f, "0.00")]
         public readonly Sync<float> ModulationIndex;
@@ -63,7 +65,7 @@ namespace Obsidian.Components.Audio
 
             float modulationIndex = ModulationIndex.Value;
 
-            // Apply FM synthesis
+            // Apply sine-shaped ring modulation
             for (int i = 0; i < buffer.Length; i++)
             {
                 for (int j = 0; j < buffer[i].ChannelCount; j++)
