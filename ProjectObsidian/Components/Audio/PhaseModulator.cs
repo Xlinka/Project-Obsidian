@@ -2,6 +2,7 @@
 using FrooxEngine;
 using Elements.Assets;
 using Obsidian.Elements;
+using Elements.Core;
 
 namespace Obsidian.Components.Audio
 {
@@ -29,7 +30,7 @@ namespace Obsidian.Components.Audio
         {
             get
             {
-                return CarrierSource.Target?.ChannelCount ?? 0;
+                return MathX.Min(CarrierSource.Target?.ChannelCount ?? 0, ModulatorSource.Target?.ChannelCount ?? 0);
             }
         }
 
@@ -63,7 +64,7 @@ namespace Obsidian.Components.Audio
 
             float modulationIndex = ModulationIndex.Value;
 
-            Algorithms.PhaseModulation(buffer, carrierBuffer, modulatorBuffer, modulationIndex);
+            Algorithms.PhaseModulation(buffer, carrierBuffer, modulatorBuffer, modulationIndex, channelCount);
         }
     }
 }

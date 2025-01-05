@@ -30,7 +30,7 @@ namespace Obsidian.Components.Audio
         {
             get
             {
-                return CarrierSource.Target?.ChannelCount ?? 0;
+                return MathX.Min(CarrierSource.Target?.ChannelCount ?? 0, ModulatorSource.Target?.ChannelCount ?? 0);
             }
         }
 
@@ -65,7 +65,7 @@ namespace Obsidian.Components.Audio
 
             float modulationIndex = ModulationIndex.Value;
 
-            Algorithms.RingModulation(buffer, carrierBuffer, modulatorBuffer, modulationIndex);
+            Algorithms.RingModulation(buffer, carrierBuffer, modulatorBuffer, modulationIndex, channelCount);
         }
     }
 }
