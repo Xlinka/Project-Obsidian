@@ -4,6 +4,7 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
+using Elements.Core;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
@@ -50,7 +51,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             {
                 newBuffer[i] = newBuffer[i].Add(newBuffer2[i]);
 
-                for (int j = 0; j < newBuffer[i].ChannelCount; j++)
+                for (int j = 0; j < ChannelCount; j++)
                 {
                     if (newBuffer[i][j] > 1f) newBuffer[i] = newBuffer[i].SetChannel(j, 1f);
                     else if (newBuffer[i][j] < -1f) newBuffer[i] = newBuffer[i].SetChannel(j, -1f);

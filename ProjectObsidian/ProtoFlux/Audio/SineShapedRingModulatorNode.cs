@@ -51,7 +51,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 newBuffer2.Fill(default);
             }
 
-            Algorithms.SineShapedRingModulation(buffer, newBuffer, newBuffer2, ModulationIndex);
+            Algorithms.SineShapedRingModulation(buffer, newBuffer, newBuffer2, ModulationIndex, ChannelCount);
         }
     }
     [NodeCategory("Obsidian/Audio/Effects")]

@@ -41,7 +41,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             {
                 newBuffer[i] = newBuffer[i].Multiply(Value);
 
-                for (int j = 0; j < newBuffer[i].ChannelCount; j++)
+                for (int j = 0; j < ChannelCount; j++)
                 {
                     if (newBuffer[i][j] > 1f) newBuffer[i] = newBuffer[i].SetChannel(j, 1f);
                     if (newBuffer[i][j] < -1f) newBuffer[i] = newBuffer[i].SetChannel(j, -1f);

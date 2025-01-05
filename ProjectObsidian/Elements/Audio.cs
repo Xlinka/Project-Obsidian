@@ -164,12 +164,12 @@ public class BandPassFilterController
 
 public static class Algorithms
 {
-    public static void SineShapedRingModulation<S>(Span<S> buffer, Span<S> input1, Span<S> input2, float modulationIndex) where S : unmanaged, IAudioSample<S>
+    public static void SineShapedRingModulation<S>(Span<S> buffer, Span<S> input1, Span<S> input2, float modulationIndex, int channelCount) where S : unmanaged, IAudioSample<S>
     {
         // Apply sine-shaped ring modulation
         for (int i = 0; i < buffer.Length; i++)
         {
-            for (int j = 0; j < buffer[i].ChannelCount; j++)
+            for (int j = 0; j < channelCount; j++)
             {
                 float carrierValue = input1[i][j];
                 float modulatorValue = input2[i][j];
@@ -221,14 +221,14 @@ public static class Algorithms
         return phase;
     }
 
-    public static void PhaseModulation<S>(Span<S> buffer, Span<S> input1, Span<S> input2, float modulationIndex) where S : unmanaged, IAudioSample<S>
+    public static void PhaseModulation<S>(Span<S> buffer, Span<S> input1, Span<S> input2, float modulationIndex, int channelCount) where S : unmanaged, IAudioSample<S>
     {
         double[] carrierPhase = CalculateInstantaneousPhase(input1);
 
         // Apply phase modulation
         for (int i = 0; i < buffer.Length; i++)
         {
-            for (int j = 0; j < buffer[i].ChannelCount; j++)
+            for (int j = 0; j < channelCount; j++)
             {
                 double modifiedPhase = carrierPhase[i] + (modulationIndex * input2[i][j]);
 
@@ -244,12 +244,12 @@ public static class Algorithms
         }
     }
 
-    public static void RingModulation<S>(Span<S> buffer, Span<S> input1, Span<S> input2, float modulationIndex) where S : unmanaged, IAudioSample<S>
+    public static void RingModulation<S>(Span<S> buffer, Span<S> input1, Span<S> input2, float modulationIndex, int channelCount) where S : unmanaged, IAudioSample<S>
     {
         // Apply ring modulation
         for (int i = 0; i < buffer.Length; i++)
         {
-            for (int j = 0; j < buffer[i].ChannelCount; j++)
+            for (int j = 0; j < channelCount; j++)
             {
                 float carrierValue = input1[i][j];
                 float modulatorValue = input2[i][j];
