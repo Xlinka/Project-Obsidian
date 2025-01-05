@@ -65,7 +65,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             };
         }
     }
-    [NodeCategory("Obsidian/Audio")]
+    [NodeCategory("Obsidian/Audio/Generators")]
     public class SineGenerator : ProxyVoidNode<FrooxEngineContext, SineGeneratorProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]

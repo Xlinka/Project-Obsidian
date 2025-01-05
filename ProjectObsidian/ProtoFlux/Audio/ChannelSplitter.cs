@@ -4,32 +4,20 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
-using Elements.Core;
-using System.Runtime.InteropServices;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class SquareGeneratorProxy : ProtoFluxEngineProxy, IAudioSource
+    public class ChannelSplitterProxy : ProtoFluxEngineProxy, IAudioSource
     {
-        public float Frequency;
+        public IAudioSource AudioInput;
 
-        public float Amplitude;
-
-        public float Phase;
-
-        public float PulseWidth;
-
-        public double time;
-
-        private float[] tempBuffer;
+        public int Channel;
 
         public bool Active;
 
         public bool IsActive => Active;
 
         public int ChannelCount => 1;
-
-        private bool updateTime;
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
@@ -39,66 +27,36 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            tempBuffer = tempBuffer.EnsureSize(buffer.Length);
-            var temptime = time;
-            float period = (1f / Frequency);
-            temptime %= period;
-            var clampedAmplitude = MathX.Clamp01(Amplitude);
-            float advance = (1f / (float)base.Engine.AudioSystem.SampleRate);
-            
+            if (AudioInput.ChannelCount < Channel + 1 || Channel < 0)
+            {
+                buffer.Fill(default(S));
+                return;
+            }
+
+            Span<S> newBuffer = stackalloc S[buffer.Length];
+            if (AudioInput != null)
+            {
+                AudioInput.Read(newBuffer);
+            }
+            else
+            {
+                newBuffer.Fill(default);
+            }
+
             for (int i = 0; i < buffer.Length; i++)
             {
-                if ((temptime + (Phase * period)) % period <= PulseWidth / Frequency)
-                {
-                    tempBuffer[i] = 1f * clampedAmplitude;
-                }
-                else
-                {
-                    tempBuffer[i] = -1f * clampedAmplitude;
-                }
-                temptime += advance;
+                buffer[i] = buffer[i].SetChannel(Channel, newBuffer[i][Channel]);
             }
-            if (updateTime)
-            {
-                time = temptime;
-                updateTime = false;
-            }
-            double position = 0.0;
-            MonoSample lastSample = default(MonoSample);
-            MemoryMarshal.Cast<float, MonoSample>(MemoryExtensions.AsSpan(tempBuffer)).CopySamples(buffer, ref position, ref lastSample);
-        }
-
-        protected override void OnStart()
-        {
-            Engine.AudioSystem.AudioUpdate += () =>
-            {
-                updateTime = true;
-            };
         }
     }
-    [NodeCategory("Obsidian/Audio/Generators")]
-    public class SquareGenerator : ProxyVoidNode<FrooxEngineContext, SquareGeneratorProxy>, IExecutionChangeListener<FrooxEngineContext>
+    [NodeCategory("Obsidian/Audio")]
+    public class ChannelSplitter : ProxyVoidNode<FrooxEngineContext, ChannelSplitterProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        [DefaultValueAttribute(440f)]
-        public readonly ValueInput<float> Frequency;
+        public readonly ObjectInput<IAudioSource> AudioInput;
 
         [ChangeListener]
-        [DefaultValueAttribute(1f)]
-        public readonly ValueInput<float> Amplitude;
-
-        [ChangeListener]
-        [DefaultValueAttribute(0f)]
-        public readonly ValueInput<float> Phase;
-
-        [ChangeListener]
-        [DefaultValueAttribute(0.5f)]
-        public readonly ValueInput<float> PulseWidth;
-
-        [PossibleContinuations(new string[] { "OnReset" })]
-        public readonly Operation Reset;
-
-        public Continuation OnReset;
+        public readonly ValueInput<int> Channel;
 
         public readonly ObjectOutput<IAudioSource> AudioOutput;
 
@@ -108,7 +66,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public bool ValueListensToChanges { get; private set; }
 
-        private bool ShouldListen(SquareGeneratorProxy proxy)
+        private bool ShouldListen(ChannelSplitterProxy proxy)
         {
             if (proxy.Enabled)
             {
@@ -117,7 +75,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             return false;
         }
 
-        protected override void ProxyAdded(SquareGeneratorProxy proxy, FrooxEngineContext context)
+        protected override void ProxyAdded(ChannelSplitterProxy proxy, FrooxEngineContext context)
         {
             base.ProxyAdded(proxy, context);
             NodeContextPath path = context.CaptureContextPath();
@@ -145,7 +103,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             proxy.Active = ValueListensToChanges;
         }
 
-        protected override void ProxyRemoved(SquareGeneratorProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
+        protected override void ProxyRemoved(ChannelSplitterProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
         {
             if (!inUseByAnotherInstance)
             {
@@ -159,7 +117,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         protected void UpdateListenerState(FrooxEngineContext context)
         {
-            SquareGeneratorProxy proxy = GetProxy(context);
+            ChannelSplitterProxy proxy = GetProxy(context);
             if (proxy != null)
             {
                 bool shouldListen = ShouldListen(proxy);
@@ -174,38 +132,24 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Changed(FrooxEngineContext context)
         {
-            SquareGeneratorProxy proxy = GetProxy(context);
+            ChannelSplitterProxy proxy = GetProxy(context);
             if (proxy == null)
             {
                 return;
             }
-            proxy.Amplitude = Amplitude.Evaluate(context, 1f);
-            proxy.Phase = Phase.Evaluate(context, 0f);
-            proxy.Frequency = Frequency.Evaluate(context, 440f);
-            proxy.PulseWidth = PulseWidth.Evaluate(context, 0.5f);
+            proxy.AudioInput = AudioInput.Evaluate(context);
+            proxy.Channel = Channel.Evaluate(context);
         }
 
         protected override void ComputeOutputs(FrooxEngineContext context)
         {
-            SquareGeneratorProxy proxy = GetProxy(context);
+            ChannelSplitterProxy proxy = GetProxy(context);
             AudioOutput.Write(proxy, context);
         }
 
-        private IOperation DoReset(FrooxEngineContext context)
-        {
-            SquareGeneratorProxy proxy = GetProxy(context);
-            if (proxy == null)
-            {
-                return null;
-            }
-            proxy.time = 0f;
-            return OnReset.Target;
-        }
-
-        public SquareGenerator()
+        public ChannelSplitter()
         {
             AudioOutput = new ObjectOutput<IAudioSource>(this);
-            Reset = new Operation(this, 0);
         }
     }
 }

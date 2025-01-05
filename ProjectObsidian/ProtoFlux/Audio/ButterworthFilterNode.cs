@@ -4,32 +4,27 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
-using Elements.Core;
-using System.Runtime.InteropServices;
+using Obsidian.Elements;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class SquareGeneratorProxy : ProtoFluxEngineProxy, IAudioSource
+    public class ButterworthFilterProxy : ProtoFluxEngineProxy, IAudioSource
     {
+        public IAudioSource AudioInput;
+
+        public bool LowPass;
+
         public float Frequency;
 
-        public float Amplitude;
-
-        public float Phase;
-
-        public float PulseWidth;
-
-        public double time;
-
-        private float[] tempBuffer;
+        public float Resonance;
 
         public bool Active;
 
         public bool IsActive => Active;
 
-        public int ChannelCount => 1;
+        public int ChannelCount => AudioInput.ChannelCount;
 
-        private bool updateTime;
+        private ButterworthFilterController _controller = new();
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
@@ -39,66 +34,36 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            tempBuffer = tempBuffer.EnsureSize(buffer.Length);
-            var temptime = time;
-            float period = (1f / Frequency);
-            temptime %= period;
-            var clampedAmplitude = MathX.Clamp01(Amplitude);
-            float advance = (1f / (float)base.Engine.AudioSystem.SampleRate);
-            
-            for (int i = 0; i < buffer.Length; i++)
+            Span<S> newBuffer = stackalloc S[buffer.Length];
+            newBuffer = buffer;
+            if (AudioInput != null)
             {
-                if ((temptime + (Phase * period)) % period <= PulseWidth / Frequency)
-                {
-                    tempBuffer[i] = 1f * clampedAmplitude;
-                }
-                else
-                {
-                    tempBuffer[i] = -1f * clampedAmplitude;
-                }
-                temptime += advance;
+                AudioInput.Read(newBuffer);
             }
-            if (updateTime)
+            else
             {
-                time = temptime;
-                updateTime = false;
+                newBuffer.Fill(default);
             }
-            double position = 0.0;
-            MonoSample lastSample = default(MonoSample);
-            MemoryMarshal.Cast<float, MonoSample>(MemoryExtensions.AsSpan(tempBuffer)).CopySamples(buffer, ref position, ref lastSample);
-        }
 
-        protected override void OnStart()
-        {
-            Engine.AudioSystem.AudioUpdate += () =>
-            {
-                updateTime = true;
-            };
+            _controller.Process(newBuffer, LowPass, Frequency, Resonance);
         }
     }
-    [NodeCategory("Obsidian/Audio/Generators")]
-    public class SquareGenerator : ProxyVoidNode<FrooxEngineContext, SquareGeneratorProxy>, IExecutionChangeListener<FrooxEngineContext>
+    [NodeCategory("Obsidian/Audio/Filters")]
+    public class ButterworthFilter : ProxyVoidNode<FrooxEngineContext, ButterworthFilterProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        [DefaultValueAttribute(440f)]
+        public readonly ObjectInput<IAudioSource> AudioInput;
+
+        [ChangeListener]
+        public readonly ValueInput<bool> LowPass;
+
+        [ChangeListener]
+        [DefaultValueAttribute(20f)]
         public readonly ValueInput<float> Frequency;
 
         [ChangeListener]
-        [DefaultValueAttribute(1f)]
-        public readonly ValueInput<float> Amplitude;
-
-        [ChangeListener]
-        [DefaultValueAttribute(0f)]
-        public readonly ValueInput<float> Phase;
-
-        [ChangeListener]
-        [DefaultValueAttribute(0.5f)]
-        public readonly ValueInput<float> PulseWidth;
-
-        [PossibleContinuations(new string[] { "OnReset" })]
-        public readonly Operation Reset;
-
-        public Continuation OnReset;
+        [DefaultValueAttribute(1.41f)]
+        public readonly ValueInput<float> Resonance;
 
         public readonly ObjectOutput<IAudioSource> AudioOutput;
 
@@ -108,7 +73,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public bool ValueListensToChanges { get; private set; }
 
-        private bool ShouldListen(SquareGeneratorProxy proxy)
+        private bool ShouldListen(ButterworthFilterProxy proxy)
         {
             if (proxy.Enabled)
             {
@@ -117,7 +82,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             return false;
         }
 
-        protected override void ProxyAdded(SquareGeneratorProxy proxy, FrooxEngineContext context)
+        protected override void ProxyAdded(ButterworthFilterProxy proxy, FrooxEngineContext context)
         {
             base.ProxyAdded(proxy, context);
             NodeContextPath path = context.CaptureContextPath();
@@ -145,7 +110,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             proxy.Active = ValueListensToChanges;
         }
 
-        protected override void ProxyRemoved(SquareGeneratorProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
+        protected override void ProxyRemoved(ButterworthFilterProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
         {
             if (!inUseByAnotherInstance)
             {
@@ -159,7 +124,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         protected void UpdateListenerState(FrooxEngineContext context)
         {
-            SquareGeneratorProxy proxy = GetProxy(context);
+            ButterworthFilterProxy proxy = GetProxy(context);
             if (proxy != null)
             {
                 bool shouldListen = ShouldListen(proxy);
@@ -174,38 +139,26 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Changed(FrooxEngineContext context)
         {
-            SquareGeneratorProxy proxy = GetProxy(context);
+            ButterworthFilterProxy proxy = GetProxy(context);
             if (proxy == null)
             {
                 return;
             }
-            proxy.Amplitude = Amplitude.Evaluate(context, 1f);
-            proxy.Phase = Phase.Evaluate(context, 0f);
-            proxy.Frequency = Frequency.Evaluate(context, 440f);
-            proxy.PulseWidth = PulseWidth.Evaluate(context, 0.5f);
+            proxy.AudioInput = AudioInput.Evaluate(context);
+            proxy.LowPass = LowPass.Evaluate(context);
+            proxy.Frequency = Frequency.Evaluate(context, 20f);
+            proxy.Resonance = Resonance.Evaluate(context, 1.41f);
         }
 
         protected override void ComputeOutputs(FrooxEngineContext context)
         {
-            SquareGeneratorProxy proxy = GetProxy(context);
+            ButterworthFilterProxy proxy = GetProxy(context);
             AudioOutput.Write(proxy, context);
         }
 
-        private IOperation DoReset(FrooxEngineContext context)
-        {
-            SquareGeneratorProxy proxy = GetProxy(context);
-            if (proxy == null)
-            {
-                return null;
-            }
-            proxy.time = 0f;
-            return OnReset.Target;
-        }
-
-        public SquareGenerator()
+        public ButterworthFilter()
         {
             AudioOutput = new ObjectOutput<IAudioSource>(this);
-            Reset = new Operation(this, 0);
         }
     }
 }

@@ -4,31 +4,22 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
-using Elements.Core;
-using System.Runtime.InteropServices;
+using Obsidian.Elements;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class TriangleGeneratorProxy : ProtoFluxEngineProxy, IAudioSource
+    public class EMA_IIR_SmoothSignalProxy : ProtoFluxEngineProxy, IAudioSource
     {
-        public float Frequency;
+        public IAudioSource AudioInput;
 
-        public float Amplitude;
-
-        public float Phase;
-
-        public double time;
-
-        private float[] tempBuffer;
+        public float SmoothingFactor;
 
         public bool Active;
 
         public bool IsActive => Active;
 
-        public int ChannelCount => 1;
+        public int ChannelCount => AudioInput.ChannelCount;
 
-        private bool updateTime;
-        
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive)
@@ -37,60 +28,28 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            tempBuffer = tempBuffer.EnsureSize(buffer.Length);
-            var temptime = time;
-            float period = (1f / Frequency);
-            temptime %= period;
-            var clampedAmplitude = MathX.Clamp01(Amplitude);
-            float advance = (1f / (float)base.Engine.AudioSystem.SampleRate);
-
-            for (int i = 0; i < buffer.Length; i++)
+            Span<S> newBuffer = stackalloc S[buffer.Length];
+            newBuffer = buffer;
+            if (AudioInput != null)
             {
-                double t = temptime * Frequency + Phase;
-                tempBuffer[i] = clampedAmplitude * (2f * (float)MathX.Abs(2f * (t - MathX.Floor(t + 0.5f))) - 1f);
-
-                if (tempBuffer[i] > 1f) tempBuffer[i] = 1f;
-                else if (tempBuffer[i] < -1f) tempBuffer[i] = -1f;
-                temptime += advance;
+                AudioInput.Read(newBuffer);
+            }
+            else
+            {
+                newBuffer.Fill(default);
             }
 
-            if (updateTime)
-            {
-                time = temptime;
-                updateTime = false;
-            }
-            double position = 0.0;
-            MonoSample lastSample = default(MonoSample);
-            MemoryMarshal.Cast<float, MonoSample>(MemoryExtensions.AsSpan(tempBuffer)).CopySamples(buffer, ref position, ref lastSample);
-        }
-
-        protected override void OnStart()
-        {
-            Engine.AudioSystem.AudioUpdate += () =>
-            {
-                updateTime = true;
-            };
+            Algorithms.EMAIIRSmoothSignal(ref newBuffer, newBuffer.Length, SmoothingFactor);
         }
     }
-    [NodeCategory("Obsidian/Audio/Generators")]
-    public class TriangleGenerator : ProxyVoidNode<FrooxEngineContext, TriangleGeneratorProxy>, IExecutionChangeListener<FrooxEngineContext>
+    [NodeCategory("Obsidian/Audio/Filters")]
+    public class EMA_IIR_SmoothSignal : ProxyVoidNode<FrooxEngineContext, EMA_IIR_SmoothSignalProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        [DefaultValueAttribute(440f)]
-        public readonly ValueInput<float> Frequency;
+        public readonly ObjectInput<IAudioSource> AudioInput;
 
         [ChangeListener]
-        [DefaultValueAttribute(1f)]
-        public readonly ValueInput<float> Amplitude;
-
-        [ChangeListener]
-        [DefaultValueAttribute(0f)]
-        public readonly ValueInput<float> Phase;
-
-        [PossibleContinuations(new string[] { "OnReset" })]
-        public readonly Operation Reset;
-
-        public Continuation OnReset;
+        public readonly ValueInput<float> SmoothingFactor;
 
         public readonly ObjectOutput<IAudioSource> AudioOutput;
 
@@ -100,7 +59,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public bool ValueListensToChanges { get; private set; }
 
-        private bool ShouldListen(TriangleGeneratorProxy proxy)
+        private bool ShouldListen(EMA_IIR_SmoothSignalProxy proxy)
         {
             if (proxy.Enabled)
             {
@@ -109,7 +68,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             return false;
         }
 
-        protected override void ProxyAdded(TriangleGeneratorProxy proxy, FrooxEngineContext context)
+        protected override void ProxyAdded(EMA_IIR_SmoothSignalProxy proxy, FrooxEngineContext context)
         {
             base.ProxyAdded(proxy, context);
             NodeContextPath path = context.CaptureContextPath();
@@ -137,7 +96,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             proxy.Active = ValueListensToChanges;
         }
 
-        protected override void ProxyRemoved(TriangleGeneratorProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
+        protected override void ProxyRemoved(EMA_IIR_SmoothSignalProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
         {
             if (!inUseByAnotherInstance)
             {
@@ -151,7 +110,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         protected void UpdateListenerState(FrooxEngineContext context)
         {
-            TriangleGeneratorProxy proxy = GetProxy(context);
+            EMA_IIR_SmoothSignalProxy proxy = GetProxy(context);
             if (proxy != null)
             {
                 bool shouldListen = ShouldListen(proxy);
@@ -166,37 +125,24 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Changed(FrooxEngineContext context)
         {
-            TriangleGeneratorProxy proxy = GetProxy(context);
+            EMA_IIR_SmoothSignalProxy proxy = GetProxy(context);
             if (proxy == null)
             {
                 return;
             }
-            proxy.Amplitude = Amplitude.Evaluate(context, 1f);
-            proxy.Phase = Phase.Evaluate(context, 0f);
-            proxy.Frequency = Frequency.Evaluate(context, 440f);
+            proxy.AudioInput = AudioInput.Evaluate(context);
+            proxy.SmoothingFactor = SmoothingFactor.Evaluate(context);
         }
 
         protected override void ComputeOutputs(FrooxEngineContext context)
         {
-            TriangleGeneratorProxy proxy = GetProxy(context);
+            EMA_IIR_SmoothSignalProxy proxy = GetProxy(context);
             AudioOutput.Write(proxy, context);
         }
 
-        private IOperation DoReset(FrooxEngineContext context)
-        {
-            TriangleGeneratorProxy proxy = GetProxy(context);
-            if (proxy == null)
-            {
-                return null;
-            }
-            proxy.time = 0f;
-            return OnReset.Target;
-        }
-
-        public TriangleGenerator()
+        public EMA_IIR_SmoothSignal()
         {
             AudioOutput = new ObjectOutput<IAudioSource>(this);
-            Reset = new Operation(this, 0);
         }
     }
 }

@@ -1,11 +1,12 @@
 ﻿using System;
 using FrooxEngine;
 using Elements.Assets;
-using System.Threading;
+using Obsidian.Elements;
+using Elements.Core;
 
 namespace Obsidian.Components.Audio
 {
-    [Category(new string[] { "Obsidian/Audio" })]
+    [Category(new string[] { "Obsidian/Audio/Effects" })]
     public class PhaseModulator : Component, IAudioSource, IWorldElement
     {
         [Range(0f, 5f, "0.00")]
@@ -29,7 +30,7 @@ namespace Obsidian.Components.Audio
         {
             get
             {
-                return CarrierSource.Target?.ChannelCount ?? 0;
+                return MathX.Min(CarrierSource.Target?.ChannelCount ?? 0, ModulatorSource.Target?.ChannelCount ?? 0);
             }
         }
 
@@ -37,43 +38,6 @@ namespace Obsidian.Components.Audio
         {
             base.OnAwake();
             ModulationIndex.Value = 1f; // Default modulation index
-        }
-
-        /// <summary>
-        /// Calculates instantaneous phase of a signal using a simple Hilbert transform approximation
-        /// </summary>
-        private double[] CalculateInstantaneousPhase<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
-        {
-            int length = buffer.Length;
-            double[] phase = new double[length];
-            double[] avgAmplitudes = new double[length];
-
-            for (int i = 1; i < length - 1; i++)
-            {
-                for (int j = 0; j < buffer[i].ChannelCount; j++)
-                {
-                    avgAmplitudes[i] += buffer[i][j];
-                }
-                avgAmplitudes[i] /= buffer[i].ChannelCount;
-            }
-
-            // Simple 3-point derivative for phase approximation
-            for (int i = 1; i < length - 1; i++)
-            {
-                double derivative = (avgAmplitudes[i + 1] - avgAmplitudes[i - 1]) / 2.0;
-                double hilbertApprox = avgAmplitudes[i] / Math.Sqrt(avgAmplitudes[i] * avgAmplitudes[i] + derivative * derivative);
-                phase[i] = Math.Acos(hilbertApprox);
-
-                // Correct phase quadrant based on derivative sign
-                if (derivative < 0)
-                    phase[i] = 2 * Math.PI - phase[i];
-            }
-
-            // Handle edge cases
-            phase[0] = phase[1];
-            phase[length - 1] = phase[length - 2];
-
-            return phase;
         }
 
         // TODO: Make this not click when the signal goes silent and then not silent?
@@ -100,25 +64,7 @@ namespace Obsidian.Components.Audio
 
             float modulationIndex = ModulationIndex.Value;
 
-            double[] carrierPhase = CalculateInstantaneousPhase(carrierBuffer);
-
-            // Apply phase modulation
-            for (int i = 0; i < buffer.Length; i++)
-            {
-                for (int j = 0; j < buffer[i].ChannelCount; j++)
-                {
-                    double modifiedPhase = carrierPhase[i] + (modulationIndex * modulatorBuffer[i][j]);
-
-                    // Calculate amplitude using original carrier amplitude
-                    float amplitude = carrierBuffer[i][j];
-
-                    // Generate output sample
-                    buffer[i] = buffer[i].SetChannel(j, amplitude * (float)Math.Sin(modifiedPhase));
-
-                    if (buffer[i][j] > 1f) buffer[i] = buffer[i].SetChannel(j, 1f);
-                    if (buffer[i][j] < -1f) buffer[i] = buffer[i].SetChannel(j, -1f);
-                }
-            }
+            Algorithms.PhaseModulation(buffer, carrierBuffer, modulatorBuffer, modulationIndex, channelCount);
         }
     }
 }

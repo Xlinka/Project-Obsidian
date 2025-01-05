@@ -67,7 +67,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             };
         }
     }
-    [NodeCategory("Obsidian/Audio")]
+    [NodeCategory("Obsidian/Audio/Generators")]
     public class SawtoothGenerator : ProxyVoidNode<FrooxEngineContext, SawtoothGeneratorProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
