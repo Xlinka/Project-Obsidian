@@ -7,17 +7,17 @@ using Elements.Assets;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class AudioAdderProxy : ProtoFluxEngineProxy, IAudioSource
+    public class StereoCombinerProxy : ProtoFluxEngineProxy, IAudioSource
     {
-        public IAudioSource AudioInput;
+        public IAudioSource Left;
 
-        public IAudioSource AudioInput2;
+        public IAudioSource Right;
 
         public bool Active;
 
         public bool IsActive => Active;
 
-        public int ChannelCount => AudioInput.ChannelCount;
+        public int ChannelCount => 2;
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
@@ -27,45 +27,44 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
+            Span<StereoSample> samples = stackalloc StereoSample[buffer.Length];
             Span<S> newBuffer = stackalloc S[buffer.Length];
-            newBuffer = buffer;
             Span<S> newBuffer2 = stackalloc S[buffer.Length];
-            if (AudioInput != null)
+            if (Left != null)
             {
-                AudioInput.Read(newBuffer);
+                Left.Read(newBuffer);
             }
             else
             {
                 newBuffer.Fill(default);
             }
-            if (AudioInput2 != null)
+            if (Right != null)
             {
-                AudioInput2.Read(newBuffer2);
+                Right.Read(newBuffer2);
             }
             else
             {
                 newBuffer2.Fill(default);
             }
+
             for (int i = 0; i < buffer.Length; i++)
             {
-                newBuffer[i] = newBuffer[i].Add(newBuffer2[i]);
-
-                for (int j = 0; j < newBuffer[i].ChannelCount; j++)
-                {
-                    if (newBuffer[i][j] > 1f) newBuffer[i] = newBuffer[i].SetChannel(j, 1f);
-                    else if (newBuffer[i][j] < -1f) newBuffer[i] = newBuffer[i].SetChannel(j, -1f);
-                }
+                samples[i] = new StereoSample(newBuffer[i][0], newBuffer2[i][0]);
             }
+
+            double position = 0.0;
+            StereoSample lastSample = default(StereoSample);
+            samples.CopySamples(buffer, ref position, ref lastSample);
         }
     }
     [NodeCategory("Obsidian/Audio")]
-    public class AudioAdder : ProxyVoidNode<FrooxEngineContext, AudioAdderProxy>, IExecutionChangeListener<FrooxEngineContext>
+    public class StereoCombiner : ProxyVoidNode<FrooxEngineContext, StereoCombinerProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> AudioInput;
+        public readonly ObjectInput<IAudioSource> Left;
 
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> AudioInput2;
+        public readonly ObjectInput<IAudioSource> Right;
 
         public readonly ObjectOutput<IAudioSource> AudioOutput;
 
@@ -75,7 +74,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public bool ValueListensToChanges { get; private set; }
 
-        private bool ShouldListen(AudioAdderProxy proxy)
+        private bool ShouldListen(StereoCombinerProxy proxy)
         {
             if (proxy.Enabled)
             {
@@ -84,7 +83,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             return false;
         }
 
-        protected override void ProxyAdded(AudioAdderProxy proxy, FrooxEngineContext context)
+        protected override void ProxyAdded(StereoCombinerProxy proxy, FrooxEngineContext context)
         {
             base.ProxyAdded(proxy, context);
             NodeContextPath path = context.CaptureContextPath();
@@ -112,7 +111,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             proxy.Active = ValueListensToChanges;
         }
 
-        protected override void ProxyRemoved(AudioAdderProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
+        protected override void ProxyRemoved(StereoCombinerProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
         {
             if (!inUseByAnotherInstance)
             {
@@ -126,7 +125,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         protected void UpdateListenerState(FrooxEngineContext context)
         {
-            AudioAdderProxy proxy = GetProxy(context);
+            StereoCombinerProxy proxy = GetProxy(context);
             if (proxy != null)
             {
                 bool shouldListen = ShouldListen(proxy);
@@ -141,22 +140,22 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Changed(FrooxEngineContext context)
         {
-            AudioAdderProxy proxy = GetProxy(context);
+            StereoCombinerProxy proxy = GetProxy(context);
             if (proxy == null)
             {
                 return;
             }
-            proxy.AudioInput = AudioInput.Evaluate(context);
-            proxy.AudioInput2 = AudioInput2.Evaluate(context);
+            proxy.Left = Left.Evaluate(context);
+            proxy.Right = Right.Evaluate(context);
         }
 
         protected override void ComputeOutputs(FrooxEngineContext context)
         {
-            AudioAdderProxy proxy = GetProxy(context);
+            StereoCombinerProxy proxy = GetProxy(context);
             AudioOutput.Write(proxy, context);
         }
 
-        public AudioAdder()
+        public StereoCombiner()
         {
             AudioOutput = new ObjectOutput<IAudioSource>(this);
         }

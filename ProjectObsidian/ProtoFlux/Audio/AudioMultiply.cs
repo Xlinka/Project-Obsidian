@@ -4,7 +4,6 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
-using Elements.Core;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
@@ -18,7 +17,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public bool IsActive => Active;
 
-        public int ChannelCount => 1;
+        public int ChannelCount => AudioInput.ChannelCount;
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {

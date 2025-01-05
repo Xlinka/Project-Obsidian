@@ -17,7 +17,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public bool IsActive => Active;
 
-        public int ChannelCount => 1;
+        public int ChannelCount => AudioInput.ChannelCount;
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {

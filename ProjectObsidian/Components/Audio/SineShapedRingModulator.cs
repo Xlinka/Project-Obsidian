@@ -2,10 +2,11 @@
 using FrooxEngine;
 using Elements.Assets;
 using Elements.Core;
+using Obsidian.Elements;
 
 namespace Obsidian.Components.Audio
 {
-    [Category(new string[] { "Obsidian/Audio" })]
+    [Category(new string[] { "Obsidian/Audio/Effects" })]
     [OldTypeName("Obsidian.Components.Audio.FrequencyModulator")]
     public class SineShapedRingModulator : Component, IAudioSource, IWorldElement
     {
@@ -65,22 +66,7 @@ namespace Obsidian.Components.Audio
 
             float modulationIndex = ModulationIndex.Value;
 
-            // Apply sine-shaped ring modulation
-            for (int i = 0; i < buffer.Length; i++)
-            {
-                for (int j = 0; j < buffer[i].ChannelCount; j++)
-                {
-                    float carrierValue = carrierBuffer[i][j];
-                    float modulatorValue = modulatorBuffer[i][j];
-
-                    float modulatedValue = (float)(carrierValue * Math.Sin(2 * Math.PI * modulationIndex * modulatorValue));
-
-                    buffer[i] = buffer[i].SetChannel(j, modulatedValue);
-
-                    if (buffer[i][j] > 1f) buffer[i] = buffer[i].SetChannel(j, 1f);
-                    if (buffer[i][j] < -1f) buffer[i] = buffer[i].SetChannel(j, -1f);
-                }
-            }
+            Algorithms.SineShapedRingModulation(buffer, carrierBuffer, modulatorBuffer, modulationIndex);
         }
     }
 }

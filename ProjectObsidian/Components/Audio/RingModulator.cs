@@ -2,10 +2,11 @@
 using FrooxEngine;
 using Elements.Assets;
 using Elements.Core;
+using Obsidian.Elements;
 
 namespace Obsidian.Components.Audio
 {
-    [Category(new string[] { "Obsidian/Audio" })]
+    [Category(new string[] { "Obsidian/Audio/Effects" })]
     public class RingModulator : Component, IAudioSource, IWorldElement
     {
         [Range(0f, 5f, "0.00")]
@@ -64,22 +65,7 @@ namespace Obsidian.Components.Audio
 
             float modulationIndex = ModulationIndex.Value;
 
-            // Apply ring modulation
-            for (int i = 0; i < buffer.Length; i++)
-            {
-                for (int j = 0; j < buffer[i].ChannelCount; j++)
-                {
-                    float carrierValue = carrierBuffer[i][j];
-                    float modulatorValue = modulatorBuffer[i][j];
-
-                    float modulatedValue = (float)(carrierValue * modulatorValue * modulationIndex);
-
-                    buffer[i] = buffer[i].SetChannel(j, modulatedValue);
-
-                    if (buffer[i][j] > 1f) buffer[i] = buffer[i].SetChannel(j, 1f);
-                    if (buffer[i][j] < -1f) buffer[i] = buffer[i].SetChannel(j, -1f);
-                }
-            }
+            Algorithms.RingModulation(buffer, carrierBuffer, modulatorBuffer, modulationIndex);
         }
     }
 }

@@ -72,7 +72,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             };
         }
     }
-    [NodeCategory("Obsidian/Audio")]
+    [NodeCategory("Obsidian/Audio/Generators")]
     public class TriangleGenerator : ProxyVoidNode<FrooxEngineContext, TriangleGeneratorProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
