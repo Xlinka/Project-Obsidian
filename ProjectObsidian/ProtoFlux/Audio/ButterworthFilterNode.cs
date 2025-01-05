@@ -22,7 +22,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public bool IsActive => Active;
 
-        public int ChannelCount => AudioInput.ChannelCount;
+        public int ChannelCount => AudioInput?.ChannelCount ?? 0;
 
         private ButterworthFilterController _controller = new();
 

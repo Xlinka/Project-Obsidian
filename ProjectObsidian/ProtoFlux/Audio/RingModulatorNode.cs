@@ -22,7 +22,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public bool IsActive => Active;
 
-        public int ChannelCount => MathX.Min(AudioInput.ChannelCount, AudioInput2.ChannelCount);
+        public int ChannelCount => MathX.Min(AudioInput?.ChannelCount ?? 0, AudioInput2?.ChannelCount ?? 0);
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
