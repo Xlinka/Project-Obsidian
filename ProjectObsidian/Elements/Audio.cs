@@ -350,36 +350,123 @@ public static class Algorithms
     /// <summary>
     /// Calculates instantaneous phase of a signal using a simple Hilbert transform approximation
     /// </summary>
+    //private static double[] CalculateInstantaneousPhase<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+    //{
+    //    int length = buffer.Length;
+    //    double[] phase = new double[length];
+    //    double[] avgAmplitudes = new double[length];
+
+    //    for (int i = 1; i < length - 1; i++)
+    //    {
+    //        for (int j = 0; j < buffer[i].ChannelCount; j++)
+    //        {
+    //            avgAmplitudes[i] += buffer[i][j];
+    //        }
+    //        avgAmplitudes[i] /= buffer[i].ChannelCount;
+    //    }
+
+    //    // Simple 3-point derivative for phase approximation
+    //    for (int i = 1; i < length - 1; i++)
+    //    {
+    //        double derivative = (avgAmplitudes[i + 1] - avgAmplitudes[i - 1]) / 2.0;
+    //        double hilbertApprox = avgAmplitudes[i] / Math.Sqrt(avgAmplitudes[i] * avgAmplitudes[i] + derivative * derivative);
+    //        phase[i] = Math.Acos(hilbertApprox);
+
+    //        // Correct phase quadrant based on derivative sign
+    //        if (derivative < 0)
+    //            phase[i] = 2 * Math.PI - phase[i];
+    //    }
+
+    //    // Handle edge cases
+    //    phase[0] = phase[1];
+    //    phase[length - 1] = phase[length - 2];
+
+    //    return phase;
+    //}
+
+    //public static void PhaseModulation<S>(Span<S> buffer, Span<S> input1, Span<S> input2, float modulationIndex, int channelCount) where S : unmanaged, IAudioSample<S>
+    //{
+    //    double[] carrierPhase = CalculateInstantaneousPhase(input1);
+
+    //    // Apply phase modulation
+    //    for (int i = 0; i < buffer.Length; i++)
+    //    {
+    //        for (int j = 0; j < channelCount; j++)
+    //        {
+    //            double modifiedPhase = carrierPhase[i] + (modulationIndex * input2[i][j]);
+
+    //            // Calculate amplitude using original carrier amplitude
+    //            float amplitude = input1[i][j];
+
+    //            // Generate output sample
+    //            buffer[i] = buffer[i].SetChannel(j, amplitude * (float)Math.Sin(modifiedPhase));
+
+    //            if (buffer[i][j] > 1f) buffer[i] = buffer[i].SetChannel(j, 1f);
+    //            if (buffer[i][j] < -1f) buffer[i] = buffer[i].SetChannel(j, -1f);
+    //        }
+    //    }
+    //}
+
+    /// <summary>
+    /// Calculates instantaneous phase of a signal using a more robust Hilbert transform approximation
+    /// </summary>
     private static double[] CalculateInstantaneousPhase<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
     {
         int length = buffer.Length;
         double[] phase = new double[length];
         double[] avgAmplitudes = new double[length];
 
-        for (int i = 1; i < length - 1; i++)
+        // Calculate average amplitudes across channels
+        for (int i = 0; i < length; i++)
         {
+            double sum = 0;
             for (int j = 0; j < buffer[i].ChannelCount; j++)
             {
-                avgAmplitudes[i] += buffer[i][j];
+                sum += buffer[i][j];
             }
-            avgAmplitudes[i] /= buffer[i].ChannelCount;
+            avgAmplitudes[i] = sum / buffer[i].ChannelCount;
         }
 
-        // Simple 3-point derivative for phase approximation
-        for (int i = 1; i < length - 1; i++)
+        // Use a wider window for derivative calculation to reduce noise
+        const int windowSize = 5;
+        const double epsilon = 1e-10; // Small value to prevent division by zero
+
+        for (int i = windowSize; i < length - windowSize; i++)
         {
-            double derivative = (avgAmplitudes[i + 1] - avgAmplitudes[i - 1]) / 2.0;
-            double hilbertApprox = avgAmplitudes[i] / Math.Sqrt(avgAmplitudes[i] * avgAmplitudes[i] + derivative * derivative);
-            phase[i] = Math.Acos(hilbertApprox);
+            // Calculate smoothed derivative using a wider window
+            double derivative = 0;
+            for (int j = 1; j <= windowSize; j++)
+            {
+                derivative += (avgAmplitudes[i + j] - avgAmplitudes[i - j]) / (2.0 * j);
+            }
+            derivative /= windowSize;
+
+            // Calculate analytic signal magnitude with protection against zero
+            double magnitude = Math.Sqrt(avgAmplitudes[i] * avgAmplitudes[i] + derivative * derivative + epsilon);
+
+            // Normalize with smoothing to prevent discontinuities
+            double normalizedSignal = avgAmplitudes[i] / magnitude;
+
+            // Clamp to valid arccos range to prevent NaN
+            normalizedSignal = Math.Max(-1.0, Math.Min(1.0, normalizedSignal));
+
+            // Calculate phase
+            phase[i] = Math.Acos(normalizedSignal);
 
             // Correct phase quadrant based on derivative sign
             if (derivative < 0)
                 phase[i] = 2 * Math.PI - phase[i];
         }
 
-        // Handle edge cases
-        phase[0] = phase[1];
-        phase[length - 1] = phase[length - 2];
+        // Smooth out edge cases using linear interpolation
+        for (int i = 0; i < windowSize; i++)
+        {
+            phase[i] = phase[windowSize];
+        }
+        for (int i = length - windowSize; i < length; i++)
+        {
+            phase[i] = phase[length - windowSize - 1];
+        }
 
         return phase;
     }
@@ -388,21 +475,32 @@ public static class Algorithms
     {
         double[] carrierPhase = CalculateInstantaneousPhase(input1);
 
-        // Apply phase modulation
+        // Apply phase modulation with improved amplitude handling
         for (int i = 0; i < buffer.Length; i++)
         {
+            // Get carrier amplitude for envelope
+            float carrierAmplitude = 0;
             for (int j = 0; j < channelCount; j++)
             {
+                carrierAmplitude += Math.Abs(input1[i][j]);
+            }
+            carrierAmplitude /= channelCount;
+
+            for (int j = 0; j < channelCount; j++)
+            {
+                // Apply modulation with smooth amplitude envelope
                 double modifiedPhase = carrierPhase[i] + (modulationIndex * input2[i][j]);
 
-                // Calculate amplitude using original carrier amplitude
-                float amplitude = input1[i][j];
+                // Generate output sample with envelope following
+                float outputSample = carrierAmplitude * (float)Math.Sin(modifiedPhase);
 
-                // Generate output sample
-                buffer[i] = buffer[i].SetChannel(j, amplitude * (float)Math.Sin(modifiedPhase));
+                // Soft clip instead of hard limiting
+                if (Math.Abs(outputSample) > 1f)
+                {
+                    outputSample = Math.Sign(outputSample) * (1f - 1f / (Math.Abs(outputSample) + 1f));
+                }
 
-                if (buffer[i][j] > 1f) buffer[i] = buffer[i].SetChannel(j, 1f);
-                if (buffer[i][j] < -1f) buffer[i] = buffer[i].SetChannel(j, -1f);
+                buffer[i] = buffer[i].SetChannel(j, outputSample);
             }
         }
     }
