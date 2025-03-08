@@ -8,6 +8,7 @@ using Obsidian.Elements;
 using Elements.Core;
 using System.Collections.Generic;
 using System.Linq;
+using SkyFrost.Base;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
@@ -149,9 +150,20 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             }
             var index = CoefficientIndex.Evaluate(context);
             float value = CoefficientValue.Evaluate(context);
+            int prevCount = proxy.Coefficients.Count;
             proxy.Coefficients.EnsureMinimumCount(index + 1);
             proxy.Coefficients[index] = value;
-            proxy.filters.Clear();
+            if (prevCount != proxy.Coefficients.Count)
+            {
+                proxy.filters.Clear();
+            }
+            else
+            {
+                foreach (var filter in proxy.filters.Values)
+                {
+                    ((IFirFilter)filter).SetCoefficients(proxy.Coefficients.ToArray());
+                }
+            }
             return OnSetCoefficient.Target;
         }
 

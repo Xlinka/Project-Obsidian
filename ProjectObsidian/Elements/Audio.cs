@@ -158,11 +158,16 @@ public class BandPassFilterController
     }
 }
 
-public class FirFilter<S> where S : unmanaged, IAudioSample<S>
+public interface IFirFilter
 {
-    private readonly float[] coefficients;
-    private readonly S[] delayLine;
-    private int delayLineIndex;
+    public void SetCoefficients(float[] _coefficients); 
+}
+
+public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
+{
+    public float[] coefficients;
+    public readonly S[] delayLine;
+    public int delayLineIndex;
 
     /// <summary>
     /// Creates a new FIR filter with the specified coefficients
@@ -239,6 +244,11 @@ public class FirFilter<S> where S : unmanaged, IAudioSample<S>
     {
         Array.Clear(delayLine, 0, delayLine.Length);
         delayLineIndex = 0;
+    }
+
+    public void SetCoefficients(float[] _coefficients)
+    {
+        coefficients = (float[])_coefficients.Clone();
     }
 }
 
