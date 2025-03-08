@@ -197,9 +197,6 @@ public class FirFilter<S> where S : unmanaged, IAudioSample<S>
 
         for (int i = 0; i < coefficients.Length; i++)
         {
-            //output += coefficients[i] * delayLine[index];
-            //output = output.Bias(coefficients[i] * delayLine[index][0]);
-
             for (int channel = 0; channel < delayLine[index].ChannelCount; channel++)
             {
                 output = output.SetChannel(channel, output[channel] + (coefficients[i] * delayLine[index][channel]));
