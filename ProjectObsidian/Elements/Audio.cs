@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Elements.Assets;
-using Elements.Core;
 using FrooxEngine;
 
 namespace Obsidian.Elements;
@@ -159,6 +155,173 @@ public class BandPassFilterController
             ((FilterButterworth<S>)lowFilter).Update(ref buffer[i]);
             ((FilterButterworth<S>)highFilter).Update(ref buffer[i]);
         }
+    }
+}
+
+public class FirFilter<S> where S : unmanaged, IAudioSample<S>
+{
+    private readonly float[] coefficients;
+    private readonly S[] delayLine;
+    private int delayLineIndex;
+
+    /// <summary>
+    /// Creates a new FIR filter with the specified coefficients
+    /// </summary>
+    /// <param name="filterCoefficients">The filter coefficients that define the filter's behavior</param>
+    public FirFilter(float[] filterCoefficients)
+    {
+        if (filterCoefficients == null || filterCoefficients.Length == 0)
+            throw new ArgumentException("Filter coefficients cannot be null or empty");
+
+        // Store the coefficients
+        coefficients = (float[])filterCoefficients.Clone();
+
+        // Create the delay line (buffer for previous samples)
+        delayLine = new S[coefficients.Length];
+        delayLineIndex = 0;
+    }
+
+    /// <summary>
+    /// Process a single sample through the FIR filter
+    /// </summary>
+    /// <param name="input">The input sample</param>
+    /// <returns>The filtered output sample</returns>
+    public S ProcessSample(S input)
+    {
+        // Store the current input in the delay line
+        delayLine[delayLineIndex] = input;
+
+        // Calculate the output: sum of (coefficient * delayed sample)
+        S output = default(S);
+        int index = delayLineIndex;
+
+        for (int i = 0; i < coefficients.Length; i++)
+        {
+            //output += coefficients[i] * delayLine[index];
+            //output = output.Bias(coefficients[i] * delayLine[index][0]);
+
+            for (int channel = 0; channel < delayLine[index].ChannelCount; channel++)
+            {
+                output = output.SetChannel(channel, output[channel] + (coefficients[i] * delayLine[index][channel]));
+            }
+
+            // Move to the previous sample in the delay line (circular buffer)
+            index--;
+            if (index < 0)
+                index = coefficients.Length - 1;
+        }
+
+        // Update the delay line index for the next sample
+        delayLineIndex++;
+        if (delayLineIndex >= coefficients.Length)
+            delayLineIndex = 0;
+
+        return output;
+    }
+
+    /// <summary>
+    /// Process an entire buffer of samples through the FIR filter
+    /// </summary>
+    /// <param name="inputBuffer">Array of input samples</param>
+    /// <returns>Array of filtered output samples</returns>
+    public void ProcessBuffer(Span<S> inputBuffer)
+    {
+        if (inputBuffer == null)
+            throw new ArgumentNullException(nameof(inputBuffer));
+
+        for (int i = 0; i < inputBuffer.Length; i++)
+        {
+            inputBuffer[i] = ProcessSample(inputBuffer[i]);
+        }
+    }
+
+    /// <summary>
+    /// Reset the filter's internal state (delay line)
+    /// </summary>
+    public void Reset()
+    {
+        Array.Clear(delayLine, 0, delayLine.Length);
+        delayLineIndex = 0;
+    }
+}
+
+public static class FilterDesign
+{
+    /// <summary>
+    /// Creates a low-pass FIR filter using the window method
+    /// </summary>
+    /// <param name="cutoffFrequency">Cutoff frequency in Hz</param>
+    /// <param name="sampleRate">Sample rate in Hz</param>
+    /// <param name="filterLength">Length of the filter (number of taps)</param>
+    /// <returns>The filter coefficients</returns>
+    public static float[] DesignLowPassFilter(float cutoffFrequency, float sampleRate, int filterLength)
+    {
+        // Ensure filter length is odd for symmetric filter
+        if (filterLength % 2 == 0)
+            filterLength++;
+
+        float[] coefficients = new float[filterLength];
+        float fc = cutoffFrequency / sampleRate; // Normalized cutoff frequency
+        int center = filterLength / 2;
+
+        // Create ideal lowpass filter response (sinc function)
+        for (int i = 0; i < filterLength; i++)
+        {
+            if (i == center)
+            {
+                // Handle the center point to avoid division by zero
+                coefficients[i] = 2.0f * fc;
+            }
+            else
+            {
+                // Calculate sinc function: sin(x)/x
+                float x = 2.0f * (float)Math.PI * fc * (i - center);
+                coefficients[i] = (float)Math.Sin(x) / x;
+            }
+
+            // Apply Hamming window to reduce ringing effects
+            float window = 0.54f - 0.46f * (float)Math.Cos(2.0f * Math.PI * i / (filterLength - 1));
+            coefficients[i] *= window;
+        }
+
+        // Normalize the filter to ensure unity gain at DC
+        float sum = 0;
+        for (int i = 0; i < filterLength; i++)
+        {
+            sum += coefficients[i];
+        }
+
+        for (int i = 0; i < filterLength; i++)
+        {
+            coefficients[i] /= sum;
+        }
+
+        return coefficients;
+    }
+
+    /// <summary>
+    /// Creates a high-pass FIR filter using the window method
+    /// </summary>
+    /// <param name="cutoffFrequency">Cutoff frequency in Hz</param>
+    /// <param name="sampleRate">Sample rate in Hz</param>
+    /// <param name="filterLength">Length of the filter (number of taps)</param>
+    /// <returns>The filter coefficients</returns>
+    public static float[] DesignHighPassFilter(float cutoffFrequency, float sampleRate, int filterLength)
+    {
+        // First design a lowpass filter
+        float[] lowpass = DesignLowPassFilter(cutoffFrequency, sampleRate, filterLength);
+
+        // Convert to highpass using spectral inversion
+        for (int i = 0; i < filterLength; i++)
+        {
+            lowpass[i] = -lowpass[i];
+        }
+
+        // Add 1 to the center tap
+        int center = filterLength / 2;
+        lowpass[center] += 1.0f;
+
+        return lowpass;
     }
 }
 
