@@ -17,7 +17,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public readonly SyncFieldList<float> Coefficients;
 
-        public object filter = null;
+        public Dictionary<Type, object> filters = new();
 
         public bool Active;
 
@@ -30,7 +30,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             if (!IsActive || AudioInput == null || !AudioInput.IsActive)
             {
                 buffer.Fill(default(S));
-                filter = null;
+                filters.Clear();
                 return;
             }
 
@@ -38,9 +38,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             newBuffer = buffer;
             AudioInput.Read(newBuffer);
 
-            if (filter == null)
+            if (!filters.TryGetValue(typeof(S), out var filter))
             {
                 filter = new FirFilter<S>(Coefficients.ToArray());
+                filters.Add(typeof(S), filter);
                 UniLog.Log("Created new FIR filter");
             }
 
@@ -150,7 +151,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             float value = CoefficientValue.Evaluate(context);
             proxy.Coefficients.EnsureMinimumCount(index + 1);
             proxy.Coefficients[index] = value;
-            proxy.filter = null;
+            proxy.filters.Clear();
             return OnSetCoefficient.Target;
         }
 
@@ -162,7 +163,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return null;
             }
             proxy.Coefficients.Clear();
-            proxy.filter = null;
+            proxy.filters.Clear();
             return OnClearCoefficients.Target;
         }
 
