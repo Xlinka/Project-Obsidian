@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Elements.Assets;
+using Elements.Core;
 using FrooxEngine;
+using ProtoFlux.Runtimes.Execution.Nodes.Actions;
 
 namespace Obsidian.Elements;
 
@@ -59,11 +61,11 @@ public class FilterButterworth<S> where S : unmanaged, IAudioSample<S>
         S fifth = this.outputHistory[1].Multiply(b2);
         S final = first.Add(second).Add(third).Subtract(fourth).Subtract(fifth);
 
-        for (int i = 0; i < final.ChannelCount; i++)
-        {
-            if (final[i] > 1f) final = final.SetChannel(i, 1f);
-            else if (final[i] < -1f) final = final.SetChannel(i, -1f);
-        }
+        //for (int i = 0; i < final.ChannelCount; i++)
+        //{
+        //    if (final[i] > 1f) final = final.SetChannel(i, 1f);
+        //    else if (final[i] < -1f) final = final.SetChannel(i, -1f);
+        //}
 
         this.inputHistory[1] = this.inputHistory[0];
         this.inputHistory[0] = newInput;
@@ -166,8 +168,9 @@ public interface IFirFilter
 public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
 {
     public float[] coefficients;
-    public readonly S[] delayLine;
+    public S[] delayLine;
     public int delayLineIndex;
+    private S[] lastBuffer = null;
 
     /// <summary>
     /// Creates a new FIR filter with the specified coefficients
@@ -202,9 +205,12 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
 
         for (int i = 0; i < coefficients.Length; i++)
         {
-            for (int channel = 0; channel < delayLine[index].ChannelCount; channel++)
+            if (coefficients[i] != 0f && coefficients[i].IsValid() && (coefficients[i] * -1f).IsValid())
             {
-                output = output.SetChannel(channel, output[channel] + (coefficients[i] * delayLine[index][channel]));
+                for (int channel = 0; channel < delayLine[index].ChannelCount; channel++)
+                {
+                    output = output.SetChannel(channel, output[channel] + (coefficients[i] * delayLine[index][channel]));
+                }
             }
 
             // Move to the previous sample in the delay line (circular buffer)
@@ -226,14 +232,25 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     /// </summary>
     /// <param name="inputBuffer">Array of input samples</param>
     /// <returns>Array of filtered output samples</returns>
-    public void ProcessBuffer(Span<S> inputBuffer)
+    public void ProcessBuffer(Span<S> inputBuffer, bool update)
     {
         if (inputBuffer == null)
             throw new ArgumentNullException(nameof(inputBuffer));
 
+        if (!update && lastBuffer != null)
+        {
+            inputBuffer = lastBuffer.AsSpan();
+            return;
+        }
+
         for (int i = 0; i < inputBuffer.Length; i++)
         {
             inputBuffer[i] = ProcessSample(inputBuffer[i]);
+        }
+
+        if (update || lastBuffer == null)
+        {
+            lastBuffer = inputBuffer.ToArray();
         }
     }
 
@@ -249,6 +266,70 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     public void SetCoefficients(float[] _coefficients)
     {
         coefficients = (float[])_coefficients.Clone();
+    }
+}
+
+public class SimpleDelayEffect<S> where S : unmanaged, IAudioSample<S>
+{
+    public S[] buffer;
+    private int bufferSize;
+    public int position = 0;
+    private S[] lastBuffer = null;
+
+    /// <summary>
+    /// Creates a simple delay effect
+    /// </summary>
+    /// <param name="delayTimeMs">Delay time in milliseconds</param>
+    /// <param name="sampleRate">Sample rate in Hz</param>
+    /// <param name="feedback">Feedback amount (0.0 to 0.9)</param>
+    public SimpleDelayEffect(int delayTimeMs, int sampleRate)
+    {
+        // Calculate buffer size from delay time
+        bufferSize = (delayTimeMs * sampleRate) / 1000;
+        buffer = new S[bufferSize];
+    }
+
+    /// <summary>
+    /// Process a single audio sample
+    /// </summary>
+    public S Process(S input, float dryWet, float feedback)
+    {
+        // Set feedback (limit to 0.99 to prevent excessive buildup)
+        var fb = Math.Min(0.99f, Math.Max(0.0f, feedback));
+
+        // Read the delayed sample
+        S delayed = buffer[position];
+
+        // Mix input with feedback for new buffer value
+        buffer[position] = input.Add(delayed.Multiply(fb));
+
+        // Update position in circular buffer
+        position = (position + 1) % bufferSize;
+
+        float newDryWet = MathX.Clamp(dryWet, 0f, 1f);
+
+        // Return mix of input and delayed signal
+        return input.Multiply(1f-newDryWet).Add(delayed.Multiply(newDryWet));
+    }
+
+    /// <summary>
+    /// Process an array of samples
+    /// </summary>
+    public void Process(Span<S> inputBuffer, float dryWet, float feedback, bool update)
+    {
+        if (!update && lastBuffer != null)
+        {
+            inputBuffer = lastBuffer.AsSpan();
+            return;
+        }
+        for (int i = 0; i < inputBuffer.Length; i++)
+        {
+            inputBuffer[i] = Process(inputBuffer[i], dryWet, feedback);
+        }
+        if (update || lastBuffer == null)
+        {
+            lastBuffer = inputBuffer.ToArray();
+        }
     }
 }
 
@@ -348,8 +429,8 @@ public static class Algorithms
 
                 buffer[i] = buffer[i].SetChannel(j, modulatedValue);
 
-                if (buffer[i][j] > 1f) buffer[i] = buffer[i].SetChannel(j, 1f);
-                if (buffer[i][j] < -1f) buffer[i] = buffer[i].SetChannel(j, -1f);
+                //if (buffer[i][j] > 1f) buffer[i] = buffer[i].SetChannel(j, 1f);
+                //if (buffer[i][j] < -1f) buffer[i] = buffer[i].SetChannel(j, -1f);
             }
         }
     }
@@ -442,10 +523,10 @@ public static class Algorithms
                 float outputSample = carrierAmplitude * (float)Math.Sin(modifiedPhase);
 
                 // Soft clip instead of hard limiting
-                if (Math.Abs(outputSample) > 1f)
-                {
-                    outputSample = Math.Sign(outputSample) * (1f - 1f / (Math.Abs(outputSample) + 1f));
-                }
+                //if (Math.Abs(outputSample) > 1f)
+                //{
+                //    outputSample = Math.Sign(outputSample) * (1f - 1f / (Math.Abs(outputSample) + 1f));
+                //}
 
                 buffer[i] = buffer[i].SetChannel(j, outputSample);
             }
@@ -466,8 +547,8 @@ public static class Algorithms
 
                 buffer[i] = buffer[i].SetChannel(j, modulatedValue);
 
-                if (buffer[i][j] > 1f) buffer[i] = buffer[i].SetChannel(j, 1f);
-                if (buffer[i][j] < -1f) buffer[i] = buffer[i].SetChannel(j, -1f);
+                //if (buffer[i][j] > 1f) buffer[i] = buffer[i].SetChannel(j, 1f);
+                //if (buffer[i][j] < -1f) buffer[i] = buffer[i].SetChannel(j, -1f);
             }
         }
     }
