@@ -41,8 +41,8 @@ By backing us on Patreon, you're actively participating in the plugin's enhancem
 
 **Important:** Project Obsidian is a plugin, not a mod. Ensure you follow the correct installation steps.
 
-1. Download the `ProjectObsidian.dll` file from the [Releases tab](https://github.com/Xlinka/Project-Obsidian/releases).
-2. Place the downloaded `ProjectObsidian.dll` file in the `Libraries` folder in your Resonite directory.
+1. Download the zip file from the [Releases tab](https://github.com/Xlinka/Project-Obsidian/releases).
+2. Extract the downloaded files to the `Libraries` folder in your Resonite directory.
 3. Add the `-LoadAssembly` launch argument followed by the plugin's file path: `-LoadAssembly Libraries/Project-Obsidian.dll`.
 
 Upon doing this, start Resonite. Project Obsidian should be operational. For further details, refer to your logs.
