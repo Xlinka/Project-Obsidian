@@ -5,14 +5,16 @@ using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
 using Obsidian.Elements;
+using Elements.Core;
+using System.Collections.Generic;
+using System.Linq;
+using SkyFrost.Base;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class EMA_IIR_SmoothSignalProxy : ProtoFluxEngineProxy, IAudioSource
+    public class AudioClampProxy : ProtoFluxEngineProxy, IAudioSource
     {
         public IAudioSource AudioInput;
-
-        public float SmoothingFactor;
 
         public bool Active;
 
@@ -22,32 +24,29 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
-            if (!IsActive)
+            if (!IsActive || AudioInput == null || !AudioInput.IsActive)
             {
                 buffer.Fill(default(S));
                 return;
             }
 
-            if (AudioInput != null)
-            {
-                AudioInput.Read(buffer);
-            }
-            else
-            {
-                buffer.Fill(default);
-            }
+            AudioInput.Read(buffer);
 
-            Algorithms.EMAIIRSmoothSignal(ref buffer, buffer.Length, SmoothingFactor);
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                for (int j = 0; j < ChannelCount; j++)
+                {
+                    if (buffer[i][j] > 1f) buffer[i] = buffer[i].SetChannel(j, 1f);
+                    else if (buffer[i][j] < -1f) buffer[i] = buffer[i].SetChannel(j, -1f);
+                }
+            }
         }
     }
-    [NodeCategory("Obsidian/Audio/Filters")]
-    public class EMA_IIR_SmoothSignal : ProxyVoidNode<FrooxEngineContext, EMA_IIR_SmoothSignalProxy>, IExecutionChangeListener<FrooxEngineContext>
+    [NodeCategory("Obsidian/Audio")]
+    public class AudioClamp : ProxyVoidNode<FrooxEngineContext, AudioClampProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
         public readonly ObjectInput<IAudioSource> AudioInput;
-
-        [ChangeListener]
-        public readonly ValueInput<float> SmoothingFactor;
 
         public readonly ObjectOutput<IAudioSource> AudioOutput;
 
@@ -57,7 +56,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public bool ValueListensToChanges { get; private set; }
 
-        private bool ShouldListen(EMA_IIR_SmoothSignalProxy proxy)
+        private bool ShouldListen(AudioClampProxy proxy)
         {
             if (proxy.Enabled)
             {
@@ -66,7 +65,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             return false;
         }
 
-        protected override void ProxyAdded(EMA_IIR_SmoothSignalProxy proxy, FrooxEngineContext context)
+        protected override void ProxyAdded(AudioClampProxy proxy, FrooxEngineContext context)
         {
             base.ProxyAdded(proxy, context);
             NodeContextPath path = context.CaptureContextPath();
@@ -94,7 +93,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             proxy.Active = ValueListensToChanges;
         }
 
-        protected override void ProxyRemoved(EMA_IIR_SmoothSignalProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
+        protected override void ProxyRemoved(AudioClampProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
         {
             if (!inUseByAnotherInstance)
             {
@@ -108,7 +107,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         protected void UpdateListenerState(FrooxEngineContext context)
         {
-            EMA_IIR_SmoothSignalProxy proxy = GetProxy(context);
+            AudioClampProxy proxy = GetProxy(context);
             if (proxy != null)
             {
                 bool shouldListen = ShouldListen(proxy);
@@ -123,22 +122,21 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Changed(FrooxEngineContext context)
         {
-            EMA_IIR_SmoothSignalProxy proxy = GetProxy(context);
+            AudioClampProxy proxy = GetProxy(context);
             if (proxy == null)
             {
                 return;
             }
             proxy.AudioInput = AudioInput.Evaluate(context);
-            proxy.SmoothingFactor = SmoothingFactor.Evaluate(context);
         }
 
         protected override void ComputeOutputs(FrooxEngineContext context)
         {
-            EMA_IIR_SmoothSignalProxy proxy = GetProxy(context);
+            AudioClampProxy proxy = GetProxy(context);
             AudioOutput.Write(proxy, context);
         }
 
-        public EMA_IIR_SmoothSignal()
+        public AudioClamp()
         {
             AudioOutput = new ObjectOutput<IAudioSource>(this);
         }

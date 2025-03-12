@@ -5,7 +5,7 @@ using Obsidian.Elements;
 
 namespace Obsidian.Components.Audio;
 
-[Category(new string[] { "Obsidian/Audio/Effects" })]
+[Category(new string[] { "Obsidian/Audio/Filters" })]
 public class EMA_IIR_SmoothSignal : Component, IAudioSource, IWorldElement
 {
     [Range(0f, 1f, "0.00")]
