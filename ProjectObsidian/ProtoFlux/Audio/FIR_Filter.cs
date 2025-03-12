@@ -58,9 +58,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            Span<S> newBuffer = stackalloc S[buffer.Length];
-            newBuffer = buffer;
-            AudioInput.Read(newBuffer);
+            AudioInput.Read(buffer);
 
             if (!filters.TryGetValue(typeof(S), out var filter))
             {
@@ -69,7 +67,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 UniLog.Log("Created new FIR filter");
             }
 
-            ((FirFilter<S>)filter).ProcessBuffer(newBuffer, update);
+            ((FirFilter<S>)filter).ProcessBuffer(buffer, update);
 
             if (update)
             {

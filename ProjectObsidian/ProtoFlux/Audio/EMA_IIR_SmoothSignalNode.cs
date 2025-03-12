@@ -28,18 +28,16 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            Span<S> newBuffer = stackalloc S[buffer.Length];
-            newBuffer = buffer;
             if (AudioInput != null)
             {
-                AudioInput.Read(newBuffer);
+                AudioInput.Read(buffer);
             }
             else
             {
-                newBuffer.Fill(default);
+                buffer.Fill(default);
             }
 
-            Algorithms.EMAIIRSmoothSignal(ref newBuffer, newBuffer.Length, SmoothingFactor);
+            Algorithms.EMAIIRSmoothSignal(ref buffer, buffer.Length, SmoothingFactor);
         }
     }
     [NodeCategory("Obsidian/Audio/Filters")]

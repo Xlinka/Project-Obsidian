@@ -41,9 +41,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            Span<S> newBuffer = stackalloc S[buffer.Length];
-            newBuffer = buffer;
-            AudioInput.Read(newBuffer);
+            AudioInput.Read(buffer);
 
             if (!delays.TryGetValue(typeof(S), out var delay))
             {
@@ -52,7 +50,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 UniLog.Log("Created new delay");
             }
 
-            ((SimpleDelayEffect<S>)delay).Process(newBuffer, DryWet, feedback, update);
+            ((SimpleDelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
 
             if (update)
             {

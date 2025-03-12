@@ -33,19 +33,19 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            Span<S> newBuffer = stackalloc S[buffer.Length];
+            //Span<S> newBuffer = stackalloc S[buffer.Length];
             if (AudioInput != null)
             {
-                AudioInput.Read(newBuffer);
+                AudioInput.Read(buffer);
             }
             else
             {
-                newBuffer.Fill(default);
+                buffer.Fill(default);
             }
 
             for (int i = 0; i < buffer.Length; i++)
             {
-                buffer[i] = buffer[i].SetChannel(0, newBuffer[i][Channel]);
+                buffer[i] = buffer[i].SetChannel(0, buffer[i][Channel]);
             }
         }
     }
