@@ -29,7 +29,9 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         private bool update;
 
-        private object lastBuffer = null;
+        //private object lastBuffer = null;
+
+        private Dictionary<Type, object> lastBuffers = new();
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
@@ -48,7 +50,13 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 UniLog.Log("Created new reverb");
             }
 
-            if (!update && lastBuffer != null)
+            bool lastBufferIsNull = false;
+            if (!lastBuffers.TryGetValue(typeof(S), out var lastBuffer))
+            {
+                lastBufferIsNull = true;
+            }
+
+            if (!update && !lastBufferIsNull)
             {
                 buffer = ((S[])lastBuffer).AsSpan();
                 return;
@@ -56,10 +64,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             ((BufferReverber<S>)reverb).ApplyReverb(ref buffer);
 
-            if (update || lastBuffer == null)
+            if (update || lastBufferIsNull)
             {
                 update = false;
-                lastBuffer = buffer.ToArray();
+                lastBuffers[typeof(S)] = lastBuffer;
             }
         }
         protected override void OnStart()

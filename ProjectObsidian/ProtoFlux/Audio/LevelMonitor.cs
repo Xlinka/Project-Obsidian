@@ -14,55 +14,54 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     {
         public readonly ObjectInput<IAudioSource> AudioInput;
 
+        private float lastValue = 0f;
+
+        private bool subscribed = false;
+
+        private bool update;
+
         protected override float Compute(FrooxEngineContext context)
         {
-            if (AudioInput.Evaluate(context) == null)
+            if (!subscribed)
             {
-                return default;
+                subscribed = true;
+                Engine.Current.AudioSystem.AudioUpdate += () => 
+                { 
+                    update = true;
+                };
             }
+
             IAudioSource audio = AudioInput.Evaluate(context);
 
-            switch (audio.ChannelCount)
+            if (audio == null)
             {
-                case 1:
-                    Span<MonoSample> buf = stackalloc MonoSample[Engine.Current.AudioSystem.SampleRate];
-                    audio.Read(buf);
-                    float sum = 0;
-                    foreach (MonoSample sample in buf)
-                    {
-                        sum += sample.AbsoluteAmplitude;
-                    }
-                    return sum / buf.Length;
-                case 2:
-                    Span<StereoSample> buf2 = stackalloc StereoSample[Engine.Current.AudioSystem.SampleRate];
-                    audio.Read(buf2);
-                    float sum2 = 0;
-                    foreach (MonoSample sample in buf2)
-                    {
-                        sum2 += sample.AbsoluteAmplitude;
-                    }
-                    return sum2 / buf2.Length;
-                case 4:
-                    Span<QuadSample> buf3 = stackalloc QuadSample[Engine.Current.AudioSystem.SampleRate];
-                    audio.Read(buf3);
-                    float sum3 = 0;
-                    foreach (MonoSample sample in buf3)
-                    {
-                        sum3 += sample.AbsoluteAmplitude;
-                    }
-                    return sum3 / buf3.Length;
-                case 6:
-                    Span<Surround51Sample> buf4 = stackalloc Surround51Sample[Engine.Current.AudioSystem.SampleRate];
-                    audio.Read(buf4);
-                    float sum4 = 0;
-                    foreach (MonoSample sample in buf4)
-                    {
-                        sum4 += sample.AbsoluteAmplitude;
-                    }
-                    return sum4 / buf4.Length;
+                lastValue = 0f;
+                return 0f;
             }
 
-            return 0;
+            if (!update) return lastValue;
+
+            int amt = (int)(Engine.Current.AudioSystem.SampleRate * 0.01f);
+
+            try
+            {
+                Span<MonoSample> buf = stackalloc MonoSample[amt];
+                audio.Read(buf);
+                float sum = 0;
+                foreach (MonoSample sample in buf)
+                {
+                    sum += sample.AbsoluteAmplitude;
+                }
+                lastValue = sum / buf.Length;
+            }
+            catch (Exception e)
+            {
+                UniLog.Error(e.ToString());
+                lastValue = -1f;
+            }
+
+            update = false;
+            return lastValue;
         }
     }
 }
