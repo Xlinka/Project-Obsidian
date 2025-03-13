@@ -269,7 +269,12 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     }
 }
 
-public class SimpleDelayEffect<S> where S : unmanaged, IAudioSample<S>
+public interface IDelay
+{
+    public void SetDelayTime(int newDelayTimeMs, int sampleRate);
+}
+
+public class SimpleDelayEffect<S> : IDelay where S : unmanaged, IAudioSample<S>
 {
     public S[] buffer;
     private int bufferSize;
@@ -281,11 +286,11 @@ public class SimpleDelayEffect<S> where S : unmanaged, IAudioSample<S>
     /// </summary>
     /// <param name="delayTimeMs">Delay time in milliseconds</param>
     /// <param name="sampleRate">Sample rate in Hz</param>
-    /// <param name="feedback">Feedback amount (0.0 to 0.9)</param>
     public SimpleDelayEffect(int delayTimeMs, int sampleRate)
     {
         // Calculate buffer size from delay time
         bufferSize = (delayTimeMs * sampleRate) / 1000;
+        bufferSize = Math.Max(1, bufferSize); // Ensure minimum size
         buffer = new S[bufferSize];
     }
 
@@ -330,6 +335,91 @@ public class SimpleDelayEffect<S> where S : unmanaged, IAudioSample<S>
         {
             lastBuffer = inputBuffer.ToArray();
         }
+    }
+
+    /// <summary>
+    /// Change delay time while preserving buffer contents
+    /// </summary>
+    /// <param name="newDelayTimeMs">New delay time in milliseconds</param>
+    /// <param name="sampleRate">Sample rate in Hz</param>
+    public void SetDelayTime(int newDelayTimeMs, int sampleRate)
+    {
+        int newBufferSize = (newDelayTimeMs * sampleRate) / 1000;
+
+        // Ensure we have at least 1 sample
+        newBufferSize = Math.Max(1, newBufferSize);
+
+        if (newBufferSize == bufferSize)
+            return; // No change needed
+
+        S[] newBuffer = new S[newBufferSize];
+
+        // Preserve as much of the existing buffer as possible
+        if (newBufferSize > bufferSize)
+        {
+            // UPSAMPLING - buffer is getting larger
+            // Use cubic interpolation to upsample the buffer
+            for (int i = 0; i < newBufferSize; i++)
+            {
+                // Map the new index back to where it would be in the old buffer
+                float exactPos = (float)i * bufferSize / newBufferSize;
+
+                // Use cubic interpolation for better quality
+                newBuffer[i] = CubicInterpolate(buffer, position, exactPos, bufferSize);
+            }
+        }
+        else
+        {
+            // New buffer is smaller - copy using a safer approach
+            float ratio = (float)bufferSize / newBufferSize;
+
+            for (int i = 0; i < newBufferSize; i++)
+            {
+                // Calculate source index more carefully using floating-point to avoid division issues
+                float exactPos = position + (i * ratio);
+                int oldIndex = (int)(exactPos % bufferSize);
+
+                // Add bounds check to be extra safe
+                if (oldIndex >= 0 && oldIndex < bufferSize)
+                {
+                    newBuffer[i] = buffer[oldIndex];
+                }
+            }
+        }
+
+        // Update state
+        buffer = newBuffer;
+        bufferSize = newBufferSize;
+        position = 0; // Reset position to start of new buffer
+    }
+
+    /// <summary>
+    /// Cubic interpolation for high-quality upsampling
+    /// </summary>
+    private S CubicInterpolate(S[] buffer, int startPos, float exactPos, int bufferSize)
+    {
+        // Get integer and fractional parts
+        int pos = (int)exactPos;
+        float frac = exactPos - pos;
+
+        // Get the four points for cubic interpolation
+        int pos0 = (startPos + pos - 1 + bufferSize) % bufferSize;
+        int pos1 = (startPos + pos) % bufferSize;
+        int pos2 = (startPos + pos + 1) % bufferSize;
+        int pos3 = (startPos + pos + 2) % bufferSize;
+
+        S y0 = buffer[pos0];
+        S y1 = buffer[pos1];
+        S y2 = buffer[pos2];
+        S y3 = buffer[pos3];
+
+        // Cubic interpolation formula
+        S a0 = y3.Subtract(y2).Subtract(y0).Add(y1);
+        S a1 = y0.Subtract(y1).Subtract(a0);
+        S a2 = y2.Subtract(y0);
+        S a3 = y1;
+
+        return a0.Multiply(frac * frac * frac).Add(a1.Multiply(frac * frac)).Add(a2.Multiply(frac)).Add(a3);
     }
 }
 

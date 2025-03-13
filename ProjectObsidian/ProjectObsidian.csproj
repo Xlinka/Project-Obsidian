@@ -57,6 +57,9 @@
 	  <Reference Include="Elements.Assets">
 		  <HintPath>$(ResonitePath)Resonite_Data/Managed/Elements.Assets.dll</HintPath>
 	  </Reference>
+	  <Reference Include="SharpPipe">
+	    <HintPath>G:\SteamLibrary\steamapps\common\Resonite\Resonite_Data\Managed\SharpPipe.dll</HintPath>
+	  </Reference>
 	  <Reference Include="SkyFrost.Base">
 	    <HintPath>$(ResonitePath)Resonite_Data/Managed/SkyFrost.Base.dll</HintPath>
 	  </Reference>
