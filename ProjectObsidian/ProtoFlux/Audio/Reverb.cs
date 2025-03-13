@@ -27,6 +27,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public int ChannelCount => AudioInput?.ChannelCount ?? 0;
 
+        private bool update;
+
+        private object lastBuffer = null;
+
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive || AudioInput == null || !AudioInput.IsActive)
@@ -44,7 +48,26 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 UniLog.Log("Created new reverb");
             }
 
+            if (!update && lastBuffer != null)
+            {
+                buffer = ((S[])lastBuffer).AsSpan();
+                return;
+            }
+
             ((BufferReverber<S>)reverb).ApplyReverb(ref buffer);
+
+            if (update || lastBuffer == null)
+            {
+                update = false;
+                lastBuffer = buffer.ToArray();
+            }
+        }
+        protected override void OnStart()
+        {
+            Engine.AudioSystem.AudioUpdate += () =>
+            {
+                update = true;
+            };
         }
     }
     [NodeCategory("Obsidian/Audio/Effects")]

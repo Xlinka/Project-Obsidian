@@ -45,12 +45,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             if (!delays.TryGetValue(typeof(S), out var delay))
             {
-                delay = new SimpleDelayEffect<S>(delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
+                delay = new DelayEffect<S>(delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
                 delays.Add(typeof(S), delay);
                 UniLog.Log("Created new delay");
             }
 
-            ((SimpleDelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
+            ((DelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
 
             if (update)
             {
@@ -161,15 +161,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
             proxy.AudioInput = AudioInput.Evaluate(context);
-            //var oldMillis = proxy.delayMilliseconds;
             proxy.delayMilliseconds = DelayMilliseconds.Evaluate(context);
-            //if (oldMillis != proxy.delayMilliseconds && (int)(oldMillis * Engine.Current.AudioSystem.SampleRate / 1000) != (int)(proxy.delayMilliseconds * Engine.Current.AudioSystem.SampleRate / 1000))
-            //{
-                //proxy.delays.Clear();
-            //}
             foreach (var delay in proxy.delays.Values)
             {
-                ((IDelay)delay).SetDelayTime(proxy.delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
+                ((IDelayEffect)delay).SetDelayTime(proxy.delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
             }
             proxy.feedback = Feedback.Evaluate(context);
             proxy.DryWet = DryWet.Evaluate(context);

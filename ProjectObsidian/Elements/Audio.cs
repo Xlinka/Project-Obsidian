@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Elements.Assets;
 using Elements.Core;
 using FrooxEngine;
-using ProtoFlux.Runtimes.Execution.Nodes.Actions;
 
 namespace Obsidian.Elements;
 
@@ -269,52 +269,133 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     }
 }
 
-public interface IDelay
+public interface IDelayEffect
 {
     public void SetDelayTime(int newDelayTimeMs, int sampleRate);
 }
 
-public class SimpleDelayEffect<S> : IDelay where S : unmanaged, IAudioSample<S>
+public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
 {
     public S[] buffer;
     private int bufferSize;
     public int position = 0;
     private S[] lastBuffer = null;
 
+    // Performance-optimized resampling parameters
+    private const int FILTER_LENGTH = 4; // Reduced filter length for performance
+    private S[] sincLUT; // Lookup table for sinc values
+    private const int LUT_SIZE = 1024; // Size of lookup table
+    private const int LUT_PRECISION = 10; // 2^10 = 1024 entries
+
     /// <summary>
     /// Creates a simple delay effect
     /// </summary>
     /// <param name="delayTimeMs">Delay time in milliseconds</param>
     /// <param name="sampleRate">Sample rate in Hz</param>
-    public SimpleDelayEffect(int delayTimeMs, int sampleRate)
+    public DelayEffect(int delayTimeMs, int sampleRate)
     {
         // Calculate buffer size from delay time
         bufferSize = (delayTimeMs * sampleRate) / 1000;
         bufferSize = Math.Max(1, bufferSize); // Ensure minimum size
         buffer = new S[bufferSize];
+
+        // Initialize lookup table for faster resampling
+        InitializeSincLUT();
     }
 
     /// <summary>
-    /// Process a single audio sample
+    /// Initialize lookup table for fast sinc calculations
     /// </summary>
-    public S Process(S input, float dryWet, float feedback)
+    private void InitializeSincLUT()
     {
+        sincLUT = new S[LUT_SIZE * (2 * FILTER_LENGTH)];
+
+        for (int i = 0; i < LUT_SIZE; i++)
+        {
+            float fraction = (float)i / LUT_SIZE;
+
+            for (int j = -FILTER_LENGTH + 1; j <= FILTER_LENGTH; j++)
+            {
+                float x = j - fraction;
+                S weight = default;
+
+                if (x == 0)
+                {
+                    for (int k = 0; k < weight.ChannelCount; k++)
+                    {
+                        weight = weight.SetChannel(k, 1f);
+                    }
+                }
+                else if (Math.Abs(x) >= FILTER_LENGTH)
+                {
+                    weight = default;
+                }
+                else
+                {
+                    // Lanczos-2 kernel (simplified for performance)
+                    float pi_x = (float)(Math.PI * x);
+                    float sinc = (float)Math.Sin(pi_x) / pi_x;
+                    float lanczos = (float)Math.Sin(pi_x / FILTER_LENGTH) / (pi_x / FILTER_LENGTH);
+                    for (int k = 0; k < weight.ChannelCount; k++)
+                    {
+                        weight = weight.SetChannel(k, sinc * lanczos);
+                    }
+                }
+
+                // Store in lookup table
+                sincLUT[i * (2 * FILTER_LENGTH) + (j + FILTER_LENGTH - 1)] = weight;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Process samples in bulk for better performance
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void ProcessBulk(Span<S> samples, float dryWet, float feedback)
+    {
+        // Calculate how many samples we can process without hitting the buffer wraparound
+        int samplesBeforeWrap = Math.Min(samples.Length, bufferSize - position);
+
         // Set feedback (limit to 0.99 to prevent excessive buildup)
         var fb = Math.Min(0.99f, Math.Max(0.0f, feedback));
 
-        // Read the delayed sample
-        S delayed = buffer[position];
+        // Process first chunk (up to buffer wraparound)
+        fixed (S* pSamples = samples, pBuffer = buffer)
+        {
+            for (int i = 0; i < samplesBeforeWrap; i++)
+            {
+                S input = pSamples[i];
+                S delayed = pBuffer[position + i];
 
-        // Mix input with feedback for new buffer value
-        buffer[position] = input.Add(delayed.Multiply(fb));
+                // Write new value with feedback
+                pBuffer[position + i] = input.Add(delayed.Multiply(fb));
 
-        // Update position in circular buffer
-        position = (position + 1) % bufferSize;
+                float newDryWet = MathX.Clamp(dryWet, 0f, 1f);
 
-        float newDryWet = MathX.Clamp(dryWet, 0f, 1f);
+                // Mix dry and wet
+                pSamples[i] = input.Multiply(1f - newDryWet).Add(delayed.Multiply(newDryWet));
+            }
 
-        // Return mix of input and delayed signal
-        return input.Multiply(1f-newDryWet).Add(delayed.Multiply(newDryWet));
+            // Process remaining samples (after buffer wraparound)
+            for (int i = samplesBeforeWrap; i < samples.Length; i++)
+            {
+                int bufferPos = (position + i) % bufferSize;
+                S input = pSamples[i];
+                S delayed = pBuffer[bufferPos];
+
+                // Write new value with feedback
+                pBuffer[bufferPos] = input.Add(delayed.Multiply(fb));
+
+                float newDryWet = MathX.Clamp(dryWet, 0f, 1f);
+
+                // Mix dry and wet
+                pSamples[i] = input.Multiply(1f - newDryWet).Add(delayed.Multiply(newDryWet));
+            }
+        }
+
+        // Update position
+        position = (position + samples.Length) % bufferSize;
     }
 
     /// <summary>
@@ -327,10 +408,7 @@ public class SimpleDelayEffect<S> : IDelay where S : unmanaged, IAudioSample<S>
             inputBuffer = lastBuffer.AsSpan();
             return;
         }
-        for (int i = 0; i < inputBuffer.Length; i++)
-        {
-            inputBuffer[i] = Process(inputBuffer[i], dryWet, feedback);
-        }
+        ProcessBulk(inputBuffer, dryWet, feedback);
         if (update || lastBuffer == null)
         {
             lastBuffer = inputBuffer.ToArray();
@@ -338,88 +416,98 @@ public class SimpleDelayEffect<S> : IDelay where S : unmanaged, IAudioSample<S>
     }
 
     /// <summary>
-    /// Change delay time while preserving buffer contents
+    /// Change delay time with efficient high-quality resampling
     /// </summary>
-    /// <param name="newDelayTimeMs">New delay time in milliseconds</param>
-    /// <param name="sampleRate">Sample rate in Hz</param>
     public void SetDelayTime(int newDelayTimeMs, int sampleRate)
     {
-        int newBufferSize = (newDelayTimeMs * sampleRate) / 1000;
+        // Calculate new buffer size
+        int newBufferSize = Math.Max(1, (newDelayTimeMs * sampleRate) / 1000);
 
-        // Ensure we have at least 1 sample
-        newBufferSize = Math.Max(1, newBufferSize);
-
+        // No change needed
         if (newBufferSize == bufferSize)
-            return; // No change needed
+            return;
 
+        // Fast path for small delay changes - use linear interpolation for ±10% changes
+        if (Math.Abs(newBufferSize - bufferSize) < bufferSize / 10)
+        {
+            SetDelayTimeLinear(newBufferSize);
+            return;
+        }
+
+        // Standard path - use high-quality resampling
+        SetDelayTimeLanczos(newBufferSize);
+    }
+
+    /// <summary>
+    /// Fast linear interpolation for small delay time changes
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void SetDelayTimeLinear(int newBufferSize)
+    {
+        // Create new buffer
         S[] newBuffer = new S[newBufferSize];
 
-        // Preserve as much of the existing buffer as possible
-        if (newBufferSize > bufferSize)
+        // Use simple linear interpolation for speed
+        for (int i = 0; i < newBufferSize; i++)
         {
-            // UPSAMPLING - buffer is getting larger
-            // Use cubic interpolation to upsample the buffer
-            for (int i = 0; i < newBufferSize; i++)
-            {
-                // Map the new index back to where it would be in the old buffer
-                float exactPos = (float)i * bufferSize / newBufferSize;
+            float exactPos = (float)i * bufferSize / newBufferSize;
+            int pos1 = (int)exactPos;
+            int pos2 = (pos1 + 1) % bufferSize;
+            float fraction = exactPos - pos1;
 
-                // Use cubic interpolation for better quality
-                newBuffer[i] = CubicInterpolate(buffer, position, exactPos, bufferSize);
-            }
+            pos1 = (position + pos1) % bufferSize;
+            pos2 = (position + pos2) % bufferSize;
+
+            newBuffer[i] = buffer[pos1].Multiply(1 - fraction).Add(buffer[pos2].Multiply(fraction));
         }
-        else
-        {
-            // New buffer is smaller - copy using a safer approach
-            float ratio = (float)bufferSize / newBufferSize;
 
+        // Update state
+        buffer = newBuffer;
+        bufferSize = newBufferSize;
+        position = 0;
+    }
+
+    /// <summary>
+    /// High-quality Lanczos resampling for significant delay time changes
+    /// </summary>
+    private unsafe void SetDelayTimeLanczos(int newBufferSize)
+    {
+        // Create new buffer
+        S[] newBuffer = new S[newBufferSize];
+
+        // Use lookup-based Lanczos resampling
+        fixed (S* pBuffer = buffer, pNewBuffer = newBuffer, pSincLUT = sincLUT)
+        {
             for (int i = 0; i < newBufferSize; i++)
             {
-                // Calculate source index more carefully using floating-point to avoid division issues
-                float exactPos = position + (i * ratio);
-                int oldIndex = (int)(exactPos % bufferSize);
+                float exactPos = (float)i * bufferSize / newBufferSize;
+                int intPos = (int)exactPos;
+                float fraction = exactPos - intPos;
 
-                // Add bounds check to be extra safe
-                if (oldIndex >= 0 && oldIndex < bufferSize)
+                // Convert fraction to lookup table index
+                int lutIdx = (int)(fraction * LUT_SIZE);
+                if (lutIdx >= LUT_SIZE) lutIdx = LUT_SIZE - 1;
+
+                // Offset in the lookup table for this fraction
+                int lutOffset = lutIdx * (2 * FILTER_LENGTH);
+
+                // Apply filter
+                S sum = default;
+                for (int j = -FILTER_LENGTH + 1; j <= FILTER_LENGTH; j++)
                 {
-                    newBuffer[i] = buffer[oldIndex];
+                    int samplePos = (position + intPos + j + bufferSize) % bufferSize;
+                    S weight = pSincLUT[lutOffset + (j + FILTER_LENGTH - 1)];
+                    sum = sum.Add(pBuffer[samplePos].LerpTo(weight, 1f));
                 }
+
+                pNewBuffer[i] = sum;
             }
         }
 
         // Update state
         buffer = newBuffer;
         bufferSize = newBufferSize;
-        position = 0; // Reset position to start of new buffer
-    }
-
-    /// <summary>
-    /// Cubic interpolation for high-quality upsampling
-    /// </summary>
-    private S CubicInterpolate(S[] buffer, int startPos, float exactPos, int bufferSize)
-    {
-        // Get integer and fractional parts
-        int pos = (int)exactPos;
-        float frac = exactPos - pos;
-
-        // Get the four points for cubic interpolation
-        int pos0 = (startPos + pos - 1 + bufferSize) % bufferSize;
-        int pos1 = (startPos + pos) % bufferSize;
-        int pos2 = (startPos + pos + 1) % bufferSize;
-        int pos3 = (startPos + pos + 2) % bufferSize;
-
-        S y0 = buffer[pos0];
-        S y1 = buffer[pos1];
-        S y2 = buffer[pos2];
-        S y3 = buffer[pos3];
-
-        // Cubic interpolation formula
-        S a0 = y3.Subtract(y2).Subtract(y0).Add(y1);
-        S a1 = y0.Subtract(y1).Subtract(a0);
-        S a2 = y2.Subtract(y0);
-        S a3 = y1;
-
-        return a0.Multiply(frac * frac * frac).Add(a1.Multiply(frac * frac)).Add(a2.Multiply(frac)).Add(a3);
+        position = 0;
     }
 }
 
