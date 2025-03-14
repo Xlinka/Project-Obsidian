@@ -33,7 +33,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            //Span<S> newBuffer = stackalloc S[buffer.Length];
             if (AudioInput != null)
             {
                 AudioInput.Read(buffer);

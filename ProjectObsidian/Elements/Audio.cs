@@ -239,7 +239,7 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
 
         if (!update && lastBuffer != null)
         {
-            inputBuffer = lastBuffer.AsSpan();
+            lastBuffer.CopyTo(inputBuffer);
             return;
         }
 
@@ -276,16 +276,12 @@ public interface IDelayEffect
 
 public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
 {
-    public S[] buffer;
+    private S[] buffer;
     private int bufferSize;
-    public int position = 0;
+    private int position = 0;
     private S[] lastBuffer = null;
 
-    // Performance-optimized resampling parameters
-    private const int FILTER_LENGTH = 4; // Reduced filter length for performance
-    private S[] sincLUT; // Lookup table for sinc values
-    private const int LUT_SIZE = 1024; // Size of lookup table
-    private const int LUT_PRECISION = 10; // 2^10 = 1024 entries
+    private const int MAX_DELAY_TIME_MS = 5000; // 5 seconds maximum delay
 
     /// <summary>
     /// Creates a simple delay effect
@@ -294,65 +290,20 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
     /// <param name="sampleRate">Sample rate in Hz</param>
     public DelayEffect(int delayTimeMs, int sampleRate)
     {
+        // Apply maximum delay time constraint
+        int delayTimeMs2 = Math.Min(delayTimeMs, MAX_DELAY_TIME_MS);
+
         // Calculate buffer size from delay time
-        bufferSize = (delayTimeMs * sampleRate) / 1000;
+        bufferSize = (delayTimeMs2 * sampleRate) / 1000;
         bufferSize = Math.Max(1, bufferSize); // Ensure minimum size
         buffer = new S[bufferSize];
-
-        // Initialize lookup table for faster resampling
-        InitializeSincLUT();
-    }
-
-    /// <summary>
-    /// Initialize lookup table for fast sinc calculations
-    /// </summary>
-    private void InitializeSincLUT()
-    {
-        sincLUT = new S[LUT_SIZE * (2 * FILTER_LENGTH)];
-
-        for (int i = 0; i < LUT_SIZE; i++)
-        {
-            float fraction = (float)i / LUT_SIZE;
-
-            for (int j = -FILTER_LENGTH + 1; j <= FILTER_LENGTH; j++)
-            {
-                float x = j - fraction;
-                S weight = default;
-
-                if (x == 0)
-                {
-                    for (int k = 0; k < weight.ChannelCount; k++)
-                    {
-                        weight = weight.SetChannel(k, 1f);
-                    }
-                }
-                else if (Math.Abs(x) >= FILTER_LENGTH)
-                {
-                    weight = default;
-                }
-                else
-                {
-                    // Lanczos-2 kernel (simplified for performance)
-                    float pi_x = (float)(Math.PI * x);
-                    float sinc = (float)Math.Sin(pi_x) / pi_x;
-                    float lanczos = (float)Math.Sin(pi_x / FILTER_LENGTH) / (pi_x / FILTER_LENGTH);
-                    for (int k = 0; k < weight.ChannelCount; k++)
-                    {
-                        weight = weight.SetChannel(k, sinc * lanczos);
-                    }
-                }
-
-                // Store in lookup table
-                sincLUT[i * (2 * FILTER_LENGTH) + (j + FILTER_LENGTH - 1)] = weight;
-            }
-        }
     }
 
     /// <summary>
     /// Process samples in bulk for better performance
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private unsafe void ProcessBulk(Span<S> samples, float dryWet, float feedback)
+    private unsafe void ProcessLarge(Span<S> samples, float dryWet, float feedback)
     {
         // Calculate how many samples we can process without hitting the buffer wraparound
         int samplesBeforeWrap = Math.Min(samples.Length, bufferSize - position);
@@ -401,17 +352,17 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
     /// <summary>
     /// Process an array of samples
     /// </summary>
-    public void Process(Span<S> inputBuffer, float dryWet, float feedback, bool update)
+    public void Process(Span<S> samples, float dryWet, float feedback, bool update)
     {
         if (!update && lastBuffer != null)
         {
-            inputBuffer = lastBuffer.AsSpan();
+            lastBuffer.CopyTo(samples);
             return;
         }
-        ProcessBulk(inputBuffer, dryWet, feedback);
+        ProcessLarge(samples, dryWet, feedback);
         if (update || lastBuffer == null)
         {
-            lastBuffer = inputBuffer.ToArray();
+            lastBuffer = samples.ToArray();
         }
     }
 
@@ -420,22 +371,18 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
     /// </summary>
     public void SetDelayTime(int newDelayTimeMs, int sampleRate)
     {
+        // Apply maximum delay time constraint
+        int newDelayTimeMs2 = Math.Min(newDelayTimeMs, MAX_DELAY_TIME_MS);
+
         // Calculate new buffer size
-        int newBufferSize = Math.Max(1, (newDelayTimeMs * sampleRate) / 1000);
+        int newBufferSize = Math.Max(1, (newDelayTimeMs2 * sampleRate) / 1000);
 
         // No change needed
         if (newBufferSize == bufferSize)
             return;
 
-        // Fast path for small delay changes - use linear interpolation for ±10% changes
-        if (Math.Abs(newBufferSize - bufferSize) < bufferSize / 10)
-        {
-            SetDelayTimeLinear(newBufferSize);
-            return;
-        }
-
-        // Standard path - use high-quality resampling
-        SetDelayTimeLanczos(newBufferSize);
+        SetDelayTimeLinear(newBufferSize);
+        return;
     }
 
     /// <summary>
@@ -459,49 +406,6 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
             pos2 = (position + pos2) % bufferSize;
 
             newBuffer[i] = buffer[pos1].Multiply(1 - fraction).Add(buffer[pos2].Multiply(fraction));
-        }
-
-        // Update state
-        buffer = newBuffer;
-        bufferSize = newBufferSize;
-        position = 0;
-    }
-
-    /// <summary>
-    /// High-quality Lanczos resampling for significant delay time changes
-    /// </summary>
-    private unsafe void SetDelayTimeLanczos(int newBufferSize)
-    {
-        // Create new buffer
-        S[] newBuffer = new S[newBufferSize];
-
-        // Use lookup-based Lanczos resampling
-        fixed (S* pBuffer = buffer, pNewBuffer = newBuffer, pSincLUT = sincLUT)
-        {
-            for (int i = 0; i < newBufferSize; i++)
-            {
-                float exactPos = (float)i * bufferSize / newBufferSize;
-                int intPos = (int)exactPos;
-                float fraction = exactPos - intPos;
-
-                // Convert fraction to lookup table index
-                int lutIdx = (int)(fraction * LUT_SIZE);
-                if (lutIdx >= LUT_SIZE) lutIdx = LUT_SIZE - 1;
-
-                // Offset in the lookup table for this fraction
-                int lutOffset = lutIdx * (2 * FILTER_LENGTH);
-
-                // Apply filter
-                S sum = default;
-                for (int j = -FILTER_LENGTH + 1; j <= FILTER_LENGTH; j++)
-                {
-                    int samplePos = (position + intPos + j + bufferSize) % bufferSize;
-                    S weight = pSincLUT[lutOffset + (j + FILTER_LENGTH - 1)];
-                    sum = sum.Add(pBuffer[samplePos].LerpTo(weight, 1f));
-                }
-
-                pNewBuffer[i] = sum;
-            }
         }
 
         // Update state

@@ -29,8 +29,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         private bool update;
 
-        //private object lastBuffer = null;
-
         private Dictionary<Type, object> lastBuffers = new();
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
@@ -58,7 +56,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             if (!update && !lastBufferIsNull)
             {
-                buffer = ((S[])lastBuffer).AsSpan();
+                ((S[])lastBuffer).CopyTo(buffer);
                 return;
             }
 
