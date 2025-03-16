@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Elements.Assets;
 using Elements.Core;
@@ -356,15 +357,26 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
     /// </summary>
     public void Process(Span<S> samples, float dryWet, float feedback, bool update)
     {
-        if (!update && lastBuffer != null)
+        //if (!update && lastBuffer != null)
+        //{
+            //lastBuffer.CopyTo(samples);
+            //return;
+        //}
+        S[] bufferBackup = null;
+        int positionBackup = position;
+        if (!update)
         {
-            lastBuffer.CopyTo(samples);
-            return;
+            bufferBackup = buffer.ToArray();
         }
         ProcessLarge(samples, dryWet, feedback);
-        if (update || lastBuffer == null)
+        //if (update || lastBuffer == null)
+        //{
+            //lastBuffer = samples.ToArray();
+        //}
+        if (!update)
         {
-            lastBuffer = samples.ToArray();
+            Array.Copy(bufferBackup, buffer, buffer.Length);
+            position = positionBackup;
         }
     }
 
