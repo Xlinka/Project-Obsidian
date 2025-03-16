@@ -49,7 +49,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 AudioInput2.Read(buffer2s);
             }
             
-            for (int i = 0; i < buffer.Length; i+=buffer[i].ChannelCount)
+            for (int i = 0; i < buffer.Length; i++)
             {
                 buffer[i] = buffer1s[i].Subtract(buffer2s[i]);
                 
