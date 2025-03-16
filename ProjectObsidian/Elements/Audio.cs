@@ -171,7 +171,6 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     public float[] coefficients;
     public S[] delayLine;
     public int delayLineIndex;
-    //private S[] lastBuffer = null;
 
     /// <summary>
     /// Creates a new FIR filter with the specified coefficients
@@ -277,7 +276,6 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
     private S[] buffer;
     private int bufferSize;
     private int position = 0;
-    private S[] lastBuffer = null;
 
     private const int MAX_DELAY_TIME_MS = 5000; // 5 seconds maximum delay
 
