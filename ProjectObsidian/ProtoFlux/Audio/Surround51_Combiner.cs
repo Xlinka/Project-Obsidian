@@ -35,6 +35,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
+            buffer.Fill(default);
+
             Span<Surround51Sample> samples = stackalloc Surround51Sample[buffer.Length];
             Span<MonoSample> newBuffer = stackalloc MonoSample[buffer.Length];
             Span<MonoSample> newBuffer2 = stackalloc MonoSample[buffer.Length];
