@@ -7,9 +7,6 @@ using Elements.Assets;
 using Obsidian.Elements;
 using Elements.Core;
 using System.Collections.Generic;
-using System.Linq;
-using SkyFrost.Base;
-using System.Runtime.CompilerServices;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {

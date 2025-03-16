@@ -8,7 +8,6 @@ using Obsidian.Elements;
 using Elements.Core;
 using System.Collections.Generic;
 using System.Linq;
-using SkyFrost.Base;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {

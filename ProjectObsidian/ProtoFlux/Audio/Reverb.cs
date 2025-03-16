@@ -7,7 +7,6 @@ using Elements.Assets;
 using Elements.Core;
 using System.Collections.Generic;
 using SharpPipe;
-using System.Runtime.CompilerServices;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {

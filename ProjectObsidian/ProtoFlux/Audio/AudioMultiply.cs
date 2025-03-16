@@ -4,7 +4,6 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
-using Obsidian.Elements;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
