@@ -90,23 +90,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 lastValue = -1f;
             }
 
-            //try
-            //{
-            //    Span<MonoSample> buf = stackalloc MonoSample[amt];
-            //    audio.Read(buf);
-            //    float sum = 0;
-            //    foreach (MonoSample sample in buf)
-            //    {
-            //        sum += sample.AbsoluteAmplitude;
-            //    }
-            //    lastValue = sum / buf.Length;
-            //}
-            //catch (Exception e)
-            //{
-            //    UniLog.Error(e.ToString());
-            //    lastValue = -1f;
-            //}
-
             update = false;
             return lastValue;
         }
