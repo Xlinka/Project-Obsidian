@@ -44,10 +44,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             buffer.Fill(default);
 
-            //Span<float> buffer1 = stackalloc float[buffer.Length * AudioInput.ChannelCount];
-            //buffer1.Fill(default);
-            //AudioInput.GetFloatBuffer(buffer1);
-
             AudioInput.Read(buffer);
 
             if (!delays.TryGetValue(typeof(S), out var delay))
@@ -56,8 +52,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 delays.Add(typeof(S), delay);
                 UniLog.Log("Created new delay");
             }
-
-            //AudioInput.CopyFloatToBuffer(buffer1, buffer);
 
             ((DelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
 

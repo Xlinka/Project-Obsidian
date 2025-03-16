@@ -100,7 +100,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             for (int i = 0; i < buffer.Length; i++)
             {
-                //samples[i] = new Surround51Sample(leftFrontBuf[i][0], rightFrontBuf[i][0], centerBuf[i][0], subwooferBuf[i][0], leftRearBuf[i][0], rightRearBuf[i][0]);
                 samples[i] = samples[i].SetChannel(0, newBuffer[i][0]);
                 samples[i] = samples[i].SetChannel(1, newBuffer2[i][0]);
                 samples[i] = samples[i].SetChannel(2, newBuffer3[i][0]);

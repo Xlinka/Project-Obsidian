@@ -31,64 +31,24 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             
             buffer.Fill(default);
 
-            //Span<S> newBuffer = stackalloc S[buffer.Length];
-            //Span<S> newBuffer2 = stackalloc S[buffer.Length];
-            //newBuffer.Fill(default);
-            //newBuffer2.Fill(default);
-
-            //int count = AudioInput?.ChannelCount ?? 1;
-            //Span<float> buffer1 = stackalloc float[buffer.Length * count];
             Span<S> buffer1s = stackalloc S[buffer.Length];
-            //buffer1.Fill(default);
             buffer1s.Fill(default);
             if (AudioInput != null)
             {
-                //AudioInput.GetFloatBuffer(buffer1);
-                //AudioInput.CopyFloatToBuffer(buffer1, buffer1s);
                 AudioInput.Read(buffer1s);
             }
                 
-
-            //if (AudioInput != null)
-            //{
-            //AudioInput.Read(newBuffer);
-            //}
-            //else
-            //{
-            //newBuffer.Fill(default);
-            //}
-                
-            //int count2 = AudioInput2?.ChannelCount ?? 1;
-            //Span<float> buffer2 = stackalloc float[buffer.Length * count2];
             Span<S> buffer2s = stackalloc S[buffer.Length];
-            //buffer2.Fill(default);
             buffer2s.Fill(default);
             if (AudioInput2 != null)
             {
-                //AudioInput2.GetFloatBuffer(buffer2);
-                //AudioInput2.CopyFloatToBuffer(buffer2, buffer2s);\
                 AudioInput2.Read(buffer2s);
             }
                 
-
-            //if (AudioInput2 != null)
-            //{
-                //AudioInput2.Read(newBuffer2);
-            //}
-            //else
-            //{
-                //newBuffer2.Fill(default);
-            //}
             for (int i = 0; i < buffer.Length; i+=buffer[i].ChannelCount)
             {
                 buffer[i] = buffer1s[i].Add(buffer2s[i]);
-
-                //for (int j = 0; j < buffer[i].ChannelCount; j++)
-                //{
-                    //buffer[i] = buffer[i].SetChannel(j, buffer1[i+j] + buffer2[i+j]);
-                //}
                 
-
                 //for (int j = 0; j < ChannelCount; j++)
                 //{
                 //    if (newBuffer[i][j] > 1f) newBuffer[i] = newBuffer[i].SetChannel(j, 1f);

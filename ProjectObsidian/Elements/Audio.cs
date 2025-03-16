@@ -241,15 +241,10 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
         {
             delayLineCopy = (S[])delayLine.Clone();
         }
-
-        //Span<S> copy = stackalloc S[inputBuffer.Length];
-        //copy.Fill(default);
-        //inputBuffer.CopyTo(copy);
         for (int i = 0; i < inputBuffer.Length; i++)
         {
             inputBuffer[i] = ProcessSample(inputBuffer[i]);
         }
-
         if (!update)
         {
             Array.Copy(delayLineCopy, delayLine, delayLine.Length);
@@ -357,11 +352,6 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
     /// </summary>
     public void Process(Span<S> samples, float dryWet, float feedback, bool update)
     {
-        //if (!update && lastBuffer != null)
-        //{
-            //lastBuffer.CopyTo(samples);
-            //return;
-        //}
         S[] bufferBackup = null;
         int positionBackup = position;
         if (!update)
@@ -369,10 +359,6 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
             bufferBackup = buffer.ToArray();
         }
         ProcessLarge(samples, dryWet, feedback);
-        //if (update || lastBuffer == null)
-        //{
-            //lastBuffer = samples.ToArray();
-        //}
         if (!update)
         {
             Array.Copy(bufferBackup, buffer, buffer.Length);

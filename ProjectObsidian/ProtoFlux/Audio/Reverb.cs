@@ -29,8 +29,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         private ZitaParameters defaultParameters = new ZitaParameters();
 
-        //private Dictionary<Type, object> lastBuffers = new();
-
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive || AudioInput == null || !AudioInput.IsActive || parameters.Equals(defaultParameters))
@@ -42,9 +40,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             buffer.Fill(default);
 
-            //Span<float> buffer1 = stackalloc float[buffer.Length * AudioInput.ChannelCount];
-            //buffer1.Fill(default);
-            //AudioInput.GetFloatBuffer(buffer1);
             AudioInput.Read(buffer);
 
             if (!reverbs.TryGetValue(typeof(S), out var reverb))
@@ -54,30 +49,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 UniLog.Log("Created new reverb");
             }
 
-            //bool lastBufferIsNull = false;
-            //if (!lastBuffers.TryGetValue(typeof(S), out var lastBuffer))
-            //{
-                //lastBufferIsNull = true;
-            //}
-
-            //if (!update && !lastBufferIsNull)
-            //{
-                //((S[])lastBuffer).CopyTo(buffer);
-                //buffer = ((S[])lastBuffer).AsSpan();
-                //return;
-            //}
-
-            //AudioInput.CopyFloatToBuffer(buffer1, buffer);
-            //Span<S> audioBuffer = buffer1.AsAudioBuffer<S>();
-
             ((BufferReverber<S>)reverb).ApplyReverb(ref buffer);
-
-            //if (update || lastBufferIsNull)
-            //{
-                //lastBuffer = buffer.ToArray();
-                //update = false;
-                //lastBuffers[typeof(S)] = lastBuffer;
-            //}
         }
         protected override void OnStart()
         {

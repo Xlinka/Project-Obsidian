@@ -60,11 +60,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             buffer.Fill(default);
 
-            //Span<float> buffer2 = stackalloc float[buffer.Length * AudioInput.ChannelCount];
-            //buffer2.Fill(default);
-            //AudioInput.GetFloatBuffer(buffer2);
-            //AudioInput.CopyFloatToBuffer(buffer2, buffer);
-
             AudioInput.Read(buffer);
 
             if (!filters.TryGetValue(typeof(S), out var filter))
