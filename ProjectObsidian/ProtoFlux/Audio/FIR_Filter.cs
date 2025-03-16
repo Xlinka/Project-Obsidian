@@ -51,12 +51,19 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
-            if (!IsActive || AudioInput == null || !AudioInput.IsActive)
+            if (!IsActive || AudioInput == null || !AudioInput.IsActive || Coefficients == null || Coefficients.Count == 0)
             {
                 buffer.Fill(default(S));
                 filters.Clear();
                 return;
             }
+
+            buffer.Fill(default);
+
+            //Span<float> buffer2 = stackalloc float[buffer.Length * AudioInput.ChannelCount];
+            //buffer2.Fill(default);
+            //AudioInput.GetFloatBuffer(buffer2);
+            //AudioInput.CopyFloatToBuffer(buffer2, buffer);
 
             AudioInput.Read(buffer);
 
@@ -67,7 +74,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 UniLog.Log("Created new FIR filter");
             }
 
-            ((FirFilter<S>)filter).ProcessBuffer(buffer, update);
+            ((FirFilter<S>)filter).ProcessBuffer(ref buffer, update);
 
             if (update)
             {

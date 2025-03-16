@@ -4,6 +4,7 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
+using Obsidian.Elements;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
@@ -21,20 +22,23 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
-            if (!IsActive)
+            if (!IsActive || AudioInput == null)
             {
                 buffer.Fill(default(S));
                 return;
             }
 
-            if (AudioInput != null)
-            {
-                AudioInput.Read(buffer);
-            }
-            else
-            {
-                buffer.Fill(default);
-            }
+            buffer.Fill(default);
+
+            //Span<float> buffer1 = stackalloc float[buffer.Length * AudioInput.ChannelCount];
+            //buffer1.Fill(default);
+            //AudioInput.GetFloatBuffer(buffer1);
+            //AudioInput.CopyFloatToBuffer(buffer1, buffer);
+
+            AudioInput.Read(buffer);
+
+
+
             for (int i = 0; i < buffer.Length; i++)
             {
                 buffer[i] = buffer[i].Multiply(Value);

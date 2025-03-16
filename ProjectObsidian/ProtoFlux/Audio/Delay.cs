@@ -9,6 +9,7 @@ using Elements.Core;
 using System.Collections.Generic;
 using System.Linq;
 using SkyFrost.Base;
+using System.Runtime.CompilerServices;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
@@ -41,6 +42,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
+            buffer.Fill(default);
+
+            //Span<float> buffer1 = stackalloc float[buffer.Length * AudioInput.ChannelCount];
+            //buffer1.Fill(default);
+            //AudioInput.GetFloatBuffer(buffer1);
+
             AudioInput.Read(buffer);
 
             if (!delays.TryGetValue(typeof(S), out var delay))
@@ -49,6 +56,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 delays.Add(typeof(S), delay);
                 UniLog.Log("Created new delay");
             }
+
+            //AudioInput.CopyFloatToBuffer(buffer1, buffer);
 
             ((DelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
 

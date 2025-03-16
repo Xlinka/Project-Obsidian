@@ -21,7 +21,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public double time;
 
-        private float[] tempBuffer;
+        private float[] tempBuffer = null;
 
         public bool Active;
 
@@ -36,6 +36,14 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             if (!IsActive)
             {
                 buffer.Fill(default(S));
+                return;
+            }
+
+            if (!updateTime && tempBuffer != null)
+            {
+                double position2 = 0.0;
+                MonoSample lastSample2 = default(MonoSample);
+                MemoryMarshal.Cast<float, MonoSample>(MemoryExtensions.AsSpan(tempBuffer)).CopySamples<MonoSample, S>(buffer, ref position2, ref lastSample2, 1.0);
                 return;
             }
 

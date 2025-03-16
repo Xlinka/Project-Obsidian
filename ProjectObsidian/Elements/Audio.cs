@@ -170,7 +170,7 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     public float[] coefficients;
     public S[] delayLine;
     public int delayLineIndex;
-    private S[] lastBuffer = null;
+    //private S[] lastBuffer = null;
 
     /// <summary>
     /// Creates a new FIR filter with the specified coefficients
@@ -232,25 +232,27 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     /// </summary>
     /// <param name="inputBuffer">Array of input samples</param>
     /// <returns>Array of filtered output samples</returns>
-    public void ProcessBuffer(Span<S> inputBuffer, bool update)
+    public void ProcessBuffer(ref Span<S> inputBuffer, bool update)
     {
-        if (inputBuffer == null)
-            throw new ArgumentNullException(nameof(inputBuffer));
-
-        if (!update && lastBuffer != null)
+        S[] delayLineCopy = null;
+        var delayLineIndexCopy = delayLineIndex;
+        if (!update)
         {
-            lastBuffer.CopyTo(inputBuffer);
-            return;
+            delayLineCopy = (S[])delayLine.Clone();
         }
 
+        //Span<S> copy = stackalloc S[inputBuffer.Length];
+        //copy.Fill(default);
+        //inputBuffer.CopyTo(copy);
         for (int i = 0; i < inputBuffer.Length; i++)
         {
             inputBuffer[i] = ProcessSample(inputBuffer[i]);
         }
 
-        if (update || lastBuffer == null)
+        if (!update)
         {
-            lastBuffer = inputBuffer.ToArray();
+            Array.Copy(delayLineCopy, delayLine, delayLine.Length);
+            delayLineIndex = delayLineIndexCopy;
         }
     }
 
@@ -655,3 +657,44 @@ public static class Algorithms
         }
     }
 }
+
+//public static class AudioExtensions
+//{
+//    public static void GetFloatBuffer(this IAudioSource audioSource, Span<float> buffer)
+//    {
+//        switch (audioSource.ChannelCount)
+//        {
+//            case 1:
+//                audioSource.Read(buffer.AsMonoBuffer());
+//                break;
+//            case 2:
+//                audioSource.Read(buffer.AsStereoBuffer());
+//                break;
+//            case 4:
+//                audioSource.Read(buffer.AsQuadBuffer());
+//                break;
+//            case 6:
+//                audioSource.Read(buffer.AsSurround51Buffer());
+//                break;
+//        }
+//    }
+
+//    public static void CopyFloatToBuffer<S>(this IAudioSource audioSource, Span<float> source, Span<S> target) where S : unmanaged, IAudioSample<S>
+//    {
+//        switch (audioSource.ChannelCount)
+//        {
+//            case 1:
+//                source.AsAudioBuffer<MonoSample>().CopySamples(target);
+//                break;
+//            case 2:
+//                source.AsAudioBuffer<StereoSample>().CopySamples(target);
+//                break;
+//            case 4:
+//                source.AsAudioBuffer<QuadSample>().CopySamples(target);
+//                break;
+//            case 6:
+//                source.AsAudioBuffer<Surround51Sample>().CopySamples(target);
+//                break;
+//        }
+//    }
+//}

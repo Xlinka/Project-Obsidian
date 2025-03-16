@@ -34,6 +34,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
+            buffer.Fill(default);
+
             if (AudioInput != null)
             {
                 AudioInput.Read(buffer);

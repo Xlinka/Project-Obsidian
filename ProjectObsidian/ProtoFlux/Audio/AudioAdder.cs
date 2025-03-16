@@ -4,6 +4,8 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
+using Obsidian.Elements;
+using FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
@@ -26,27 +28,66 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 buffer.Fill(default(S));
                 return;
             }
+            
+            buffer.Fill(default);
 
-            Span<S> newBuffer2 = stackalloc S[buffer.Length];
+            //Span<S> newBuffer = stackalloc S[buffer.Length];
+            //Span<S> newBuffer2 = stackalloc S[buffer.Length];
+            //newBuffer.Fill(default);
+            //newBuffer2.Fill(default);
+
+            //int count = AudioInput?.ChannelCount ?? 1;
+            //Span<float> buffer1 = stackalloc float[buffer.Length * count];
+            Span<S> buffer1s = stackalloc S[buffer.Length];
+            //buffer1.Fill(default);
+            buffer1s.Fill(default);
             if (AudioInput != null)
             {
-                AudioInput.Read(buffer);
+                //AudioInput.GetFloatBuffer(buffer1);
+                //AudioInput.CopyFloatToBuffer(buffer1, buffer1s);
+                AudioInput.Read(buffer1s);
             }
-            else
-            {
-                buffer.Fill(default);
-            }
+                
+
+            //if (AudioInput != null)
+            //{
+            //AudioInput.Read(newBuffer);
+            //}
+            //else
+            //{
+            //newBuffer.Fill(default);
+            //}
+                
+            //int count2 = AudioInput2?.ChannelCount ?? 1;
+            //Span<float> buffer2 = stackalloc float[buffer.Length * count2];
+            Span<S> buffer2s = stackalloc S[buffer.Length];
+            //buffer2.Fill(default);
+            buffer2s.Fill(default);
             if (AudioInput2 != null)
             {
-                AudioInput2.Read(newBuffer2);
+                //AudioInput2.GetFloatBuffer(buffer2);
+                //AudioInput2.CopyFloatToBuffer(buffer2, buffer2s);\
+                AudioInput2.Read(buffer2s);
             }
-            else
+                
+
+            //if (AudioInput2 != null)
+            //{
+                //AudioInput2.Read(newBuffer2);
+            //}
+            //else
+            //{
+                //newBuffer2.Fill(default);
+            //}
+            for (int i = 0; i < buffer.Length; i+=buffer[i].ChannelCount)
             {
-                newBuffer2.Fill(default);
-            }
-            for (int i = 0; i < buffer.Length; i++)
-            {
-                buffer[i] = buffer[i].Add(newBuffer2[i]);
+                buffer[i] = buffer1s[i].Add(buffer2s[i]);
+
+                //for (int j = 0; j < buffer[i].ChannelCount; j++)
+                //{
+                    //buffer[i] = buffer[i].SetChannel(j, buffer1[i+j] + buffer2[i+j]);
+                //}
+                
 
                 //for (int j = 0; j < ChannelCount; j++)
                 //{

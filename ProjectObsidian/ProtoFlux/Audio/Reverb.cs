@@ -4,12 +4,10 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
-using Obsidian.Elements;
 using Elements.Core;
 using System.Collections.Generic;
-using System.Linq;
-using SkyFrost.Base;
 using SharpPipe;
+using System.Runtime.CompilerServices;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
@@ -29,16 +27,24 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         private bool update;
 
+        private ZitaParameters defaultParameters = new ZitaParameters();
+
         private Dictionary<Type, object> lastBuffers = new();
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
-            if (!IsActive || AudioInput == null || !AudioInput.IsActive)
+            if (!IsActive || AudioInput == null || !AudioInput.IsActive || parameters.Equals(defaultParameters))
             {
                 buffer.Fill(default(S));
+                reverbs.Clear();
                 return;
             }
 
+            buffer.Fill(default);
+
+            //Span<float> buffer1 = stackalloc float[buffer.Length * AudioInput.ChannelCount];
+            //buffer1.Fill(default);
+            //AudioInput.GetFloatBuffer(buffer1);
             AudioInput.Read(buffer);
 
             if (!reverbs.TryGetValue(typeof(S), out var reverb))
@@ -56,14 +62,19 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             if (!update && !lastBufferIsNull)
             {
-                ((S[])lastBuffer).CopyTo(buffer);
+                //((S[])lastBuffer).CopyTo(buffer);
+                buffer = ((S[])lastBuffer).AsSpan();
                 return;
             }
+
+            //AudioInput.CopyFloatToBuffer(buffer1, buffer);
+            //Span<S> audioBuffer = buffer1.AsAudioBuffer<S>();
 
             ((BufferReverber<S>)reverb).ApplyReverb(ref buffer);
 
             if (update || lastBufferIsNull)
             {
+                lastBuffer = buffer.ToArray();
                 update = false;
                 lastBuffers[typeof(S)] = lastBuffer;
             }
