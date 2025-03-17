@@ -7,7 +7,6 @@ using Elements.Assets;
 using Elements.Core;
 using System.Collections.Generic;
 using SharpPipe;
-using System.Runtime.CompilerServices;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
@@ -26,6 +25,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         public int ChannelCount => AudioInput?.ChannelCount ?? 0;
 
         private ZitaParameters defaultParameters = new ZitaParameters();
+
+        public Dictionary<Type, object> lastBuffers = new();
+
+        private bool update;
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
@@ -47,7 +50,55 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 UniLog.Log("Created new reverb");
             }
 
+            bool lastBufferIsNull = false;
+            if (!lastBuffers.TryGetValue(typeof(S), out var lastBuffer))
+            {
+                lastBufferIsNull = true;
+            }
+
+            if (!update && !lastBufferIsNull)
+            {
+                ((S[])lastBuffer).CopyTo(buffer);
+                return;
+            }
+
             ((BufferReverber<S>)reverb).ApplyReverb(ref buffer);
+
+            if (update || lastBufferIsNull)
+            {
+                update = false;
+                //((S[])lastBuffer).EnsureExactSize(buffer.Length);
+                lastBuffer = buffer.ToArray();
+                lastBuffers[typeof(S)] = lastBuffer;
+                //foreach (var type in reverbs.Keys)
+                //{
+                //    if (type == typeof(S)) continue;
+                //    if (type == typeof(MonoSample))
+                //    {
+                //        ((S[])lastBuffer).AsSpan().CopySamples(((MonoSample[])reverbs[type]).AsSpan());
+                //    }
+                //    else if (type == typeof(StereoSample))
+                //    {
+                //        ((S[])lastBuffer).AsSpan().CopySamples(((StereoSample[])reverbs[type]).AsSpan());
+                //    }
+                //    else if (type == typeof(QuadSample))
+                //    {
+                //        ((S[])lastBuffer).AsSpan().CopySamples(((QuadSample[])reverbs[type]).AsSpan());
+                //    }
+                //    else if (type == typeof(Surround51Sample))
+                //    {
+                //        ((S[])lastBuffer).AsSpan().CopySamples(((Surround51Sample[])reverbs[type]).AsSpan());
+                //    }
+                //}
+            }
+        }
+
+        protected override void OnStart()
+        {
+            Engine.AudioSystem.AudioUpdate += () =>
+            {
+                update = true;
+            };
         }
     }
     [NodeCategory("Obsidian/Audio/Effects")]

@@ -164,12 +164,8 @@ public class BandPassFilterController
 public interface IFirFilter
 {
     public void SetCoefficients(float[] _coefficients); 
-    public void SetDelayLine(float[] _delayLine);
-    public float[] GetDelayLine();
-    public int GetDelayLineIndex();
-    public void SetDelayLineIndex(int _delayLineIndex);
-    public void SetLastBuffer(float[] _lastBuffer);
-    public float[] GetLastBuffer();
+    //public void SetLastBuffer(float[] _lastBuffer);
+    //public float[] GetLastBuffer();
 }
 
 public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
@@ -196,35 +192,15 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
         delayLineIndex = 0;
     }
 
-    public void SetDelayLine(float[] _delayLine)
-    {
-        delayLine = _delayLine.AsAudioBuffer<S>().ToArray();
-    }
+    //public void SetLastBuffer(float[] _lastBuffer)
+    //{
+        //lastBuffer = _lastBuffer.AsAudioBuffer<S>().ToArray();
+    //}
 
-    public float[] GetDelayLine()
-    {
-        return delayLine.AsSpan().AsSampleBuffer().ToArray();
-    }
-
-    public int GetDelayLineIndex()
-    {
-        return delayLineIndex;
-    }
-
-    public void SetDelayLineIndex(int _delayLineIndex)
-    {
-        delayLineIndex = _delayLineIndex;
-    }
-
-    public void SetLastBuffer(float[] _lastBuffer)
-    {
-        lastBuffer = _lastBuffer.AsAudioBuffer<S>().ToArray();
-    }
-
-    public float[] GetLastBuffer()
-    {
-        return lastBuffer.AsSpan().AsSampleBuffer().ToArray();
-    }
+    //public float[] GetLastBuffer()
+    //{
+        //return lastBuffer.AsSpan().AsSampleBuffer().ToArray();
+    //}
 
     /// <summary>
     /// Process a single sample through the FIR filter
@@ -271,11 +247,8 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     /// <returns>Array of filtered output samples</returns>
     public void ProcessBuffer(ref Span<S> inputBuffer, bool update)
     {
-        //S[] delayLineCopy = null;
-        //var delayLineIndexCopy = delayLineIndex;
         if (!update && lastBuffer != null)
         {
-            //delayLineCopy = (S[])delayLine.Clone();
             lastBuffer.CopyTo(inputBuffer);
             return;
         }
@@ -285,8 +258,6 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
         }
         if (update || lastBuffer == null)
         {
-            //Array.Copy(delayLineCopy, delayLine, delayLine.Length);
-            //delayLineIndex = delayLineIndexCopy;
             lastBuffer = inputBuffer.ToArray();
         }
     }
@@ -309,6 +280,8 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
 public interface IDelayEffect
 {
     public void SetDelayTime(int newDelayTimeMs, int sampleRate);
+    //public void SetLastBuffer(float[] _lastBuffer);
+    //public float[] GetLastBuffer();
 }
 
 public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
@@ -316,6 +289,7 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
     private S[] buffer;
     private int bufferSize;
     private int position = 0;
+    private S[] lastBuffer;
 
     private const int MAX_DELAY_TIME_MS = 5000; // 5 seconds maximum delay
 
@@ -334,6 +308,16 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
         bufferSize = Math.Max(1, bufferSize); // Ensure minimum size
         buffer = new S[bufferSize];
     }
+
+    //public void SetLastBuffer(float[] _lastBuffer)
+    //{
+        //lastBuffer = _lastBuffer.AsAudioBuffer<S>().ToArray();
+    //}
+
+    //public float[] GetLastBuffer()
+    //{
+        //return lastBuffer.AsSpan().AsSampleBuffer().ToArray();
+    //}
 
     /// <summary>
     /// Process samples in bulk for better performance
@@ -390,17 +374,15 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
     /// </summary>
     public void Process(Span<S> samples, float dryWet, float feedback, bool update)
     {
-        S[] bufferBackup = null;
-        int positionBackup = position;
-        if (!update)
+        if (!update && lastBuffer != null)
         {
-            bufferBackup = buffer.ToArray();
+            lastBuffer.CopyTo(samples);
+            return;
         }
         ProcessLarge(samples, dryWet, feedback);
-        if (!update)
+        if (update || lastBuffer == null)
         {
-            Array.Copy(bufferBackup, buffer, buffer.Length);
-            position = positionBackup;
+            lastBuffer = samples.ToArray();
         }
     }
 

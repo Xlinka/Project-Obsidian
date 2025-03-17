@@ -55,6 +55,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             if (update)
             {
                 update = false;
+                //float[] lastbuffer = ((DelayEffect<S>)delay).GetLastBuffer();
+                //foreach (var delay2 in delays.Values)
+                //{
+                //    if (delay2 == delay) continue;
+                //    ((IDelayEffect)delay2).SetLastBuffer(lastbuffer);
+                //}
             }
         }
 
