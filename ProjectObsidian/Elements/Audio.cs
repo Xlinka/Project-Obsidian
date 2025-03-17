@@ -164,6 +164,12 @@ public class BandPassFilterController
 public interface IFirFilter
 {
     public void SetCoefficients(float[] _coefficients); 
+    public void SetDelayLine(float[] _delayLine);
+    public float[] GetDelayLine();
+    public int GetDelayLineIndex();
+    public void SetDelayLineIndex(int _delayLineIndex);
+    public void SetLastBuffer(float[] _lastBuffer);
+    public float[] GetLastBuffer();
 }
 
 public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
@@ -171,6 +177,7 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     public float[] coefficients;
     public S[] delayLine;
     public int delayLineIndex;
+    private S[] lastBuffer;
 
     /// <summary>
     /// Creates a new FIR filter with the specified coefficients
@@ -189,12 +196,42 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
         delayLineIndex = 0;
     }
 
+    public void SetDelayLine(float[] _delayLine)
+    {
+        delayLine = _delayLine.AsAudioBuffer<S>().ToArray();
+    }
+
+    public float[] GetDelayLine()
+    {
+        return delayLine.AsSpan().AsSampleBuffer().ToArray();
+    }
+
+    public int GetDelayLineIndex()
+    {
+        return delayLineIndex;
+    }
+
+    public void SetDelayLineIndex(int _delayLineIndex)
+    {
+        delayLineIndex = _delayLineIndex;
+    }
+
+    public void SetLastBuffer(float[] _lastBuffer)
+    {
+        lastBuffer = _lastBuffer.AsAudioBuffer<S>().ToArray();
+    }
+
+    public float[] GetLastBuffer()
+    {
+        return lastBuffer.AsSpan().AsSampleBuffer().ToArray();
+    }
+
     /// <summary>
     /// Process a single sample through the FIR filter
     /// </summary>
     /// <param name="input">The input sample</param>
     /// <returns>The filtered output sample</returns>
-    public S ProcessSample(S input)
+    public S ProcessSample(S input, bool update)
     {
         // Store the current input in the delay line
         delayLine[delayLineIndex] = input;
@@ -234,20 +271,23 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     /// <returns>Array of filtered output samples</returns>
     public void ProcessBuffer(ref Span<S> inputBuffer, bool update)
     {
-        S[] delayLineCopy = null;
-        var delayLineIndexCopy = delayLineIndex;
-        if (!update)
+        //S[] delayLineCopy = null;
+        //var delayLineIndexCopy = delayLineIndex;
+        if (!update && lastBuffer != null)
         {
-            delayLineCopy = (S[])delayLine.Clone();
+            //delayLineCopy = (S[])delayLine.Clone();
+            lastBuffer.CopyTo(inputBuffer);
+            return;
         }
         for (int i = 0; i < inputBuffer.Length; i++)
         {
-            inputBuffer[i] = ProcessSample(inputBuffer[i]);
+            inputBuffer[i] = ProcessSample(inputBuffer[i], update);
         }
-        if (!update)
+        if (update || lastBuffer == null)
         {
-            Array.Copy(delayLineCopy, delayLine, delayLine.Length);
-            delayLineIndex = delayLineIndexCopy;
+            //Array.Copy(delayLineCopy, delayLine, delayLine.Length);
+            //delayLineIndex = delayLineIndexCopy;
+            lastBuffer = inputBuffer.ToArray();
         }
     }
 

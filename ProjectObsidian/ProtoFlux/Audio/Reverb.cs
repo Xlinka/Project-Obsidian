@@ -7,6 +7,7 @@ using Elements.Assets;
 using Elements.Core;
 using System.Collections.Generic;
 using SharpPipe;
+using System.Runtime.CompilerServices;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
@@ -24,8 +25,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public int ChannelCount => AudioInput?.ChannelCount ?? 0;
 
-        private bool update;
-
         private ZitaParameters defaultParameters = new ZitaParameters();
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
@@ -37,7 +36,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            buffer.Fill(default);
+            //buffer.Fill(default);
 
             AudioInput.Read(buffer);
 
@@ -49,13 +48,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             }
 
             ((BufferReverber<S>)reverb).ApplyReverb(ref buffer);
-        }
-        protected override void OnStart()
-        {
-            Engine.AudioSystem.AudioUpdate += () =>
-            {
-                update = true;
-            };
         }
     }
     [NodeCategory("Obsidian/Audio/Effects")]
@@ -72,6 +64,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
         private ObjectStore<SlotEvent> _activeChangedHandler;
+
+        private ZitaParameters lastParameters;
 
         public bool ValueListensToChanges { get; private set; }
 
@@ -148,6 +142,11 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             }
             proxy.AudioInput = AudioInput.Evaluate(context);
             proxy.parameters = Parameters.Evaluate(context);
+            if (!proxy.parameters.Equals(lastParameters))
+            {
+                proxy.reverbs.Clear();
+            }
+            lastParameters = proxy.parameters;
         }
 
         protected override void ComputeOutputs(FrooxEngineContext context)

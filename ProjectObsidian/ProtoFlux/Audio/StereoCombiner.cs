@@ -27,7 +27,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            buffer.Fill(default);
+            //buffer.Fill(default);
 
             Span<StereoSample> samples = stackalloc StereoSample[buffer.Length];
             Span<MonoSample> newBuffer = stackalloc MonoSample[buffer.Length];
@@ -39,17 +39,9 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             {
                 Left.Read(newBuffer);
             }
-            else
-            {
-                newBuffer.Fill(default);
-            }
             if (Right != null && Right.ChannelCount == 1)
             {
                 Right.Read(newBuffer2);
-            }
-            else
-            {
-                newBuffer2.Fill(default);
             }
 
             for (int i = 0; i < buffer.Length; i++)

@@ -27,7 +27,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
             
-            buffer.Fill(default);
+            //buffer.Fill(default);
 
             Span<S> buffer1s = stackalloc S[buffer.Length];
             buffer1s.Fill(default);

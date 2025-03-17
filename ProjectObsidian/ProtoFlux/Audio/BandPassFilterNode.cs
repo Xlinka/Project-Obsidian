@@ -28,22 +28,15 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
-            if (!IsActive)
+            if (!IsActive || AudioInput == null)
             {
                 buffer.Fill(default(S));
                 return;
             }
 
-            buffer.Fill(default);
+            //buffer.Fill(default);
 
-            if (AudioInput != null)
-            {
-                AudioInput.Read(buffer);
-            }
-            else
-            {
-                buffer.Fill(default);
-            }
+            AudioInput.Read(buffer);
 
             _controller.Process(buffer, LowFrequency, HighFrequency, Resonance);
         }

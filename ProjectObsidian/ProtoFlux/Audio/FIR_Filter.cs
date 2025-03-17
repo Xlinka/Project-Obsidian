@@ -57,7 +57,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            buffer.Fill(default);
+            //buffer.Fill(default);
 
             AudioInput.Read(buffer);
 
@@ -69,6 +69,19 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             }
 
             ((FirFilter<S>)filter).ProcessBuffer(ref buffer, update);
+
+            if (!update)
+            {
+                float[] lastbuffer = ((FirFilter<S>)filter).GetLastBuffer();
+                //int delayLineIndex = ((FirFilter<S>)filter).GetDelayLineIndex();
+                foreach (var filter2 in filters.Values)
+                {
+                    if (filter2 == filter) continue;
+                    //((IFirFilter)filter2).SetDelayLine(delayLine);
+                    //((IFirFilter)filter2).SetDelayLineIndex(delayLineIndex);
+                    ((IFirFilter)filter2).SetLastBuffer(lastbuffer);
+                }
+            }
 
             if (update)
             {
