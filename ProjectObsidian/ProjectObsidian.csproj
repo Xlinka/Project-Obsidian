@@ -34,7 +34,7 @@
       <HintPath>$(ResonitePath)Resonite_Data/Managed/FrooxEngine.dll</HintPath>
     </Reference>
     <Reference Include="FrooxEngine.Store">
-      <HintPath>$(ResonitePath)Resonite_Data\Managed\FrooxEngine.Store.dll</HintPath>
+      <HintPath>$(ResonitePath)Resonite_Data/Managed/FrooxEngine.Store.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces">
       <HintPath>$(ResonitePath)Resonite_Data/Managed/Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
@@ -58,7 +58,7 @@
 		  <HintPath>$(ResonitePath)Resonite_Data/Managed/Elements.Assets.dll</HintPath>
 	  </Reference>
 	  <Reference Include="SharpPipe">
-	    <HintPath>G:\SteamLibrary\steamapps\common\Resonite\Resonite_Data\Managed\SharpPipe.dll</HintPath>
+	    <HintPath>$(ResonitePath)Resonite_Data/Managed/SharpPipe.dll</HintPath>
 	  </Reference>
 	  <Reference Include="SkyFrost.Base">
 	    <HintPath>$(ResonitePath)Resonite_Data/Managed/SkyFrost.Base.dll</HintPath>
