@@ -233,7 +233,7 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     /// </summary>
     /// <param name="inputBuffer">Array of input samples</param>
     /// <returns>Array of filtered output samples</returns>
-    public void ProcessBuffer(ref Span<S> inputBuffer, bool update)
+    public void ProcessBuffer(Span<S> inputBuffer, bool update)
     {
         if (!update && lastBuffer != null)
         {

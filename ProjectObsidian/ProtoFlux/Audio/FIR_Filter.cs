@@ -72,7 +72,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 updateBools[typeof(S)] = update;
             }
 
-            ((FirFilter<S>)filter).ProcessBuffer(ref buffer, update);
+            ((FirFilter<S>)filter).ProcessBuffer(buffer, update);
 
             if (update)
             {
