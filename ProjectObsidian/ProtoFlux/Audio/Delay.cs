@@ -7,6 +7,7 @@ using Elements.Assets;
 using Obsidian.Elements;
 using Elements.Core;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
@@ -22,13 +23,13 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public Dictionary<Type, object> delays = new();
 
+        public Dictionary<Type, bool> updateBools = new();
+
         public bool Active;
 
         public bool IsActive => Active;
 
         public int ChannelCount => AudioInput?.ChannelCount ?? 0;
-
-        private bool update;
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
@@ -39,8 +40,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            //buffer.Fill(default);
-
             AudioInput.Read(buffer);
 
             if (!delays.TryGetValue(typeof(S), out var delay))
@@ -50,17 +49,17 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 UniLog.Log("Created new delay");
             }
 
+            if (!updateBools.TryGetValue(typeof(S), out bool update))
+            {
+                update = true;
+                updateBools[typeof(S)] = update;
+            }
+
             ((DelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
 
             if (update)
             {
-                update = false;
-                //float[] lastbuffer = ((DelayEffect<S>)delay).GetLastBuffer();
-                //foreach (var delay2 in delays.Values)
-                //{
-                //    if (delay2 == delay) continue;
-                //    ((IDelayEffect)delay2).SetLastBuffer(lastbuffer);
-                //}
+                updateBools[typeof(S)] = false;
             }
         }
 
@@ -68,7 +67,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         {
             Engine.AudioSystem.AudioUpdate += () =>
             {
-                update = true;
+                foreach (var key in updateBools.Keys.ToArray())
+                {
+                    updateBools[key] = true;
+                }
             };
         }
     }

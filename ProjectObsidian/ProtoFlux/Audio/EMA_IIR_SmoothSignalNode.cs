@@ -28,8 +28,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            //buffer.Fill(default);
-
             AudioInput.Read(buffer);
 
             Algorithms.EMAIIRSmoothSignal(ref buffer, buffer.Length, SmoothingFactor);

@@ -33,8 +33,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            //buffer.Fill(default);
-
             Span<S> buffer1s = stackalloc S[buffer.Length];
             buffer1s.Fill(default);
             if (AudioInput != null)
@@ -52,12 +50,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             for (int i = 0; i < buffer.Length; i++)
             {
                 buffer[i] = buffer1s[i].Subtract(buffer2s[i]);
-                
-                //for (int j = 0; j < ChannelCount; j++)
-                //{
-                //    if (newBuffer[i][j] > 1f) newBuffer[i] = newBuffer[i].SetChannel(j, 1f);
-                //    else if (newBuffer[i][j] < -1f) newBuffer[i] = newBuffer[i].SetChannel(j, -1f);
-                //}
             }
         }
     }

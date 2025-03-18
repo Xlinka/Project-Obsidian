@@ -33,8 +33,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            //buffer.Fill(default);
-
             switch (AudioInput.ChannelCount)
             {
                 case 1:

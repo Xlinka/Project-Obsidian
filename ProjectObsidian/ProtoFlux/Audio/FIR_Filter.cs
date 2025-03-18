@@ -19,13 +19,13 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public Dictionary<Type, object> filters = new();
 
+        public Dictionary<Type, bool> updateBools = new();
+
         public bool Active;
 
         public bool IsActive => Active;
 
         public int ChannelCount => AudioInput?.ChannelCount ?? 0;
-
-        private bool update;
 
         protected override void OnAwake()
         {
@@ -57,8 +57,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            //buffer.Fill(default);
-
             AudioInput.Read(buffer);
 
             if (!filters.TryGetValue(typeof(S), out var filter))
@@ -68,17 +66,17 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 UniLog.Log("Created new FIR filter");
             }
 
+            if (!updateBools.TryGetValue(typeof(S), out bool update))
+            {
+                update = true;
+                updateBools[typeof(S)] = update;
+            }
+
             ((FirFilter<S>)filter).ProcessBuffer(ref buffer, update);
 
             if (update)
             {
-                update = false;
-                //float[] lastbuffer = ((FirFilter<S>)filter).GetLastBuffer();
-                //foreach (var filter2 in filters.Values)
-                //{
-                //    if (filter2 == filter) continue;
-                //    ((IFirFilter)filter2).SetLastBuffer(lastbuffer);
-                //}
+                updateBools[typeof(S)] = false;
             }
         }
 
@@ -86,7 +84,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         {
             Engine.AudioSystem.AudioUpdate += () =>
             {
-                update = true;
+                foreach (var key in updateBools.Keys.ToArray())
+                {
+                    updateBools[key] = true;
+                }
             };
         }
     }

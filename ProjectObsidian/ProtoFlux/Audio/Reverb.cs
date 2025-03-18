@@ -7,6 +7,7 @@ using Elements.Assets;
 using Elements.Core;
 using System.Collections.Generic;
 using SharpPipe;
+using System.Linq;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
@@ -15,6 +16,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         public IAudioSource AudioInput;
 
         public Dictionary<Type, object> reverbs = new();
+
+        public Dictionary<Type, bool> updateBools = new();
 
         public ZitaParameters parameters;
 
@@ -28,8 +31,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public Dictionary<Type, object> lastBuffers = new();
 
-        private bool update;
-
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive || AudioInput == null || !AudioInput.IsActive || parameters.Equals(defaultParameters))
@@ -39,8 +40,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            //buffer.Fill(default);
-
             AudioInput.Read(buffer);
 
             if (!reverbs.TryGetValue(typeof(S), out var reverb))
@@ -48,6 +47,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 reverb = new BufferReverber<S>(Engine.Current.AudioSystem.SampleRate, parameters);
                 reverbs.Add(typeof(S), reverb);
                 UniLog.Log("Created new reverb");
+            }
+
+            if (!updateBools.TryGetValue(typeof(S), out bool update))
+            {
+                update = true;
+                updateBools[typeof(S)] = update;
             }
 
             bool lastBufferIsNull = false;
@@ -66,30 +71,9 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             if (update || lastBufferIsNull)
             {
-                update = false;
-                //((S[])lastBuffer).EnsureExactSize(buffer.Length);
+                updateBools[typeof(S)] = false;
                 lastBuffer = buffer.ToArray();
                 lastBuffers[typeof(S)] = lastBuffer;
-                //foreach (var type in reverbs.Keys)
-                //{
-                //    if (type == typeof(S)) continue;
-                //    if (type == typeof(MonoSample))
-                //    {
-                //        ((S[])lastBuffer).AsSpan().CopySamples(((MonoSample[])reverbs[type]).AsSpan());
-                //    }
-                //    else if (type == typeof(StereoSample))
-                //    {
-                //        ((S[])lastBuffer).AsSpan().CopySamples(((StereoSample[])reverbs[type]).AsSpan());
-                //    }
-                //    else if (type == typeof(QuadSample))
-                //    {
-                //        ((S[])lastBuffer).AsSpan().CopySamples(((QuadSample[])reverbs[type]).AsSpan());
-                //    }
-                //    else if (type == typeof(Surround51Sample))
-                //    {
-                //        ((S[])lastBuffer).AsSpan().CopySamples(((Surround51Sample[])reverbs[type]).AsSpan());
-                //    }
-                //}
             }
         }
 
@@ -97,7 +81,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         {
             Engine.AudioSystem.AudioUpdate += () =>
             {
-                update = true;
+                foreach (var key in updateBools.Keys.ToArray())
+                {
+                    updateBools[key] = true;
+                }
             };
         }
     }

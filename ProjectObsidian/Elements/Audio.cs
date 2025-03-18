@@ -164,8 +164,6 @@ public class BandPassFilterController
 public interface IFirFilter
 {
     public void SetCoefficients(float[] _coefficients); 
-    //public void SetLastBuffer(float[] _lastBuffer);
-    //public float[] GetLastBuffer();
 }
 
 public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
@@ -191,16 +189,6 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
         delayLine = new S[coefficients.Length];
         delayLineIndex = 0;
     }
-
-    //public void SetLastBuffer(float[] _lastBuffer)
-    //{
-        //lastBuffer = _lastBuffer.AsAudioBuffer<S>().ToArray();
-    //}
-
-    //public float[] GetLastBuffer()
-    //{
-        //return lastBuffer.AsSpan().AsSampleBuffer().ToArray();
-    //}
 
     /// <summary>
     /// Process a single sample through the FIR filter
@@ -280,8 +268,6 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
 public interface IDelayEffect
 {
     public void SetDelayTime(int newDelayTimeMs, int sampleRate);
-    //public void SetLastBuffer(float[] _lastBuffer);
-    //public float[] GetLastBuffer();
 }
 
 public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
@@ -308,16 +294,6 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
         bufferSize = Math.Max(1, bufferSize); // Ensure minimum size
         buffer = new S[bufferSize];
     }
-
-    //public void SetLastBuffer(float[] _lastBuffer)
-    //{
-        //lastBuffer = _lastBuffer.AsAudioBuffer<S>().ToArray();
-    //}
-
-    //public float[] GetLastBuffer()
-    //{
-        //return lastBuffer.AsSpan().AsSampleBuffer().ToArray();
-    //}
 
     /// <summary>
     /// Process samples in bulk for better performance
