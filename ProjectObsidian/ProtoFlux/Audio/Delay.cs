@@ -8,7 +8,6 @@ using Obsidian.Elements;
 using Elements.Core;
 using System.Collections.Generic;
 using System.Linq;
-using SkyFrost.Base;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
@@ -24,13 +23,13 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public Dictionary<Type, object> delays = new();
 
+        public Dictionary<Type, bool> updateBools = new();
+
         public bool Active;
 
         public bool IsActive => Active;
 
         public int ChannelCount => AudioInput?.ChannelCount ?? 0;
-
-        private bool update;
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
@@ -45,16 +44,22 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             if (!delays.TryGetValue(typeof(S), out var delay))
             {
-                delay = new SimpleDelayEffect<S>(delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
+                delay = new DelayEffect<S>(delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
                 delays.Add(typeof(S), delay);
                 UniLog.Log("Created new delay");
             }
 
-            ((SimpleDelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
+            if (!updateBools.TryGetValue(typeof(S), out bool update))
+            {
+                update = true;
+                updateBools[typeof(S)] = update;
+            }
+
+            ((DelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
 
             if (update)
             {
-                update = false;
+                updateBools[typeof(S)] = false;
             }
         }
 
@@ -62,7 +67,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         {
             Engine.AudioSystem.AudioUpdate += () =>
             {
-                update = true;
+                foreach (var key in updateBools.Keys.ToArray())
+                {
+                    updateBools[key] = true;
+                }
             };
         }
     }
@@ -161,11 +169,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
             proxy.AudioInput = AudioInput.Evaluate(context);
-            var oldMillis = proxy.delayMilliseconds;
             proxy.delayMilliseconds = DelayMilliseconds.Evaluate(context);
-            if (oldMillis != proxy.delayMilliseconds && (int)(oldMillis * Engine.Current.AudioSystem.SampleRate / 1000) != (int)(proxy.delayMilliseconds * Engine.Current.AudioSystem.SampleRate / 1000))
+            foreach (var delay in proxy.delays.Values)
             {
-                proxy.delays.Clear();
+                ((IDelayEffect)delay).SetDelayTime(proxy.delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
             }
             proxy.feedback = Feedback.Evaluate(context);
             proxy.DryWet = DryWet.Evaluate(context);

@@ -27,32 +27,23 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            Span<S> newBuffer2 = stackalloc S[buffer.Length];
+            Span<S> buffer1s = stackalloc S[buffer.Length];
+            buffer1s.Fill(default);
             if (AudioInput != null)
             {
-                AudioInput.Read(buffer);
+                AudioInput.Read(buffer1s);
             }
-            else
-            {
-                buffer.Fill(default);
-            }
+                
+            Span<S> buffer2s = stackalloc S[buffer.Length];
+            buffer2s.Fill(default);
             if (AudioInput2 != null)
             {
-                AudioInput2.Read(newBuffer2);
+                AudioInput2.Read(buffer2s);
             }
-            else
-            {
-                newBuffer2.Fill(default);
-            }
+                
             for (int i = 0; i < buffer.Length; i++)
             {
-                buffer[i] = buffer[i].Add(newBuffer2[i]);
-
-                //for (int j = 0; j < ChannelCount; j++)
-                //{
-                //    if (newBuffer[i][j] > 1f) newBuffer[i] = newBuffer[i].SetChannel(j, 1f);
-                //    else if (newBuffer[i][j] < -1f) newBuffer[i] = newBuffer[i].SetChannel(j, -1f);
-                //}
+                buffer[i] = buffer1s[i].Add(buffer2s[i]);
             }
         }
     }

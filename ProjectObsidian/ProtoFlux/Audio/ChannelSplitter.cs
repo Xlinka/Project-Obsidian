@@ -33,19 +33,40 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            //Span<S> newBuffer = stackalloc S[buffer.Length];
-            if (AudioInput != null)
+            switch (AudioInput.ChannelCount)
             {
-                AudioInput.Read(buffer);
-            }
-            else
-            {
-                buffer.Fill(default);
-            }
-
-            for (int i = 0; i < buffer.Length; i++)
-            {
-                buffer[i] = buffer[i].SetChannel(0, buffer[i][Channel]);
+                case 1:
+                    Span<MonoSample> monoBuf = stackalloc MonoSample[buffer.Length];
+                    AudioInput.Read(monoBuf);
+                    for (int i = 0; i < buffer.Length; i++)
+                    {
+                        buffer[i] = buffer[i].SetChannel(0, monoBuf[i][Channel]);
+                    }
+                    break;
+                case 2:
+                    Span<StereoSample> stereoBuf = stackalloc StereoSample[buffer.Length];
+                    AudioInput.Read(stereoBuf);
+                    for (int i = 0; i < buffer.Length; i++)
+                    {
+                        buffer[i] = buffer[i].SetChannel(0, stereoBuf[i][Channel]);
+                    }
+                    break;
+                case 4:
+                    Span<QuadSample> quadBuf = stackalloc QuadSample[buffer.Length];
+                    AudioInput.Read(quadBuf);
+                    for (int i = 0; i < buffer.Length; i++)
+                    {
+                        buffer[i] = buffer[i].SetChannel(0, quadBuf[i][Channel]);
+                    }
+                    break;
+                case 6:
+                    Span<Surround51Sample> surroundBuf = stackalloc Surround51Sample[buffer.Length];
+                    AudioInput.Read(surroundBuf);
+                    for (int i = 0; i < buffer.Length; i++)
+                    {
+                        buffer[i] = buffer[i].SetChannel(0, surroundBuf[i][Channel]);
+                    }
+                    break;
             }
         }
     }

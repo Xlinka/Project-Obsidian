@@ -25,7 +25,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
-            if (!IsActive)
+            if (!IsActive || AudioInput == null || AudioInput2 == null)
             {
                 buffer.Fill(default(S));
                 return;
@@ -33,22 +33,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             Span<S> newBuffer = stackalloc S[buffer.Length];
             Span<S> newBuffer2 = stackalloc S[buffer.Length];
-            if (AudioInput != null)
-            {
-                AudioInput.Read(newBuffer);
-            }
-            else
-            {
-                newBuffer.Fill(default);
-            }
-            if (AudioInput2 != null)
-            {
-                AudioInput2.Read(newBuffer2);
-            }
-            else
-            {
-                newBuffer2.Fill(default);
-            }
+            newBuffer.Fill(default);
+            newBuffer2.Fill(default);
+            AudioInput.Read(newBuffer);
+            AudioInput2.Read(newBuffer2);
 
             Algorithms.SineShapedRingModulation(buffer, newBuffer, newBuffer2, ModulationIndex, ChannelCount);
         }

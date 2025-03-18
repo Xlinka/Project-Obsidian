@@ -21,29 +21,17 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
-            if (!IsActive)
+            if (!IsActive || AudioInput == null)
             {
                 buffer.Fill(default(S));
                 return;
             }
 
-            if (AudioInput != null)
-            {
-                AudioInput.Read(buffer);
-            }
-            else
-            {
-                buffer.Fill(default);
-            }
+            AudioInput.Read(buffer);
+
             for (int i = 0; i < buffer.Length; i++)
             {
                 buffer[i] = buffer[i].Multiply(Value);
-
-                //for (int j = 0; j < ChannelCount; j++)
-                //{
-                //    if (newBuffer[i][j] > 1f) newBuffer[i] = newBuffer[i].SetChannel(j, 1f);
-                //    if (newBuffer[i][j] < -1f) newBuffer[i] = newBuffer[i].SetChannel(j, -1f);
-                //}
             }
         }
     }

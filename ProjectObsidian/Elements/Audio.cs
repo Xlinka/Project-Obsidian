@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using Elements.Assets;
 using Elements.Core;
 using FrooxEngine;
-using ProtoFlux.Runtimes.Execution.Nodes.Actions;
 
 namespace Obsidian.Elements;
 
@@ -170,7 +171,7 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     public float[] coefficients;
     public S[] delayLine;
     public int delayLineIndex;
-    private S[] lastBuffer = null;
+    private S[] lastBuffer;
 
     /// <summary>
     /// Creates a new FIR filter with the specified coefficients
@@ -194,7 +195,7 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     /// </summary>
     /// <param name="input">The input sample</param>
     /// <returns>The filtered output sample</returns>
-    public S ProcessSample(S input)
+    public S ProcessSample(S input, bool update)
     {
         // Store the current input in the delay line
         delayLine[delayLineIndex] = input;
@@ -234,20 +235,15 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     /// <returns>Array of filtered output samples</returns>
     public void ProcessBuffer(Span<S> inputBuffer, bool update)
     {
-        if (inputBuffer == null)
-            throw new ArgumentNullException(nameof(inputBuffer));
-
         if (!update && lastBuffer != null)
         {
-            inputBuffer = lastBuffer.AsSpan();
+            lastBuffer.CopyTo(inputBuffer);
             return;
         }
-
         for (int i = 0; i < inputBuffer.Length; i++)
         {
-            inputBuffer[i] = ProcessSample(inputBuffer[i]);
+            inputBuffer[i] = ProcessSample(inputBuffer[i], update);
         }
-
         if (update || lastBuffer == null)
         {
             lastBuffer = inputBuffer.ToArray();
@@ -269,67 +265,149 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     }
 }
 
-public class SimpleDelayEffect<S> where S : unmanaged, IAudioSample<S>
+public interface IDelayEffect
 {
-    public S[] buffer;
+    public void SetDelayTime(int newDelayTimeMs, int sampleRate);
+}
+
+public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
+{
+    private S[] buffer;
     private int bufferSize;
-    public int position = 0;
-    private S[] lastBuffer = null;
+    private int position = 0;
+    private S[] lastBuffer;
+
+    private const int MAX_DELAY_TIME_MS = 5000; // 5 seconds maximum delay
 
     /// <summary>
     /// Creates a simple delay effect
     /// </summary>
     /// <param name="delayTimeMs">Delay time in milliseconds</param>
     /// <param name="sampleRate">Sample rate in Hz</param>
-    /// <param name="feedback">Feedback amount (0.0 to 0.9)</param>
-    public SimpleDelayEffect(int delayTimeMs, int sampleRate)
+    public DelayEffect(int delayTimeMs, int sampleRate)
     {
+        // Apply maximum delay time constraint
+        int delayTimeMs2 = Math.Min(delayTimeMs, MAX_DELAY_TIME_MS);
+
         // Calculate buffer size from delay time
-        bufferSize = (delayTimeMs * sampleRate) / 1000;
+        bufferSize = (delayTimeMs2 * sampleRate) / 1000;
+        bufferSize = Math.Max(1, bufferSize); // Ensure minimum size
         buffer = new S[bufferSize];
     }
 
     /// <summary>
-    /// Process a single audio sample
+    /// Process samples in bulk for better performance
     /// </summary>
-    public S Process(S input, float dryWet, float feedback)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private unsafe void ProcessLarge(Span<S> samples, float dryWet, float feedback)
     {
+        // Calculate how many samples we can process without hitting the buffer wraparound
+        int samplesBeforeWrap = Math.Min(samples.Length, bufferSize - position);
+
         // Set feedback (limit to 0.99 to prevent excessive buildup)
         var fb = Math.Min(0.99f, Math.Max(0.0f, feedback));
 
-        // Read the delayed sample
-        S delayed = buffer[position];
+        // Process first chunk (up to buffer wraparound)
+        fixed (S* pSamples = samples, pBuffer = buffer)
+        {
+            for (int i = 0; i < samplesBeforeWrap; i++)
+            {
+                S input = pSamples[i];
+                S delayed = pBuffer[position + i];
 
-        // Mix input with feedback for new buffer value
-        buffer[position] = input.Add(delayed.Multiply(fb));
+                // Write new value with feedback
+                pBuffer[position + i] = input.Add(delayed.Multiply(fb));
 
-        // Update position in circular buffer
-        position = (position + 1) % bufferSize;
+                float newDryWet = MathX.Clamp(dryWet, 0f, 1f);
 
-        float newDryWet = MathX.Clamp(dryWet, 0f, 1f);
+                // Mix dry and wet
+                pSamples[i] = input.Multiply(1f - newDryWet).Add(delayed.Multiply(newDryWet));
+            }
 
-        // Return mix of input and delayed signal
-        return input.Multiply(1f-newDryWet).Add(delayed.Multiply(newDryWet));
+            // Process remaining samples (after buffer wraparound)
+            for (int i = samplesBeforeWrap; i < samples.Length; i++)
+            {
+                int bufferPos = (position + i) % bufferSize;
+                S input = pSamples[i];
+                S delayed = pBuffer[bufferPos];
+
+                // Write new value with feedback
+                pBuffer[bufferPos] = input.Add(delayed.Multiply(fb));
+
+                float newDryWet = MathX.Clamp(dryWet, 0f, 1f);
+
+                // Mix dry and wet
+                pSamples[i] = input.Multiply(1f - newDryWet).Add(delayed.Multiply(newDryWet));
+            }
+        }
+
+        // Update position
+        position = (position + samples.Length) % bufferSize;
     }
 
     /// <summary>
     /// Process an array of samples
     /// </summary>
-    public void Process(Span<S> inputBuffer, float dryWet, float feedback, bool update)
+    public void Process(Span<S> samples, float dryWet, float feedback, bool update)
     {
         if (!update && lastBuffer != null)
         {
-            inputBuffer = lastBuffer.AsSpan();
+            lastBuffer.CopyTo(samples);
             return;
         }
-        for (int i = 0; i < inputBuffer.Length; i++)
-        {
-            inputBuffer[i] = Process(inputBuffer[i], dryWet, feedback);
-        }
+        ProcessLarge(samples, dryWet, feedback);
         if (update || lastBuffer == null)
         {
-            lastBuffer = inputBuffer.ToArray();
+            lastBuffer = samples.ToArray();
         }
+    }
+
+    /// <summary>
+    /// Change delay time with efficient high-quality resampling
+    /// </summary>
+    public void SetDelayTime(int newDelayTimeMs, int sampleRate)
+    {
+        // Apply maximum delay time constraint
+        int newDelayTimeMs2 = Math.Min(newDelayTimeMs, MAX_DELAY_TIME_MS);
+
+        // Calculate new buffer size
+        int newBufferSize = Math.Max(1, (newDelayTimeMs2 * sampleRate) / 1000);
+
+        // No change needed
+        if (newBufferSize == bufferSize)
+            return;
+
+        SetDelayTimeLinear(newBufferSize);
+        return;
+    }
+
+    /// <summary>
+    /// Fast linear interpolation for small delay time changes
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void SetDelayTimeLinear(int newBufferSize)
+    {
+        // Create new buffer
+        S[] newBuffer = new S[newBufferSize];
+
+        // Use simple linear interpolation for speed
+        for (int i = 0; i < newBufferSize; i++)
+        {
+            float exactPos = (float)i * bufferSize / newBufferSize;
+            int pos1 = (int)exactPos;
+            int pos2 = (pos1 + 1) % bufferSize;
+            float fraction = exactPos - pos1;
+
+            pos1 = (position + pos1) % bufferSize;
+            pos2 = (position + pos2) % bufferSize;
+
+            newBuffer[i] = buffer[pos1].Multiply(1 - fraction).Add(buffer[pos2].Multiply(fraction));
+        }
+
+        // Update state
+        buffer = newBuffer;
+        bufferSize = newBufferSize;
+        position = 0;
     }
 }
 

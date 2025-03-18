@@ -32,46 +32,38 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             }
 
             Span<QuadSample> samples = stackalloc QuadSample[buffer.Length];
-            Span<S> leftFrontBuf = stackalloc S[buffer.Length];
-            Span<S> rightFrontBuf = stackalloc S[buffer.Length];
-            Span<S> leftRearBuf = stackalloc S[buffer.Length];
-            Span<S> rightRearBuf = stackalloc S[buffer.Length];
-            if (LeftFront != null)
+            Span<MonoSample> newBuffer = stackalloc MonoSample[buffer.Length];
+            Span<MonoSample> newBuffer2 = stackalloc MonoSample[buffer.Length];
+            Span<MonoSample> newBuffer3 = stackalloc MonoSample[buffer.Length];
+            Span<MonoSample> newBuffer4 = stackalloc MonoSample[buffer.Length];
+            samples.Fill(default);
+            newBuffer.Fill(default);
+            newBuffer2.Fill(default);
+            newBuffer3.Fill(default);
+            newBuffer4.Fill(default);
+            if (LeftFront != null && LeftFront.ChannelCount == 1)
             {
-                LeftFront.Read(leftFrontBuf);
+                LeftFront.Read(newBuffer);
             }
-            else
+            if (RightFront != null && RightFront.ChannelCount == 1)
             {
-                leftFrontBuf.Fill(default);
+                RightFront.Read(newBuffer2);
             }
-            if (RightFront != null)
+            if (LeftRear != null && LeftRear.ChannelCount == 1)
             {
-                RightFront.Read(rightFrontBuf);
+                LeftRear.Read(newBuffer3);
             }
-            else
+            if (RightRear != null && RightRear.ChannelCount == 1)
             {
-                rightFrontBuf.Fill(default);
-            }
-            if (LeftRear != null)
-            {
-                LeftRear.Read(leftRearBuf);
-            }
-            else
-            {
-                leftRearBuf.Fill(default);
-            }
-            if (RightRear != null)
-            {
-                RightRear.Read(rightRearBuf);
-            }
-            else
-            {
-                rightRearBuf.Fill(default);
+                RightRear.Read(newBuffer4);
             }
 
             for (int i = 0; i < buffer.Length; i++)
             {
-                samples[i] = new QuadSample(leftFrontBuf[i][0], rightFrontBuf[i][0], leftRearBuf[i][0], rightRearBuf[i][0]);
+                samples[i] = samples[i].SetChannel(0, newBuffer[i][0]);
+                samples[i] = samples[i].SetChannel(1, newBuffer2[i][0]);
+                samples[i] = samples[i].SetChannel(2, newBuffer3[i][0]);
+                samples[i] = samples[i].SetChannel(3, newBuffer4[i][0]);
             }
 
             double position = 0.0;

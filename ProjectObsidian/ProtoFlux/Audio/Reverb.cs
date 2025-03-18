@@ -5,100 +5,97 @@ using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
 using Elements.Core;
-using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using SharpPipe;
+using System.Linq;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class TriangleGeneratorProxy : ProtoFluxEngineProxy, IAudioSource
+    public class ReverbProxy : ProtoFluxEngineProxy, IAudioSource
     {
-        public float Frequency;
+        public IAudioSource AudioInput;
 
-        public float Amplitude;
+        public Dictionary<Type, object> reverbs = new();
 
-        public float Phase;
+        public Dictionary<Type, bool> updateBools = new();
 
-        public double time;
-
-        private float[] tempBuffer = null;
+        public ZitaParameters parameters;
 
         public bool Active;
 
         public bool IsActive => Active;
 
-        public int ChannelCount => 1;
+        public int ChannelCount => AudioInput?.ChannelCount ?? 0;
 
-        private bool updateTime;
-        
+        private ZitaParameters defaultParameters = new ZitaParameters();
+
+        public Dictionary<Type, object> lastBuffers = new();
+
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
-            if (!IsActive)
+            if (!IsActive || AudioInput == null || !AudioInput.IsActive || parameters.Equals(defaultParameters))
             {
                 buffer.Fill(default(S));
+                reverbs.Clear();
                 return;
             }
 
-            if (!updateTime && tempBuffer != null)
+            AudioInput.Read(buffer);
+
+            if (!reverbs.TryGetValue(typeof(S), out var reverb))
             {
-                double position2 = 0.0;
-                MonoSample lastSample2 = default(MonoSample);
-                MemoryMarshal.Cast<float, MonoSample>(MemoryExtensions.AsSpan(tempBuffer)).CopySamples<MonoSample, S>(buffer, ref position2, ref lastSample2, 1.0);
+                reverb = new BufferReverber<S>(Engine.Current.AudioSystem.SampleRate, parameters);
+                reverbs.Add(typeof(S), reverb);
+                UniLog.Log("Created new reverb");
+            }
+
+            if (!updateBools.TryGetValue(typeof(S), out bool update))
+            {
+                update = true;
+                updateBools[typeof(S)] = update;
+            }
+
+            bool lastBufferIsNull = false;
+            if (!lastBuffers.TryGetValue(typeof(S), out var lastBuffer))
+            {
+                lastBufferIsNull = true;
+            }
+
+            if (!update && !lastBufferIsNull)
+            {
+                ((S[])lastBuffer).CopyTo(buffer);
                 return;
             }
 
-            tempBuffer = tempBuffer.EnsureSize(buffer.Length);
-            var temptime = time;
-            float period = (1f / Frequency);
-            temptime %= period;
-            var clampedAmplitude = MathX.Clamp01(Amplitude);
-            float advance = (1f / (float)base.Engine.AudioSystem.SampleRate);
+            ((BufferReverber<S>)reverb).ApplyReverb(ref buffer);
 
-            for (int i = 0; i < buffer.Length; i++)
+            if (update || lastBufferIsNull)
             {
-                double t = temptime * Frequency + Phase;
-                tempBuffer[i] = clampedAmplitude * (2f * (float)MathX.Abs(2f * (t - MathX.Floor(t + 0.5f))) - 1f);
-
-                if (tempBuffer[i] > 1f) tempBuffer[i] = 1f;
-                else if (tempBuffer[i] < -1f) tempBuffer[i] = -1f;
-                temptime += advance;
+                updateBools[typeof(S)] = false;
+                lastBuffer = buffer.ToArray();
+                lastBuffers[typeof(S)] = lastBuffer;
             }
-
-            if (updateTime)
-            {
-                time = temptime;
-                updateTime = false;
-            }
-            double position = 0.0;
-            MonoSample lastSample = default(MonoSample);
-            MemoryMarshal.Cast<float, MonoSample>(MemoryExtensions.AsSpan(tempBuffer)).CopySamples(buffer, ref position, ref lastSample);
         }
 
         protected override void OnStart()
         {
             Engine.AudioSystem.AudioUpdate += () =>
             {
-                updateTime = true;
+                foreach (var key in updateBools.Keys.ToArray())
+                {
+                    updateBools[key] = true;
+                }
             };
         }
     }
-    [NodeCategory("Obsidian/Audio/Generators")]
-    public class TriangleGenerator : ProxyVoidNode<FrooxEngineContext, TriangleGeneratorProxy>, IExecutionChangeListener<FrooxEngineContext>
+    [NodeCategory("Obsidian/Audio/Effects")]
+    public class Reverb : ProxyVoidNode<FrooxEngineContext, ReverbProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        [DefaultValueAttribute(440f)]
-        public readonly ValueInput<float> Frequency;
+        public readonly ObjectInput<IAudioSource> AudioInput;
 
         [ChangeListener]
-        [DefaultValueAttribute(1f)]
-        public readonly ValueInput<float> Amplitude;
-
-        [ChangeListener]
-        [DefaultValueAttribute(0f)]
-        public readonly ValueInput<float> Phase;
-
-        [PossibleContinuations(new string[] { "OnReset" })]
-        public readonly Operation Reset;
-
-        public Continuation OnReset;
+        public readonly ValueInput<ZitaParameters> Parameters;
 
         public readonly ObjectOutput<IAudioSource> AudioOutput;
 
@@ -106,9 +103,11 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         private ObjectStore<SlotEvent> _activeChangedHandler;
 
+        private ZitaParameters lastParameters;
+
         public bool ValueListensToChanges { get; private set; }
 
-        private bool ShouldListen(TriangleGeneratorProxy proxy)
+        private bool ShouldListen(ReverbProxy proxy)
         {
             if (proxy.Enabled)
             {
@@ -117,7 +116,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             return false;
         }
 
-        protected override void ProxyAdded(TriangleGeneratorProxy proxy, FrooxEngineContext context)
+        protected override void ProxyAdded(ReverbProxy proxy, FrooxEngineContext context)
         {
             base.ProxyAdded(proxy, context);
             NodeContextPath path = context.CaptureContextPath();
@@ -145,7 +144,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             proxy.Active = ValueListensToChanges;
         }
 
-        protected override void ProxyRemoved(TriangleGeneratorProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
+        protected override void ProxyRemoved(ReverbProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
         {
             if (!inUseByAnotherInstance)
             {
@@ -159,7 +158,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         protected void UpdateListenerState(FrooxEngineContext context)
         {
-            TriangleGeneratorProxy proxy = GetProxy(context);
+            ReverbProxy proxy = GetProxy(context);
             if (proxy != null)
             {
                 bool shouldListen = ShouldListen(proxy);
@@ -174,37 +173,29 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Changed(FrooxEngineContext context)
         {
-            TriangleGeneratorProxy proxy = GetProxy(context);
+            ReverbProxy proxy = GetProxy(context);
             if (proxy == null)
             {
                 return;
             }
-            proxy.Amplitude = Amplitude.Evaluate(context, 1f);
-            proxy.Phase = Phase.Evaluate(context, 0f);
-            proxy.Frequency = Frequency.Evaluate(context, 440f);
+            proxy.AudioInput = AudioInput.Evaluate(context);
+            proxy.parameters = Parameters.Evaluate(context);
+            if (!proxy.parameters.Equals(lastParameters))
+            {
+                proxy.reverbs.Clear();
+            }
+            lastParameters = proxy.parameters;
         }
 
         protected override void ComputeOutputs(FrooxEngineContext context)
         {
-            TriangleGeneratorProxy proxy = GetProxy(context);
+            ReverbProxy proxy = GetProxy(context);
             AudioOutput.Write(proxy, context);
         }
 
-        private IOperation DoReset(FrooxEngineContext context)
-        {
-            TriangleGeneratorProxy proxy = GetProxy(context);
-            if (proxy == null)
-            {
-                return null;
-            }
-            proxy.time = 0f;
-            return OnReset.Target;
-        }
-
-        public TriangleGenerator()
+        public Reverb()
         {
             AudioOutput = new ObjectOutput<IAudioSource>(this);
-            Reset = new Operation(this, 0);
         }
     }
 }
