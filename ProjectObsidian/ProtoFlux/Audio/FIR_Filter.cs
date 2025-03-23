@@ -191,6 +191,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return null;
             }
             var index = CoefficientIndex.Evaluate(context);
+            if (index < 0) return null;
             float value = CoefficientValue.Evaluate(context);
             int prevCount = proxy.Coefficients.Count;
             proxy.Changed -= proxy.OnChanged;
