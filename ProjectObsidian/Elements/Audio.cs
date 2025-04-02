@@ -88,6 +88,10 @@ public class ButterworthFilterController
 {
     private Dictionary<Type, object> filters = new();
 
+    private float lastFreq;
+    private float lastResonance;
+    private bool lastLowPass;
+
     public void Clear()
     {
         filters.Clear();
@@ -109,7 +113,14 @@ public class ButterworthFilterController
             filters.Add(typeof(S), filter);
         }
 
-        ((FilterButterworth<S>)filter).UpdateCoefficients(freq, Engine.Current.AudioSystem.SampleRate, lowPass ? FilterButterworth<S>.PassType.Lowpass : FilterButterworth<S>.PassType.Highpass, resonance);
+        if (freq != lastFreq || resonance != lastResonance || lowPass != lastLowPass)
+        {
+            ((FilterButterworth<S>)filter).UpdateCoefficients(freq, Engine.Current.AudioSystem.SampleRate, lowPass ? FilterButterworth<S>.PassType.Lowpass : FilterButterworth<S>.PassType.Highpass, resonance);
+        }
+
+        lastFreq = freq;
+        lastResonance = resonance;
+        lastLowPass = lowPass;
 
         for (int i = 0; i < buffer.Length; i++)
         {
@@ -304,8 +315,10 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
         // Calculate how many samples we can process without hitting the buffer wraparound
         int samplesBeforeWrap = Math.Min(samples.Length, bufferSize - position);
 
-        // Set feedback (limit to 0.99 to prevent excessive buildup)
-        var fb = Math.Min(0.99f, Math.Max(0.0f, feedback));
+        float fb;
+
+        // Set feedback (limit to 1)
+        fb = Math.Min(1f, Math.Max(0.0f, feedback));
 
         // Process first chunk (up to buffer wraparound)
         fixed (S* pSamples = samples, pBuffer = buffer)
