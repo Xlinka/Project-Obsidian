@@ -15,8 +15,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     {
         public IAudioSource AudioInput;
 
-        //public int delayMilliseconds;
-
         public float feedback;
 
         public float DryWet;
@@ -79,9 +77,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     {
         [ChangeListener]
         public readonly ObjectInput<IAudioSource> AudioInput;
-
-        //[ChangeListener]
-        //public readonly ValueInput<int> DelayMilliseconds;
 
         [ChangeListener]
         public readonly ValueInput<float> Feedback;
@@ -169,11 +164,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
             proxy.AudioInput = AudioInput.Evaluate(context);
-            //proxy.delayMilliseconds = DelayMilliseconds.Evaluate(context);
-            //foreach (var delay in proxy.delays.Values)
-            //{
-                //((IDelayEffect)delay).SetDelayTime(proxy.delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
-            //}
             proxy.feedback = Feedback.Evaluate(context);
             proxy.DryWet = DryWet.Evaluate(context);
         }
