@@ -31,6 +31,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             if (!IsActive || AudioInput == null)
             {
                 buffer.Fill(default(S));
+                // clear filters here?
+                _controller.Clear();
                 return;
             }
 
