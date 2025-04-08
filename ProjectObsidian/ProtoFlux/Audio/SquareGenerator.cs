@@ -6,10 +6,11 @@ using FrooxEngine;
 using Elements.Assets;
 using Elements.Core;
 using System.Runtime.InteropServices;
+using Awwdio;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class SquareGeneratorProxy : ProtoFluxEngineProxy, IAudioSource
+    public class SquareGeneratorProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
         public float Frequency;
 
@@ -31,7 +32,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         private bool updateTime;
 
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive)
             {
@@ -52,7 +53,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             float period = (1f / Frequency);
             temptime %= period;
             var clampedAmplitude = MathX.Clamp01(Amplitude);
-            float advance = (1f / (float)base.Engine.AudioSystem.SampleRate);
+            float advance = (1f / (float)simulator.SampleRate);
             
             for (int i = 0; i < buffer.Length; i++)
             {
@@ -108,7 +109,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public Continuation OnReset;
 
-        public readonly ObjectOutput<IAudioSource> AudioOutput;
+        public readonly ObjectOutput<IWorldAudioDataSource> AudioOutput;
 
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
@@ -212,7 +213,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public SquareGenerator()
         {
-            AudioOutput = new ObjectOutput<IAudioSource>(this);
+            AudioOutput = new ObjectOutput<IWorldAudioDataSource>(this);
             Reset = new Operation(this, 0);
         }
     }

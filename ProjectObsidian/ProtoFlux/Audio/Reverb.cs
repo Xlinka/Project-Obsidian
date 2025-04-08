@@ -8,12 +8,13 @@ using Elements.Core;
 using System.Collections.Generic;
 using SharpPipe;
 using System.Linq;
+using Awwdio;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class ReverbProxy : ProtoFluxEngineProxy, IAudioSource
+    public class ReverbProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
-        public IAudioSource AudioInput;
+        public IWorldAudioDataSource AudioInput;
 
         public Dictionary<Type, object> reverbs = new();
 
@@ -31,7 +32,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public Dictionary<Type, object> lastBuffers = new();
 
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive || AudioInput == null || !AudioInput.IsActive || parameters.Equals(defaultParameters))
             {
@@ -40,7 +41,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            AudioInput.Read(buffer);
+            AudioInput.Read(buffer, simulator);
 
             if (!reverbs.TryGetValue(typeof(S), out var reverb))
             {
@@ -92,12 +93,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     public class Reverb : ProxyVoidNode<FrooxEngineContext, ReverbProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> AudioInput;
+        public readonly ObjectInput<IWorldAudioDataSource> AudioInput;
 
         [ChangeListener]
         public readonly ValueInput<ZitaParameters> Parameters;
 
-        public readonly ObjectOutput<IAudioSource> AudioOutput;
+        public readonly ObjectOutput<IWorldAudioDataSource> AudioOutput;
 
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
@@ -195,7 +196,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public Reverb()
         {
-            AudioOutput = new ObjectOutput<IAudioSource>(this);
+            AudioOutput = new ObjectOutput<IWorldAudioDataSource>(this);
         }
     }
 }

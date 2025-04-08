@@ -6,14 +6,15 @@ using FrooxEngine;
 using Elements.Assets;
 using Elements.Core;
 using Obsidian.Elements;
+using Awwdio;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class PhaseModulatorProxy : ProtoFluxEngineProxy, IAudioSource
+    public class PhaseModulatorProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
-        public IAudioSource AudioInput;
+        public IWorldAudioDataSource AudioInput;
 
-        public IAudioSource AudioInput2;
+        public IWorldAudioDataSource AudioInput2;
 
         public float ModulationIndex;
 
@@ -23,7 +24,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public int ChannelCount => MathX.Min(AudioInput?.ChannelCount ?? 0, AudioInput2?.ChannelCount ?? 0);
 
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive || AudioInput == null || AudioInput2 == null)
             {
@@ -35,8 +36,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             Span<S> newBuffer2 = stackalloc S[buffer.Length];
             newBuffer.Fill(default);
             newBuffer2.Fill(default);
-            AudioInput.Read(newBuffer);
-            AudioInput2.Read(newBuffer2);
+            AudioInput.Read(newBuffer, simulator);
+            AudioInput2.Read(newBuffer2, simulator);
 
             Algorithms.PhaseModulation(buffer, newBuffer, newBuffer2, ModulationIndex, ChannelCount);
         }
@@ -45,15 +46,15 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     public class PhaseModulator : ProxyVoidNode<FrooxEngineContext, PhaseModulatorProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> AudioInput;
+        public readonly ObjectInput<IWorldAudioDataSource> AudioInput;
 
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> AudioInput2;
+        public readonly ObjectInput<IWorldAudioDataSource> AudioInput2;
 
         [ChangeListener]
         public readonly ValueInput<float> ModulationIndex;
 
-        public readonly ObjectOutput<IAudioSource> AudioOutput;
+        public readonly ObjectOutput<IWorldAudioDataSource> AudioOutput;
 
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
@@ -145,7 +146,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public PhaseModulator()
         {
-            AudioOutput = new ObjectOutput<IAudioSource>(this);
+            AudioOutput = new ObjectOutput<IWorldAudioDataSource>(this);
         }
     }
 }

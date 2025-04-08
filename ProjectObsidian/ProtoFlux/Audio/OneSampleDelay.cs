@@ -8,12 +8,13 @@ using Obsidian.Elements;
 using Elements.Core;
 using System.Collections.Generic;
 using System.Linq;
+using Awwdio;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class OneSampleDelayProxy : ProtoFluxEngineProxy, IAudioSource
+    public class OneSampleDelayProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
-        public IAudioSource AudioInput;
+        public IWorldAudioDataSource AudioInput;
 
         public float feedback;
 
@@ -29,7 +30,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public int ChannelCount => AudioInput?.ChannelCount ?? 0;
 
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer,  AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive || AudioInput == null || !AudioInput.IsActive)
             {
@@ -38,7 +39,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            AudioInput.Read(buffer);
+            AudioInput.Read(buffer, simulator);
 
             if (!delays.TryGetValue(typeof(S), out var delay))
             {
@@ -76,7 +77,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     public class OneSampleDelay : ProxyVoidNode<FrooxEngineContext, OneSampleDelayProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> AudioInput;
+        public readonly ObjectInput<IWorldAudioDataSource> AudioInput;
 
         [ChangeListener]
         public readonly ValueInput<float> Feedback;
@@ -84,7 +85,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         [ChangeListener]
         public readonly ValueInput<float> DryWet;
 
-        public readonly ObjectOutput<IAudioSource> AudioOutput;
+        public readonly ObjectOutput<IWorldAudioDataSource> AudioOutput;
 
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
@@ -176,7 +177,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public OneSampleDelay()
         {
-            AudioOutput = new ObjectOutput<IAudioSource>(this);
+            AudioOutput = new ObjectOutput<IWorldAudioDataSource>(this);
         }
     }
 }

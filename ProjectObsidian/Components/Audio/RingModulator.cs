@@ -3,17 +3,18 @@ using FrooxEngine;
 using Elements.Assets;
 using Elements.Core;
 using Obsidian.Elements;
+using Awwdio;
 
 namespace Obsidian.Components.Audio
 {
     [Category(new string[] { "Obsidian/Audio/Effects" })]
-    public class RingModulator : Component, IAudioSource, IWorldElement
+    public class RingModulator : Component, Awwdio.IAudioDataSource, IWorldAudioDataSource, IWorldElement
     {
         [Range(0f, 5f, "0.00")]
         public readonly Sync<float> ModulationIndex;
 
-        public readonly SyncRef<IAudioSource> CarrierSource;
-        public readonly SyncRef<IAudioSource> ModulatorSource;
+        public readonly SyncRef<IWorldAudioDataSource> CarrierSource;
+        public readonly SyncRef<IWorldAudioDataSource> ModulatorSource;
 
         public bool IsActive
         {
@@ -40,7 +41,7 @@ namespace Obsidian.Components.Audio
             ModulationIndex.Value = 1f; // Default modulation index
         }
 
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive)
             {
@@ -60,8 +61,8 @@ namespace Obsidian.Components.Audio
             Span<S> modulatorBuffer = stackalloc S[buffer.Length];
 
             // Read data from sources
-            CarrierSource.Target.Read(carrierBuffer);
-            ModulatorSource.Target.Read(modulatorBuffer);
+            CarrierSource.Target.Read(carrierBuffer, simulator);
+            ModulatorSource.Target.Read(modulatorBuffer, simulator);
 
             float modulationIndex = ModulationIndex.Value;
 

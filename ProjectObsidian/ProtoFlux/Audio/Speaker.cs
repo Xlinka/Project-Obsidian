@@ -10,7 +10,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     {
         public readonly FieldDrive<bool> ActiveDrive;
         public readonly FieldDrive<float> VolDrive;
-        public readonly DriveRef<SyncRef<IAudioSource>> SourceDrive;
+        public readonly DriveRef<SyncRef<IWorldAudioDataSource>> SourceDrive;
         public bool Active
         {
             get { return ActiveDrive.Target?.Value ?? false; }
@@ -21,7 +21,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             get { return VolDrive.Target?.Value ?? 0f; }
             set { if (VolDrive.Target != null && VolDrive.IsLinkValid) VolDrive.Target.Value = value; }
         }
-        public IAudioSource Source
+        public IWorldAudioDataSource Source
         {
             get { return SourceDrive.Target?.Target; }
             set { if (SourceDrive.Target != null && SourceDrive.IsLinkValid) SourceDrive.Target.Target = value; }
@@ -39,7 +39,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     public class Speaker : ProxyVoidNode<FrooxEngineContext, SpeakerProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> Source;
+        public readonly ObjectInput<IWorldAudioDataSource> Source;
 
         [ChangeListener]
         [DefaultValueAttribute(1f)]

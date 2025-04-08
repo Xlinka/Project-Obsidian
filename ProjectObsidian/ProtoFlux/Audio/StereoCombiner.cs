@@ -4,14 +4,15 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
+using Awwdio;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class StereoCombinerProxy : ProtoFluxEngineProxy, IAudioSource
+    public class StereoCombinerProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
-        public IAudioSource Left;
+        public IWorldAudioDataSource Left;
 
-        public IAudioSource Right;
+        public IWorldAudioDataSource Right;
 
         public bool Active;
 
@@ -19,7 +20,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public int ChannelCount => 2;
 
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive)
             {
@@ -35,11 +36,11 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             newBuffer2.Fill(default);
             if (Left != null && Left.ChannelCount == 1)
             {
-                Left.Read(newBuffer);
+                Left.Read(newBuffer, simulator);
             }
             if (Right != null && Right.ChannelCount == 1)
             {
-                Right.Read(newBuffer2);
+                Right.Read(newBuffer2, simulator);
             }
 
             for (int i = 0; i < buffer.Length; i++)
@@ -57,12 +58,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     public class StereoCombiner : ProxyVoidNode<FrooxEngineContext, StereoCombinerProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> Left;
+        public readonly ObjectInput<IWorldAudioDataSource> Left;
 
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> Right;
+        public readonly ObjectInput<IWorldAudioDataSource> Right;
 
-        public readonly ObjectOutput<IAudioSource> AudioOutput;
+        public readonly ObjectOutput<IWorldAudioDataSource> AudioOutput;
 
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
@@ -153,7 +154,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public StereoCombiner()
         {
-            AudioOutput = new ObjectOutput<IAudioSource>(this);
+            AudioOutput = new ObjectOutput<IWorldAudioDataSource>(this);
         }
     }
 }

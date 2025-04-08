@@ -4,12 +4,13 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
+using Awwdio;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class AudioClampProxy : ProtoFluxEngineProxy, IAudioSource
+    public class AudioClampProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
-        public IAudioSource AudioInput;
+        public IWorldAudioDataSource AudioInput;
 
         public bool Active;
 
@@ -17,7 +18,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public int ChannelCount => AudioInput?.ChannelCount ?? 0;
 
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive || AudioInput == null || !AudioInput.IsActive)
             {
@@ -25,7 +26,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            AudioInput.Read(buffer);
+            AudioInput.Read(buffer, simulator);
 
             for (int i = 0; i < buffer.Length; i++)
             {
@@ -41,9 +42,9 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     public class AudioClamp : ProxyVoidNode<FrooxEngineContext, AudioClampProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> AudioInput;
+        public readonly ObjectInput<IWorldAudioDataSource> AudioInput;
 
-        public readonly ObjectOutput<IAudioSource> AudioOutput;
+        public readonly ObjectOutput<IWorldAudioDataSource> AudioOutput;
 
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
@@ -133,7 +134,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public AudioClamp()
         {
-            AudioOutput = new ObjectOutput<IAudioSource>(this);
+            AudioOutput = new ObjectOutput<IWorldAudioDataSource>(this);
         }
     }
 }

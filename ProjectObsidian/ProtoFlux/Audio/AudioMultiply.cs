@@ -4,12 +4,13 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
+using Awwdio;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class AudioMultiplyProxy : ProtoFluxEngineProxy, IAudioSource
+    public class AudioMultiplyProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
-        public IAudioSource AudioInput;
+        public IWorldAudioDataSource AudioInput;
 
         public float Value;
 
@@ -19,7 +20,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public int ChannelCount => AudioInput?.ChannelCount ?? 0;
 
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive || AudioInput == null)
             {
@@ -31,7 +32,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             buffer1s.Fill(default);
             if (AudioInput != null)
             {
-                AudioInput.Read(buffer1s);
+                AudioInput.Read(buffer1s, simulator);
             }
 
             //AudioInput.Read(buffer);
@@ -46,12 +47,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     public class AudioMultiply : ProxyVoidNode<FrooxEngineContext, AudioMultiplyProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> AudioInput;
+        public readonly ObjectInput<IWorldAudioDataSource> AudioInput;
 
         [ChangeListener]
         public readonly ValueInput<float> Value;
 
-        public readonly ObjectOutput<IAudioSource> AudioOutput;
+        public readonly ObjectOutput<IWorldAudioDataSource> AudioOutput;
 
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
@@ -142,7 +143,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public AudioMultiply()
         {
-            AudioOutput = new ObjectOutput<IAudioSource>(this);
+            AudioOutput = new ObjectOutput<IWorldAudioDataSource>(this);
         }
     }
 }

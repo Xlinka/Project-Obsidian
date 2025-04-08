@@ -12,7 +12,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     [NodeCategory("Obsidian/Audio")]
     public class LevelMonitor : ValueFunctionNode<FrooxEngineContext, float>
     {
-        public readonly ObjectInput<IAudioSource> AudioInput;
+        public readonly ObjectInput<IWorldAudioDataSource> AudioInput;
 
         private float lastValue = 0f;
 
@@ -31,7 +31,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 };
             }
 
-            IAudioSource audio = AudioInput.Evaluate(context);
+            IWorldAudioDataSource audio = AudioInput.Evaluate(context);
 
             if (audio == null)
             {
@@ -41,7 +41,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             if (!update) return lastValue;
 
-            int amt = Engine.Current.AudioSystem.BufferSize;
+            int amt = Engine.Current.AudioSystem.FrameSize;
+            var simulator = Engine.Current.AudioSystem.Simulator;
 
             float sum = 0;
 
@@ -51,7 +52,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 {
                     case 1:
                         Span<MonoSample> monoBuf = stackalloc MonoSample[amt];
-                        audio.Read(monoBuf);
+                        audio.Read(monoBuf, simulator);
                         for (int i = 0; i < monoBuf.Length; i++)
                         {
                             sum += monoBuf[i].AbsoluteAmplitude;
@@ -59,7 +60,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                         break;
                     case 2:
                         Span<StereoSample> stereoBuf = stackalloc StereoSample[amt];
-                        audio.Read(stereoBuf);
+                        audio.Read(stereoBuf, simulator);
                         for (int i = 0; i < stereoBuf.Length; i++)
                         {
                             sum += stereoBuf[i].AbsoluteAmplitude;
@@ -67,7 +68,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                         break;
                     case 4:
                         Span<QuadSample> quadBuf = stackalloc QuadSample[amt];
-                        audio.Read(quadBuf);
+                        audio.Read(quadBuf, simulator);
                         for (int i = 0; i < quadBuf.Length; i++)
                         {
                             sum += quadBuf[i].AbsoluteAmplitude;
@@ -75,7 +76,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                         break;
                     case 6:
                         Span<Surround51Sample> surroundBuf = stackalloc Surround51Sample[amt];
-                        audio.Read(surroundBuf);
+                        audio.Read(surroundBuf, simulator);
                         for (int i = 0; i < surroundBuf.Length; i++)
                         {
                             sum += surroundBuf[i].AbsoluteAmplitude;

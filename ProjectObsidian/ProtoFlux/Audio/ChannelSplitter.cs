@@ -4,12 +4,13 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
+using Awwdio;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class ChannelSplitterProxy : ProtoFluxEngineProxy, IAudioSource
+    public class ChannelSplitterProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
-        public IAudioSource AudioInput;
+        public IWorldAudioDataSource AudioInput;
 
         public int Channel;
 
@@ -19,7 +20,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public int ChannelCount => 1;
 
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive)
             {
@@ -37,7 +38,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             {
                 case 1:
                     Span<MonoSample> monoBuf = stackalloc MonoSample[buffer.Length];
-                    AudioInput.Read(monoBuf);
+                    AudioInput.Read(monoBuf, simulator);
                     for (int i = 0; i < buffer.Length; i++)
                     {
                         buffer[i] = buffer[i].SetChannel(0, monoBuf[i][Channel]);
@@ -45,7 +46,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                     break;
                 case 2:
                     Span<StereoSample> stereoBuf = stackalloc StereoSample[buffer.Length];
-                    AudioInput.Read(stereoBuf);
+                    AudioInput.Read(stereoBuf, simulator);
                     for (int i = 0; i < buffer.Length; i++)
                     {
                         buffer[i] = buffer[i].SetChannel(0, stereoBuf[i][Channel]);
@@ -53,7 +54,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                     break;
                 case 4:
                     Span<QuadSample> quadBuf = stackalloc QuadSample[buffer.Length];
-                    AudioInput.Read(quadBuf);
+                    AudioInput.Read(quadBuf, simulator);
                     for (int i = 0; i < buffer.Length; i++)
                     {
                         buffer[i] = buffer[i].SetChannel(0, quadBuf[i][Channel]);
@@ -61,7 +62,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                     break;
                 case 6:
                     Span<Surround51Sample> surroundBuf = stackalloc Surround51Sample[buffer.Length];
-                    AudioInput.Read(surroundBuf);
+                    AudioInput.Read(surroundBuf, simulator);
                     for (int i = 0; i < buffer.Length; i++)
                     {
                         buffer[i] = buffer[i].SetChannel(0, surroundBuf[i][Channel]);
@@ -74,12 +75,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     public class ChannelSplitter : ProxyVoidNode<FrooxEngineContext, ChannelSplitterProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> AudioInput;
+        public readonly ObjectInput<IWorldAudioDataSource> AudioInput;
 
         [ChangeListener]
         public readonly ValueInput<int> Channel;
 
-        public readonly ObjectOutput<IAudioSource> AudioOutput;
+        public readonly ObjectOutput<IWorldAudioDataSource> AudioOutput;
 
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
@@ -170,7 +171,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public ChannelSplitter()
         {
-            AudioOutput = new ObjectOutput<IAudioSource>(this);
+            AudioOutput = new ObjectOutput<IWorldAudioDataSource>(this);
         }
     }
 }
