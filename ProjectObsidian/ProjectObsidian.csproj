@@ -28,7 +28,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Awwdio">
-      <HintPath>G:\SteamLibrary\steamapps\common\Resonite\Resonite_Data\Managed\Awwdio.dll</HintPath>
+      <HintPath>$(ResonitePath)Resonite_Data/Managed/Awwdio.dll</HintPath>
     </Reference>
     <Reference Include="Elements.Core">
       <HintPath>$(ResonitePath)Resonite_Data/Managed/Elements.Core.dll</HintPath>
