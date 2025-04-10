@@ -4,14 +4,24 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
+using Obsidian.Elements;
+using Elements.Core;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class AudioMultiplyProxy : ProtoFluxEngineProxy, IAudioSource
+    public class OneSampleDelayProxy : ProtoFluxEngineProxy, IAudioSource
     {
         public IAudioSource AudioInput;
 
-        public float Value;
+        public float feedback;
+
+        public float DryWet;
+
+        public Dictionary<Type, object> delays = new();
+
+        public Dictionary<Type, bool> updateBools = new();
 
         public bool Active;
 
@@ -21,35 +31,58 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
         {
-            if (!IsActive || AudioInput == null)
+            if (!IsActive || AudioInput == null || !AudioInput.IsActive)
             {
                 buffer.Fill(default(S));
+                delays.Clear();
                 return;
             }
 
-            Span<S> buffer1s = stackalloc S[buffer.Length];
-            buffer1s.Fill(default);
-            if (AudioInput != null)
+            AudioInput.Read(buffer);
+
+            if (!delays.TryGetValue(typeof(S), out var delay))
             {
-                AudioInput.Read(buffer1s);
+                delay = new DelayEffect<S>(0, Engine.Current.AudioSystem.SampleRate);
+                delays.Add(typeof(S), delay);
+                UniLog.Log("Created new delay");
             }
 
-            //AudioInput.Read(buffer);
-
-            for (int i = 0; i < buffer.Length; i++)
+            if (!updateBools.TryGetValue(typeof(S), out bool update))
             {
-                buffer[i] = buffer1s[i].Multiply(Value);
+                update = true;
+                updateBools[typeof(S)] = update;
+            }
+
+            ((DelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
+
+            if (update)
+            {
+                updateBools[typeof(S)] = false;
             }
         }
+
+        protected override void OnStart()
+        {
+            Engine.AudioSystem.AudioUpdate += () =>
+            {
+                foreach (var key in updateBools.Keys.ToArray())
+                {
+                    updateBools[key] = true;
+                }
+            };
+        }
     }
-    [NodeCategory("Obsidian/Audio")]
-    public class AudioMultiply : ProxyVoidNode<FrooxEngineContext, AudioMultiplyProxy>, IExecutionChangeListener<FrooxEngineContext>
+    [NodeCategory("Obsidian/Audio/Effects")]
+    public class OneSampleDelay : ProxyVoidNode<FrooxEngineContext, OneSampleDelayProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
         public readonly ObjectInput<IAudioSource> AudioInput;
 
         [ChangeListener]
-        public readonly ValueInput<float> Value;
+        public readonly ValueInput<float> Feedback;
+
+        [ChangeListener]
+        public readonly ValueInput<float> DryWet;
 
         public readonly ObjectOutput<IAudioSource> AudioOutput;
 
@@ -59,7 +92,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public bool ValueListensToChanges { get; private set; }
 
-        private bool ShouldListen(AudioMultiplyProxy proxy)
+        private bool ShouldListen(OneSampleDelayProxy proxy)
         {
             if (proxy.Enabled)
             {
@@ -68,7 +101,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             return false;
         }
 
-        protected override void ProxyAdded(AudioMultiplyProxy proxy, FrooxEngineContext context)
+        protected override void ProxyAdded(OneSampleDelayProxy proxy, FrooxEngineContext context)
         {
             base.ProxyAdded(proxy, context);
             NodeContextPath path = context.CaptureContextPath();
@@ -96,7 +129,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             proxy.Active = ValueListensToChanges;
         }
 
-        protected override void ProxyRemoved(AudioMultiplyProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
+        protected override void ProxyRemoved(OneSampleDelayProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
         {
             if (!inUseByAnotherInstance)
             {
@@ -110,7 +143,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         protected void UpdateListenerState(FrooxEngineContext context)
         {
-            AudioMultiplyProxy proxy = GetProxy(context);
+            OneSampleDelayProxy proxy = GetProxy(context);
             if (proxy != null)
             {
                 bool shouldListen = ShouldListen(proxy);
@@ -125,22 +158,23 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Changed(FrooxEngineContext context)
         {
-            AudioMultiplyProxy proxy = GetProxy(context);
+            OneSampleDelayProxy proxy = GetProxy(context);
             if (proxy == null)
             {
                 return;
             }
             proxy.AudioInput = AudioInput.Evaluate(context);
-            proxy.Value = Value.Evaluate(context);
+            proxy.feedback = Feedback.Evaluate(context);
+            proxy.DryWet = DryWet.Evaluate(context);
         }
 
         protected override void ComputeOutputs(FrooxEngineContext context)
         {
-            AudioMultiplyProxy proxy = GetProxy(context);
+            OneSampleDelayProxy proxy = GetProxy(context);
             AudioOutput.Write(proxy, context);
         }
 
-        public AudioMultiply()
+        public OneSampleDelay()
         {
             AudioOutput = new ObjectOutput<IAudioSource>(this);
         }

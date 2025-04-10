@@ -10,6 +10,7 @@ using System.Reflection;
 namespace Obsidian;
 
 [SettingCategory("Obsidian")]
+[AutoRegisterSetting]
 public class PluginSettings : SettingComponent<PluginSettings>
 {
     public override bool UserspaceOnly => true;
@@ -25,6 +26,7 @@ public class PluginSettings : SettingComponent<PluginSettings>
     protected override void OnStart()
     {
         base.OnStart();
+
         _localeData = new LocaleData();
         _localeData.LocaleCode = "en";
         _localeData.Authors = new List<string>() { "Nytra" };
@@ -53,7 +55,7 @@ public class PluginSettings : SettingComponent<PluginSettings>
 
     private void UpdateLocale(LocaleSettings settings = null)
     {
-        this.GetCoreLocale()?.Asset?.Data.LoadDataAdditively(_localeData);
+        this.GetCoreLocale()?.Asset?.Data?.LoadDataAdditively(_localeData);
     }
 
     [SettingProperty(null, null, null, false, 0L, null, null)]
