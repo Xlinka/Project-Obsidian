@@ -68,7 +68,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            ((BufferReverber<S>)reverb).ApplyReverb(ref buffer);
+            ((BufferReverber<S>)reverb).ApplyReverb(buffer);
 
             if (update || lastBufferIsNull)
             {
