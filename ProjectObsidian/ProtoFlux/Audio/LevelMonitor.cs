@@ -41,7 +41,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             if (!update) return lastValue;
 
-            int amt = Engine.Current.AudioSystem.FrameSize;
+            int amt = Engine.Current.AudioSystem.SimulationFrameSize;
             var simulator = Engine.Current.AudioSystem.Simulator;
 
             float sum = 0;
