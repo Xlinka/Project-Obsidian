@@ -4,8 +4,8 @@ using System.Linq;
 using FrooxEngine;
 using Elements.Core;
 using Elements.Assets;
-using Commons.Music.Midi;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Obsidian;
 
@@ -15,13 +15,14 @@ public class PluginSettings : SettingComponent<PluginSettings>
 {
     public override bool UserspaceOnly => true;
 
-    [NonPersistent]
     [SettingIndicatorProperty(null, null, null, null, false, 0L)]
-    public readonly Sync<bool> CoreAssemblyLoaded;
+    public readonly Sync<bool> PluginLoaded;
 
     private LocaleData _localeData;
 
     private static AssemblyTypeRegistry obsidianRegistry;
+
+    private static List<AssemblyTypeRegistry> coreAssemblies;
 
     protected override void OnStart()
     {
@@ -33,15 +34,20 @@ public class PluginSettings : SettingComponent<PluginSettings>
         _localeData.Messages = new Dictionary<string, string>();
         _localeData.Messages.Add("Settings.Category.Obsidian", "Obsidian");
         _localeData.Messages.Add("Settings.PluginSettings", "Plugin Settings");
-        _localeData.Messages.Add("Settings.PluginSettings.CoreAssemblyLoaded", "Core Assembly Loaded");
-        _localeData.Messages.Add("Settings.PluginSettings.ToggleCoreAssembly", "Toggle Core Assembly");
+        _localeData.Messages.Add("Settings.PluginSettings.PluginLoaded", "Plugin Loaded");
+        _localeData.Messages.Add("Settings.PluginSettings.TogglePluginLoaded", "Toggle loading the plugin for new sessions");
 
-        CoreAssemblyLoaded.Value = true;
-
-        // Sometimes the locale is null in here, so wait a bit I guess
-
-        RunInUpdates(15, () =>
+        if (PluginLoaded.Value == false)
         {
+            TogglePluginLoaded();
+        }
+
+        Task.Run(async () => 
+        { 
+            while (this.GetCoreLocale()?.Asset?.Data is null)
+            {
+                await default(NextUpdate);
+            }
             UpdateLocale();
             Settings.RegisterValueChanges<LocaleSettings>(UpdateLocale);
         });
@@ -58,28 +64,46 @@ public class PluginSettings : SettingComponent<PluginSettings>
         this.GetCoreLocale()?.Asset?.Data?.LoadDataAdditively(_localeData);
     }
 
+    private AssemblyTypeRegistry GetObsidianRegistry()
+    {
+        if (coreAssemblies == null)
+        {
+            coreAssemblies = (List<AssemblyTypeRegistry>)typeof(GlobalTypeRegistry).GetField("_coreAssemblies", BindingFlags.NonPublic | BindingFlags.Static)?.GetValue(null);
+            if (coreAssemblies == null)
+            {
+                UniLog.Error("Core assemblies list is null!");
+                return null;
+            }
+        }
+        if (obsidianRegistry == null)
+        {
+            obsidianRegistry = coreAssemblies.FirstOrDefault(assembly => assembly.Assembly == Assembly.GetExecutingAssembly());
+            if (obsidianRegistry == null)
+            {
+                UniLog.Error("Obsidian registry is null!");
+            }
+        }
+        return obsidianRegistry;
+    }
+
     [SettingProperty(null, null, null, false, 0L, null, null)]
     [SyncMethod(typeof(Action), new string[] { })]
-    public void ToggleCoreAssembly()
+    public void TogglePluginLoaded()
     {
-        UniLog.Log("Toggle pressed");
-        var glob = (List<AssemblyTypeRegistry>)typeof(GlobalTypeRegistry).GetField("_coreAssemblies", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
-        if (CoreAssemblyLoaded)
+        UniLog.Log("Toggling plugin loaded");
+
+        if (GetObsidianRegistry() is AssemblyTypeRegistry obsidianRegistry)
         {
-            foreach (var thing in glob.ToList())
+            if (coreAssemblies.Contains(obsidianRegistry))
             {
-                if (thing.Assembly == Assembly.GetExecutingAssembly())
-                {
-                    obsidianRegistry = thing;
-                    glob.Remove(thing);
-                }
+                coreAssemblies.Remove(obsidianRegistry);
+                PluginLoaded.Value = false;
             }
-            CoreAssemblyLoaded.Value = false;
-        }
-        else
-        {
-            glob.Add(obsidianRegistry);
-            CoreAssemblyLoaded.Value = true;
+            else if (!coreAssemblies.Contains(obsidianRegistry))
+            {
+                coreAssemblies.Add(obsidianRegistry);
+                PluginLoaded.Value = true;
+            }
         }
     }
 }
