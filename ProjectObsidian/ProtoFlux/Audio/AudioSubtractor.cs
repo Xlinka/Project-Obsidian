@@ -4,14 +4,15 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
+using Awwdio;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class AudioSubtractorProxy : ProtoFluxEngineProxy, IAudioSource
+    public class AudioSubtractorProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
-        public IAudioSource AudioInput;
+        public IWorldAudioDataSource AudioInput;
 
-        public IAudioSource AudioInput2;
+        public IWorldAudioDataSource AudioInput2;
 
         public bool Active;
 
@@ -19,7 +20,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public int ChannelCount => AudioInput?.ChannelCount ?? AudioInput2?.ChannelCount ?? 0;
 
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive)
             {
@@ -37,14 +38,14 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             buffer1s.Fill(default);
             if (AudioInput != null)
             {
-                AudioInput.Read(buffer1s);
+                AudioInput.Read(buffer1s, simulator);
             }
 
             Span<S> buffer2s = stackalloc S[buffer.Length];
             buffer2s.Fill(default);
             if (AudioInput2 != null)
             {
-                AudioInput2.Read(buffer2s);
+                AudioInput2.Read(buffer2s, simulator);
             }
             
             for (int i = 0; i < buffer.Length; i++)
@@ -57,12 +58,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     public class AudioSubtractor : ProxyVoidNode<FrooxEngineContext, AudioSubtractorProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> AudioInput;
+        public readonly ObjectInput<IWorldAudioDataSource> AudioInput;
 
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> AudioInput2;
+        public readonly ObjectInput<IWorldAudioDataSource> AudioInput2;
 
-        public readonly ObjectOutput<IAudioSource> AudioOutput;
+        public readonly ObjectOutput<IWorldAudioDataSource> AudioOutput;
 
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
@@ -153,7 +154,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public AudioSubtractor()
         {
-            AudioOutput = new ObjectOutput<IAudioSource>(this);
+            AudioOutput = new ObjectOutput<IWorldAudioDataSource>(this);
         }
     }
 }

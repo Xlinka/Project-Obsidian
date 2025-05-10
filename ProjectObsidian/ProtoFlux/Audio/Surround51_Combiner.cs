@@ -4,22 +4,23 @@ using ProtoFlux.Runtimes.Execution;
 using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
+using Awwdio;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class Surround51_CombinerProxy : ProtoFluxEngineProxy, IAudioSource
+    public class Surround51_CombinerProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
-        public IAudioSource LeftFront;
+        public IWorldAudioDataSource LeftFront;
 
-        public IAudioSource RightFront;
+        public IWorldAudioDataSource RightFront;
 
-        public IAudioSource Center;
+        public IWorldAudioDataSource Center;
 
-        public IAudioSource Subwoofer;
+        public IWorldAudioDataSource Subwoofer;
 
-        public IAudioSource LeftRear;
+        public IWorldAudioDataSource LeftRear;
 
-        public IAudioSource RightRear;
+        public IWorldAudioDataSource RightRear;
 
         public bool Active;
 
@@ -27,7 +28,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public int ChannelCount => 6;
 
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive)
             {
@@ -51,27 +52,27 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             newBuffer6.Fill(default);
             if (LeftFront != null && LeftFront.ChannelCount == 1)
             {
-                LeftFront.Read(newBuffer);
+                LeftFront.Read(newBuffer, simulator);
             }
             if (RightFront != null && RightFront.ChannelCount == 1)
             {
-                RightFront.Read(newBuffer2);
+                RightFront.Read(newBuffer2, simulator);
             }
             if (Center != null && Center.ChannelCount == 1)
             {
-                Center.Read(newBuffer3);
+                Center.Read(newBuffer3, simulator);
             }
             if (Subwoofer != null && Subwoofer.ChannelCount == 1)
             {
-                Subwoofer.Read(newBuffer4);
+                Subwoofer.Read(newBuffer4, simulator);
             }
             if (LeftRear != null && LeftRear.ChannelCount == 1)
             {
-                LeftRear.Read(newBuffer5);
+                LeftRear.Read(newBuffer5, simulator);
             }
             if (RightRear != null && RightRear.ChannelCount == 1)
             {
-                RightRear.Read(newBuffer6);
+                RightRear.Read(newBuffer6, simulator);
             }
 
             for (int i = 0; i < buffer.Length; i++)
@@ -93,24 +94,24 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     public class Surround51_Combiner : ProxyVoidNode<FrooxEngineContext, Surround51_CombinerProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> LeftFront;
+        public readonly ObjectInput<IWorldAudioDataSource> LeftFront;
 
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> RightFront;
+        public readonly ObjectInput<IWorldAudioDataSource> RightFront;
 
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> Center;
+        public readonly ObjectInput<IWorldAudioDataSource> Center;
 
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> Subwoofer;
+        public readonly ObjectInput<IWorldAudioDataSource> Subwoofer;
 
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> LeftRear;
+        public readonly ObjectInput<IWorldAudioDataSource> LeftRear;
 
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> RightRear;
+        public readonly ObjectInput<IWorldAudioDataSource> RightRear;
 
-        public readonly ObjectOutput<IAudioSource> AudioOutput;
+        public readonly ObjectOutput<IWorldAudioDataSource> AudioOutput;
 
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
@@ -205,7 +206,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public Surround51_Combiner()
         {
-            AudioOutput = new ObjectOutput<IAudioSource>(this);
+            AudioOutput = new ObjectOutput<IWorldAudioDataSource>(this);
         }
     }
 }

@@ -5,12 +5,13 @@ using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
 using Obsidian.Elements;
+using Awwdio;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class BandPassFilterProxy : ProtoFluxEngineProxy, IAudioSource
+    public class BandPassFilterProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
-        public IAudioSource AudioInput;
+        public IWorldAudioDataSource AudioInput;
 
         public float LowFrequency;
 
@@ -26,7 +27,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         private BandPassFilterController _controller = new();
 
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive || AudioInput == null)
             {
@@ -36,16 +37,16 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            AudioInput.Read(buffer);
+            AudioInput.Read(buffer, simulator);
 
-            _controller.Process(buffer, LowFrequency, HighFrequency, Resonance);
+            _controller.Process(buffer, simulator.SampleRate, LowFrequency, HighFrequency, Resonance);
         }
     }
     [NodeCategory("Obsidian/Audio/Filters")]
     public class BandPassFilter : ProxyVoidNode<FrooxEngineContext, BandPassFilterProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> AudioInput;
+        public readonly ObjectInput<IWorldAudioDataSource> AudioInput;
 
         [ChangeListener]
         [DefaultValueAttribute(20f)]
@@ -59,7 +60,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         [DefaultValueAttribute(1.41f)]
         public readonly ValueInput<float> Resonance;
 
-        public readonly ObjectOutput<IAudioSource> AudioOutput;
+        public readonly ObjectOutput<IWorldAudioDataSource> AudioOutput;
 
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
@@ -152,7 +153,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public BandPassFilter()
         {
-            AudioOutput = new ObjectOutput<IAudioSource>(this);
+            AudioOutput = new ObjectOutput<IWorldAudioDataSource>(this);
         }
     }
 }

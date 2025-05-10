@@ -2,16 +2,17 @@
 using FrooxEngine;
 using Elements.Assets;
 using Obsidian.Elements;
+using Awwdio;
 
 namespace Obsidian.Components.Audio;
 
 [Category(new string[] { "Obsidian/Audio/Filters" })]
-public class EMA_IIR_SmoothSignal : Component, IAudioSource, IWorldElement
+public class EMA_IIR_SmoothSignal : Component, Awwdio.IAudioDataSource, IWorldAudioDataSource, IWorldElement
 {
     [Range(0f, 1f, "0.00")]
     public readonly Sync<float> SmoothingFactor;
 
-    public readonly SyncRef<IAudioSource> Source;
+    public readonly SyncRef<IWorldAudioDataSource> Source;
 
     public bool IsActive
     {
@@ -23,7 +24,7 @@ public class EMA_IIR_SmoothSignal : Component, IAudioSource, IWorldElement
 
     public int ChannelCount => Source.Target?.ChannelCount ?? 0;
 
-    public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+    public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
     {
         if (!IsActive)
         {
@@ -35,7 +36,7 @@ public class EMA_IIR_SmoothSignal : Component, IAudioSource, IWorldElement
 
         span = buffer;
 
-        Source.Target.Read(span);
+        Source.Target.Read(span, simulator);
 
         Algorithms.EMAIIRSmoothSignal(ref span, span.Length, SmoothingFactor);
     }

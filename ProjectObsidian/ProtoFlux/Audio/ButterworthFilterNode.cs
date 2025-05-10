@@ -5,12 +5,13 @@ using FrooxEngine.ProtoFlux;
 using FrooxEngine;
 using Elements.Assets;
 using Obsidian.Elements;
+using Awwdio;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class ButterworthFilterProxy : ProtoFluxEngineProxy, IAudioSource
+    public class ButterworthFilterProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
-        public IAudioSource AudioInput;
+        public IWorldAudioDataSource AudioInput;
 
         public bool LowPass;
 
@@ -26,7 +27,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         private ButterworthFilterController _controller = new();
 
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive || AudioInput == null)
             {
@@ -36,16 +37,16 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 return;
             }
 
-            AudioInput.Read(buffer);
+            AudioInput.Read(buffer, simulator);
 
-            _controller.Process(buffer, LowPass, Frequency, Resonance);
+            _controller.Process(buffer, simulator.SampleRate, LowPass, Frequency, Resonance);
         }
     }
     [NodeCategory("Obsidian/Audio/Filters")]
     public class ButterworthFilter : ProxyVoidNode<FrooxEngineContext, ButterworthFilterProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
-        public readonly ObjectInput<IAudioSource> AudioInput;
+        public readonly ObjectInput<IWorldAudioDataSource> AudioInput;
 
         [ChangeListener]
         public readonly ValueInput<bool> LowPass;
@@ -58,7 +59,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         [DefaultValueAttribute(1.41f)]
         public readonly ValueInput<float> Resonance;
 
-        public readonly ObjectOutput<IAudioSource> AudioOutput;
+        public readonly ObjectOutput<IWorldAudioDataSource> AudioOutput;
 
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
@@ -151,7 +152,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public ButterworthFilter()
         {
-            AudioOutput = new ObjectOutput<IAudioSource>(this);
+            AudioOutput = new ObjectOutput<IWorldAudioDataSource>(this);
         }
     }
 }

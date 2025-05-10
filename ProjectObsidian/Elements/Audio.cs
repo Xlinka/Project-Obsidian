@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Awwdio;
 using Elements.Assets;
 using Elements.Core;
 using FrooxEngine;
@@ -97,7 +98,7 @@ public class ButterworthFilterController
         filters.Clear();
     }
 
-    public void Process<S>(Span<S> buffer, bool lowPass, float freq, float resonance) where S : unmanaged, IAudioSample<S>
+    public void Process<S>(Span<S> buffer, int sampleRate, bool lowPass, float freq, float resonance) where S : unmanaged, IAudioSample<S>
     {
         // avoid dividing by zero
         if (freq == 0f)
@@ -115,7 +116,7 @@ public class ButterworthFilterController
 
         if (freq != lastFreq || resonance != lastResonance || lowPass != lastLowPass)
         {
-            ((FilterButterworth<S>)filter).UpdateCoefficients(freq, Engine.Current.AudioSystem.SampleRate, lowPass ? FilterButterworth<S>.PassType.Lowpass : FilterButterworth<S>.PassType.Highpass, resonance);
+            ((FilterButterworth<S>)filter).UpdateCoefficients(freq, sampleRate, lowPass ? FilterButterworth<S>.PassType.Lowpass : FilterButterworth<S>.PassType.Highpass, resonance);
         }
 
         lastFreq = freq;
@@ -140,7 +141,7 @@ public class BandPassFilterController
         highFilters.Clear();
     }
 
-    public void Process<S>(Span<S> buffer, float lowFreq, float highFreq, float resonance) where S : unmanaged, IAudioSample<S>
+    public void Process<S>(Span<S> buffer, int sampleRate, float lowFreq, float highFreq, float resonance) where S : unmanaged, IAudioSample<S>
     {
         // avoid dividing by zero
         if (lowFreq == 0f || highFreq == 0f)
@@ -161,8 +162,8 @@ public class BandPassFilterController
             highFilters.Add(typeof(S), highFilter);
         }
 
-        ((FilterButterworth<S>)lowFilter).UpdateCoefficients(highFreq, Engine.Current.AudioSystem.SampleRate, FilterButterworth<S>.PassType.Lowpass, resonance);
-        ((FilterButterworth<S>)highFilter).UpdateCoefficients(lowFreq, Engine.Current.AudioSystem.SampleRate, FilterButterworth<S>.PassType.Highpass, resonance);
+        ((FilterButterworth<S>)lowFilter).UpdateCoefficients(highFreq, sampleRate, FilterButterworth<S>.PassType.Lowpass, resonance);
+        ((FilterButterworth<S>)highFilter).UpdateCoefficients(lowFreq, sampleRate, FilterButterworth<S>.PassType.Highpass, resonance);
 
         for (int i = 0; i < buffer.Length; i++)
         {

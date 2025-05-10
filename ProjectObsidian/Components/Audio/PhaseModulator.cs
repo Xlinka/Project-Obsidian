@@ -3,17 +3,18 @@ using FrooxEngine;
 using Elements.Assets;
 using Obsidian.Elements;
 using Elements.Core;
+using Awwdio;
 
 namespace Obsidian.Components.Audio
 {
     [Category(new string[] { "Obsidian/Audio/Effects" })]
-    public class PhaseModulator : Component, IAudioSource, IWorldElement
+    public class PhaseModulator : Component, Awwdio.IAudioDataSource, IWorldAudioDataSource, IWorldElement
     {
         [Range(0f, 5f, "0.00")]
         public readonly Sync<float> ModulationIndex;
 
-        public readonly SyncRef<IAudioSource> CarrierSource;
-        public readonly SyncRef<IAudioSource> ModulatorSource;
+        public readonly SyncRef<IWorldAudioDataSource> CarrierSource;
+        public readonly SyncRef<IWorldAudioDataSource> ModulatorSource;
 
         public bool IsActive
         {
@@ -41,7 +42,7 @@ namespace Obsidian.Components.Audio
         }
 
         // TODO: Make this not click when the signal goes silent and then not silent?
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive)
             {
@@ -59,8 +60,8 @@ namespace Obsidian.Components.Audio
             Span<S> carrierBuffer = stackalloc S[buffer.Length];
             Span<S> modulatorBuffer = stackalloc S[buffer.Length];
 
-            CarrierSource.Target.Read(carrierBuffer);
-            ModulatorSource.Target.Read(modulatorBuffer);
+            CarrierSource.Target.Read(carrierBuffer, simulator);
+            ModulatorSource.Target.Read(modulatorBuffer, simulator);
 
             float modulationIndex = ModulationIndex.Value;
 

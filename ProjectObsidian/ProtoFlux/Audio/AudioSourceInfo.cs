@@ -9,7 +9,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
     [NodeCategory("Obsidian/Audio")]
     public class AudioSourceInfo : VoidNode<FrooxEngineContext>
     {
-        public readonly ObjectInput<IAudioSource> Source;
+        public readonly ObjectInput<IWorldAudioDataSource> Source;
 
         [ContinuouslyChanging]
         public readonly ValueOutput<bool> IsActive;
@@ -18,7 +18,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         protected override void ComputeOutputs(FrooxEngineContext context)
         {
-            IAudioSource source = Source.Evaluate(context);
+            IWorldAudioDataSource source = Source.Evaluate(context);
             if (source != null)
             {
                 IsActive.Write(source.IsActive, context);

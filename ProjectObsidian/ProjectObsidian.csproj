@@ -27,6 +27,9 @@
     <None Remove="ProtoFlux\Bindings\Networking\**" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Awwdio">
+      <HintPath>$(ResonitePath)Resonite_Data/Managed/Awwdio.dll</HintPath>
+    </Reference>
     <Reference Include="Elements.Core">
       <HintPath>$(ResonitePath)Resonite_Data/Managed/Elements.Core.dll</HintPath>
     </Reference>

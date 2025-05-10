@@ -6,10 +6,11 @@ using FrooxEngine;
 using Elements.Assets;
 using Elements.Core;
 using System.Runtime.InteropServices;
+using Awwdio;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class SawtoothGeneratorProxy : ProtoFluxEngineProxy, IAudioSource
+    public class SawtoothGeneratorProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
         public float Frequency;
 
@@ -29,7 +30,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         private bool updateTime;
 
-        public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+        public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive)
             {
@@ -49,7 +50,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             var temptime = time;
             temptime %= (1f / Frequency);
             var clampedAmplitude = MathX.Clamp01(Amplitude);
-            float advance = (1f / (float)base.Engine.AudioSystem.SampleRate);
+            float advance = (1f / (float)simulator.SampleRate);
             for (int i = 0; i < buffer.Length; i++)
             {
                 tempBuffer[i] = (2.0f * ((((float)temptime / (1f / Frequency)) + Phase) % 1.0f) - 1.0f) * clampedAmplitude;
@@ -95,7 +96,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public Continuation OnReset;
 
-        public readonly ObjectOutput<IAudioSource> AudioOutput;
+        public readonly ObjectOutput<IWorldAudioDataSource> AudioOutput;
 
         private ObjectStore<Action<IChangeable>> _enabledChangedHandler;
 
@@ -198,7 +199,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public SawtoothGenerator()
         {
-            AudioOutput = new ObjectOutput<IAudioSource>(this);
+            AudioOutput = new ObjectOutput<IWorldAudioDataSource>(this);
             Reset = new Operation(this, 0);
         }
     }

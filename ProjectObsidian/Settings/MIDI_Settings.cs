@@ -5,6 +5,7 @@ using FrooxEngine;
 using Elements.Core;
 using Elements.Assets;
 using Commons.Music.Midi;
+using System.Threading.Tasks;
 
 namespace Obsidian;
 
@@ -100,10 +101,12 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
         _localeData.Messages.Add("Settings.MIDI_Settings.DeviceFound", "Device Found");
         _localeData.Messages.Add("Settings.MIDI_Settings.Remove", "Remove");
 
-        // Sometimes the locale is null in here, so wait a bit I guess
-
-        RunInUpdates(15, () =>
+        Task.Run(async () =>
         {
+            while (this.GetCoreLocale()?.Asset?.Data is null)
+            {
+                await default(NextUpdate);
+            }
             UpdateLocale();
             Settings.RegisterValueChanges<LocaleSettings>(UpdateLocale);
             RefreshDeviceLists();
@@ -118,7 +121,7 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
 
     private void UpdateLocale(LocaleSettings settings = null)
     {
-        this.GetCoreLocale()?.Asset?.Data.LoadDataAdditively(_localeData);
+        this.GetCoreLocale()?.Asset?.Data?.LoadDataAdditively(_localeData);
     }
 
     [SettingProperty(null, null, null, false, 0L, null, null)]

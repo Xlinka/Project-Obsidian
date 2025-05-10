@@ -2,11 +2,12 @@
 using FrooxEngine;
 using Elements.Assets;
 using Obsidian.Elements;
+using Awwdio;
 
 namespace Obsidian.Components.Audio;
 
 [Category(new string[] { "Obsidian/Audio/Filters" })]
-public class ButterworthFilter : Component, IAudioSource, IWorldElement
+public class ButterworthFilter : Component, Awwdio.IAudioDataSource, IWorldAudioDataSource, IWorldElement
 {
     [Range(20f, 20000f, "0.00")]
     public readonly Sync<float> Frequency;
@@ -16,7 +17,7 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
 
     public readonly Sync<bool> LowPass;
 
-    public readonly SyncRef<IAudioSource> Source;
+    public readonly SyncRef<IWorldAudioDataSource> Source;
 
     private ButterworthFilterController _controller = new();
 
@@ -46,7 +47,7 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
 
     public int ChannelCount => Source.Target?.ChannelCount ?? 0;
 
-    public void Read<S>(Span<S> buffer) where S : unmanaged, IAudioSample<S>
+    public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
     {
         if (!IsActive)
         {
@@ -59,8 +60,8 @@ public class ButterworthFilter : Component, IAudioSource, IWorldElement
 
         span = buffer;
 
-        Source.Target.Read(span);
+        Source.Target.Read(span, simulator);
 
-        _controller.Process(span, LowPass, Frequency, Resonance);
+        _controller.Process(span, simulator.SampleRate, LowPass, Frequency, Resonance);
     }
 }
