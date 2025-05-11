@@ -37,7 +37,7 @@ public class PluginSettings : SettingComponent<PluginSettings>
         _localeData.Messages.Add("Settings.PluginSettings.PluginLoaded", "Plugin Loaded");
         _localeData.Messages.Add("Settings.PluginSettings.TogglePluginLoaded", "Toggle loading the plugin for new sessions");
 
-        if (PluginLoaded.Value == false)
+        if (PluginLoaded.Value == false && GetObsidianRegistry() is AssemblyTypeRegistry obsidianRegistry && coreAssemblies.Contains(obsidianRegistry))
         {
             TogglePluginLoaded();
         }
@@ -96,11 +96,13 @@ public class PluginSettings : SettingComponent<PluginSettings>
         {
             if (coreAssemblies.Contains(obsidianRegistry))
             {
+                UniLog.Log("Removing Obsidian registry");
                 coreAssemblies.Remove(obsidianRegistry);
                 PluginLoaded.Value = false;
             }
             else if (!coreAssemblies.Contains(obsidianRegistry))
             {
+                UniLog.Log("Adding Obsidian registry");
                 coreAssemblies.Add(obsidianRegistry);
                 PluginLoaded.Value = true;
             }
