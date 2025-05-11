@@ -37,7 +37,12 @@ public class PluginSettings : SettingComponent<PluginSettings>
         _localeData.Messages.Add("Settings.PluginSettings.PluginLoaded", "Plugin Loaded");
         _localeData.Messages.Add("Settings.PluginSettings.TogglePluginLoaded", "Toggle loading the plugin for new sessions");
 
-        if (PluginLoaded.Value == false && GetObsidianRegistry() is AssemblyTypeRegistry obsidianRegistry && coreAssemblies.Contains(obsidianRegistry))
+        var obsidianRegistry = GetObsidianRegistry();
+        if (PluginLoaded.Value == false && obsidianRegistry != null && coreAssemblies.Contains(obsidianRegistry))
+        {
+            TogglePluginLoaded();
+        }
+        else if (PluginLoaded.Value == true && obsidianRegistry != null && !coreAssemblies.Contains(obsidianRegistry))
         {
             TogglePluginLoaded();
         }
