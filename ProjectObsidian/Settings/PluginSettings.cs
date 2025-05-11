@@ -15,6 +15,7 @@ public class PluginSettings : SettingComponent<PluginSettings>
 {
     public override bool UserspaceOnly => true;
 
+    [DefaultValue(true)]
     [SettingIndicatorProperty(null, null, null, null, false, 0L)]
     public readonly Sync<bool> PluginLoaded;
 
