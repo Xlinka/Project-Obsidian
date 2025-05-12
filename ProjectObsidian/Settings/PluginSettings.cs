@@ -18,50 +18,21 @@ public class PluginSettings : SettingComponent<PluginSettings>
     [SettingIndicatorProperty(null, null, null, null, false, 0L)]
     public readonly Sync<bool> PluginLoaded;
 
-    private LocaleData _localeData;
-
     private static AssemblyTypeRegistry obsidianRegistry;
 
     private static List<AssemblyTypeRegistry> coreAssemblies;
 
     protected override void OnStart()
     {
-        base.OnStart();
-
-        _localeData = new LocaleData();
-        _localeData.LocaleCode = "en";
-        _localeData.Authors = new List<string>() { "Nytra" };
-        _localeData.Messages = new Dictionary<string, string>();
-        _localeData.Messages.Add("Settings.Category.Obsidian", "Obsidian");
-        _localeData.Messages.Add("Settings.PluginSettings", "Plugin Settings");
-        _localeData.Messages.Add("Settings.PluginSettings.PluginLoaded", "Plugin Loaded");
-        _localeData.Messages.Add("Settings.PluginSettings.TogglePluginLoaded", "Toggle loading the plugin for new sessions");
-
-        if (PluginLoaded.Value == false)
+        var obsidianRegistry = GetObsidianRegistry();
+        if (PluginLoaded.Value == false && obsidianRegistry != null && coreAssemblies.Contains(obsidianRegistry))
         {
             TogglePluginLoaded();
         }
-
-        Task.Run(async () => 
-        { 
-            while (this.GetCoreLocale()?.Asset?.Data is null)
-            {
-                await default(NextUpdate);
-            }
-            UpdateLocale();
-            Settings.RegisterValueChanges<LocaleSettings>(UpdateLocale);
-        });
-    }
-
-    protected override void OnDispose()
-    {
-        base.OnDispose();
-        Settings.UnregisterValueChanges<LocaleSettings>(UpdateLocale);
-    }
-
-    private void UpdateLocale(LocaleSettings settings = null)
-    {
-        this.GetCoreLocale()?.Asset?.Data?.LoadDataAdditively(_localeData);
+        else if (PluginLoaded.Value == true && obsidianRegistry != null && !coreAssemblies.Contains(obsidianRegistry))
+        {
+            TogglePluginLoaded();
+        }
     }
 
     private AssemblyTypeRegistry GetObsidianRegistry()
@@ -96,13 +67,25 @@ public class PluginSettings : SettingComponent<PluginSettings>
         {
             if (coreAssemblies.Contains(obsidianRegistry))
             {
+                UniLog.Log("Removing Obsidian registry");
                 coreAssemblies.Remove(obsidianRegistry);
                 PluginLoaded.Value = false;
             }
             else if (!coreAssemblies.Contains(obsidianRegistry))
             {
+                UniLog.Log("Adding Obsidian registry");
                 coreAssemblies.Add(obsidianRegistry);
                 PluginLoaded.Value = true;
+            }
+            try
+            {
+                var localSettings = Userspace.UserspaceWorld.GetGloballyRegisteredComponent<SettingManagersManager>().LocalSettings.Target;
+                var localPluginSettings = localSettings.GetSetting<PluginSettings>();
+                localPluginSettings.PluginLoaded.Value = PluginLoaded.Value;
+            }
+            catch (Exception ex)
+            {
+                UniLog.Error($"Could not update local plugin settings! {ex}");
             }
         }
     }
