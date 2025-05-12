@@ -49,8 +49,6 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
     [SettingSubcategoryList("DeviceToItem", null, null, null, null, null)]
     public readonly SyncList<MIDI_Device> OutputDevices;
 
-    private LocaleData _localeData;
-
     private DataFeedItem DeviceToItem(ISyncMember item)
     {
         MIDI_Device device = (MIDI_Device)item;
@@ -85,43 +83,6 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
     protected override void OnStart()
     {
         base.OnStart();
-        _localeData = new LocaleData();
-        _localeData.LocaleCode = "en";
-        _localeData.Authors = new List<string>() { "Nytra" };
-        _localeData.Messages = new Dictionary<string, string>();
-        _localeData.Messages.Add("Settings.MIDI_Settings", "MIDI Settings");
-        _localeData.Messages.Add("Settings.MIDI_Settings.RefreshDeviceLists", "Refresh Devices");
-        _localeData.Messages.Add("Settings.MIDI_Settings.InputDevices", "Input Devices");
-        _localeData.Messages.Add("Settings.MIDI_Settings.OutputDevices", "Output Devices");
-
-        _localeData.Messages.Add("Settings.MIDI_Settings.DeviceName", "Device Name");
-        _localeData.Messages.Add("Settings.MIDI_Settings.OutputDevices.Breadcrumb", "MIDI Output Devices");
-        _localeData.Messages.Add("Settings.MIDI_Settings.InputDevices.Breadcrumb", "MIDI Input Devices");
-        _localeData.Messages.Add("Settings.MIDI_Settings.AllowConnections", "Allow Connections");
-        _localeData.Messages.Add("Settings.MIDI_Settings.DeviceFound", "Device Found");
-        _localeData.Messages.Add("Settings.MIDI_Settings.Remove", "Remove");
-
-        Task.Run(async () =>
-        {
-            while (this.GetCoreLocale()?.Asset?.Data is null)
-            {
-                await default(NextUpdate);
-            }
-            UpdateLocale();
-            Settings.RegisterValueChanges<LocaleSettings>(UpdateLocale);
-            RefreshDeviceLists();
-        });
-    }
-
-    protected override void OnDispose()
-    {
-        base.OnDispose();
-        Settings.UnregisterValueChanges<LocaleSettings>(UpdateLocale);
-    }
-
-    private void UpdateLocale(LocaleSettings settings = null)
-    {
-        this.GetCoreLocale()?.Asset?.Data?.LoadDataAdditively(_localeData);
     }
 
     [SettingProperty(null, null, null, false, 0L, null, null)]
