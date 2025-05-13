@@ -7,6 +7,8 @@ namespace Obsidian;
 public static class SettingsLocaleHelper
 {
     private static StaticLocaleProvider localeProvider;
+    private static string lastOverrideLocale;
+    private const string overrideLocaleString = "somethingRandomJustToMakeItChange";
     public static void Update(LocaleData _localeData)
     {
         UpdateDelayed(_localeData);
@@ -39,10 +41,12 @@ public static class SettingsLocaleHelper
             localeProvider.Asset.Data.LoadDataAdditively(_localeData);
 
             // force asset update for locale provider
-            localeProvider.OverrideLocale.Value = "owo";
+            if (localeProvider.OverrideLocale.Value != null && localeProvider.OverrideLocale.Value != overrideLocaleString)
+                lastOverrideLocale = localeProvider.OverrideLocale.Value;
+            localeProvider.OverrideLocale.Value = overrideLocaleString;
             Userspace.UserspaceWorld.RunInUpdates(1, () => 
             {
-                localeProvider.OverrideLocale.Value = null;
+                localeProvider.OverrideLocale.Value = lastOverrideLocale;
             });
         }
         else
