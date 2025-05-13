@@ -23,6 +23,8 @@ public class PluginSettings : SettingComponent<PluginSettings>
 
     private static List<AssemblyTypeRegistry> coreAssemblies;
 
+    private LocaleData _localeData;
+
     protected override void OnStart()
     {
         var obsidianRegistry = GetObsidianRegistry();
@@ -34,6 +36,17 @@ public class PluginSettings : SettingComponent<PluginSettings>
         {
             TogglePluginLoaded();
         }
+
+        _localeData = new LocaleData();
+        _localeData.LocaleCode = "en";
+        _localeData.Authors = new List<string>() { "Nytra" };
+        _localeData.Messages = new Dictionary<string, string>();
+        _localeData.Messages.Add("Settings.Category.Obsidian", "Obsidian");
+        _localeData.Messages.Add("Settings.PluginSettings", "Plugin Settings");
+        _localeData.Messages.Add("Settings.PluginSettings.PluginLoaded", "Plugin Loaded");
+        _localeData.Messages.Add("Settings.PluginSettings.TogglePluginLoaded", "Toggle loading the plugin for new sessions");
+
+        SettingsLocaleHelper.Update(_localeData);
     }
 
     private AssemblyTypeRegistry GetObsidianRegistry()
