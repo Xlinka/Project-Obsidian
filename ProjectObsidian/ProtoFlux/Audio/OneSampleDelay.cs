@@ -35,30 +35,43 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             if (!IsActive || AudioInput == null || !AudioInput.IsActive)
             {
                 buffer.Fill(default(S));
-                delays.Clear();
+                lock (delays)
+                    delays.Clear();
                 return;
             }
 
             AudioInput.Read(buffer, simulator);
 
-            if (!delays.TryGetValue(typeof(S), out var delay))
+            object delay;
+            lock (delays)
             {
-                delay = new DelayEffect<S>(0, Engine.Current.AudioSystem.SampleRate);
-                delays.Add(typeof(S), delay);
-                UniLog.Log("Created new delay");
+                if (!delays.TryGetValue(typeof(S), out delay))
+                {
+                    delay = new DelayEffect<S>(0, Engine.Current.AudioSystem.SampleRate);
+                    delays.Add(typeof(S), delay);
+                    UniLog.Log("Created new delay");
+                }
             }
 
-            if (!updateBools.TryGetValue(typeof(S), out bool update))
+            bool update;
+            lock (updateBools)
             {
-                update = true;
-                updateBools[typeof(S)] = update;
+                if (!updateBools.TryGetValue(typeof(S), out update))
+                {
+                    update = true;
+                    updateBools[typeof(S)] = update;
+                }
             }
 
-            ((DelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
+            lock ((DelayEffect<S>)delay)
+            {
+                ((DelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
+            }
 
             if (update)
             {
-                updateBools[typeof(S)] = false;
+                lock (updateBools)
+                    updateBools[typeof(S)] = false;
             }
         }
 
@@ -68,7 +81,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             {
                 foreach (var key in updateBools.Keys.ToArray())
                 {
-                    updateBools[key] = true;
+                    lock (updateBools)
+                        updateBools[key] = true;
                 }
             };
         }

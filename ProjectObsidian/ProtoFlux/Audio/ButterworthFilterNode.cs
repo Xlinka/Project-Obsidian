@@ -33,13 +33,19 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             {
                 buffer.Fill(default(S));
                 // clear filters here?
-                _controller.Clear();
+                lock (_controller)
+                {
+                    _controller.Clear();
+                }
                 return;
             }
 
             AudioInput.Read(buffer, simulator);
 
-            _controller.Process(buffer, simulator.SampleRate, LowPass, Frequency, Resonance);
+            lock (_controller)
+            {
+                _controller.Process(buffer, simulator.SampleRate, LowPass, Frequency, Resonance);
+            }
         }
     }
     [NodeCategory("Obsidian/Audio/Filters")]

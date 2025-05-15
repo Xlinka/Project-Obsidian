@@ -37,23 +37,32 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             if (!IsActive || AudioInput == null || !AudioInput.IsActive || parameters.Equals(defaultParameters))
             {
                 buffer.Fill(default(S));
-                reverbs.Clear();
+                lock (reverbs)
+                    reverbs.Clear();
                 return;
             }
 
             AudioInput.Read(buffer, simulator);
 
-            if (!reverbs.TryGetValue(typeof(S), out var reverb))
+            object reverb;
+            lock (reverbs)
             {
-                reverb = new BufferReverber<S>(Engine.Current.AudioSystem.SampleRate, parameters);
-                reverbs.Add(typeof(S), reverb);
-                UniLog.Log("Created new reverb");
+                if (!reverbs.TryGetValue(typeof(S), out reverb))
+                {
+                    reverb = new BufferReverber<S>(Engine.Current.AudioSystem.SampleRate, parameters);
+                    reverbs.Add(typeof(S), reverb);
+                    UniLog.Log("Created new reverb");
+                }
             }
 
-            if (!updateBools.TryGetValue(typeof(S), out bool update))
+            bool update;
+            lock (updateBools)
             {
-                update = true;
-                updateBools[typeof(S)] = update;
+                if (!updateBools.TryGetValue(typeof(S), out update))
+                {
+                    update = true;
+                    updateBools[typeof(S)] = update;
+                }
             }
 
             bool lastBufferIsNull = false;
@@ -64,17 +73,30 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             if (!update && !lastBufferIsNull)
             {
-                ((S[])lastBuffer).CopyTo(buffer);
-                return;
+                // check if buffer size changed
+                if (((S[])lastBuffer).Length != buffer.Length)
+                {
+                    lastBufferIsNull = true;
+                }
+                else
+                {
+                    ((S[])lastBuffer).CopyTo(buffer);
+                    return;
+                }
             }
 
-            ((BufferReverber<S>)reverb).ApplyReverb(buffer);
+            lock ((BufferReverber<S>)reverb)
+            {
+                ((BufferReverber<S>)reverb).ApplyReverb(buffer);
+            }
 
             if (update || lastBufferIsNull)
             {
-                updateBools[typeof(S)] = false;
+                lock (updateBools)
+                    updateBools[typeof(S)] = false;
                 lastBuffer = buffer.ToArray();
-                lastBuffers[typeof(S)] = lastBuffer;
+                lock (lastBuffers)
+                    lastBuffers[typeof(S)] = lastBuffer;
             }
         }
 
@@ -84,7 +106,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             {
                 foreach (var key in updateBools.Keys.ToArray())
                 {
-                    updateBools[key] = true;
+                    lock (updateBools)
+                        updateBools[key] = true;
                 }
             };
         }

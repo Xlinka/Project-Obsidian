@@ -249,8 +249,16 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     {
         if (!update && lastBuffer != null)
         {
-            lastBuffer.CopyTo(inputBuffer);
-            return;
+            // check if buffer size changed
+            if (lastBuffer.Length != inputBuffer.Length)
+            {
+                lastBuffer = null;
+            }
+            else
+            {
+                lastBuffer.CopyTo(inputBuffer);
+                return;
+            }
         }
         for (int i = 0; i < inputBuffer.Length; i++)
         {
@@ -273,7 +281,13 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
 
     public void SetCoefficients(float[] _coefficients)
     {
+        int prevLen = coefficients.Length;
         coefficients = (float[])_coefficients.Clone();
+        if (prevLen != coefficients.Length)
+        {
+            delayLine = new S[coefficients.Length];
+            delayLineIndex = 0;
+        }
     }
 }
 
@@ -366,8 +380,16 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
     {
         if (!update && lastBuffer != null)
         {
-            lastBuffer.CopyTo(samples);
-            return;
+            // check if buffer size changed
+            if (lastBuffer.Length != samples.Length)
+            {
+                lastBuffer = null;
+            }
+            else
+            {
+                lastBuffer.CopyTo(samples);
+                return;
+            }
         }
         ProcessLarge(samples, dryWet, feedback);
         if (update || lastBuffer == null)
