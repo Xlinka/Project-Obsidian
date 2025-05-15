@@ -86,8 +86,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                 if (!updateBools.TryGetValue(typeof(S), out update))
                 {
                     update = true;
-                    lock (updateBools)
-                        updateBools[typeof(S)] = update;
+                    updateBools[typeof(S)] = update;
                 }
             }
 
