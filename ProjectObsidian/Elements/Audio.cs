@@ -6,6 +6,7 @@ using Awwdio;
 using Elements.Assets;
 using Elements.Core;
 using FrooxEngine;
+using SharpPipe;
 
 namespace Obsidian.Elements;
 
@@ -82,6 +83,107 @@ public class FilterButterworth<S> where S : unmanaged, IAudioSample<S>
     public S Value
     {
         get { return this.outputHistory[0]; }
+    }
+}
+
+public class DelayController
+{
+    public Dictionary<Type, object> delays = new();
+
+    public Dictionary<Type, bool> updateBools = new();
+
+    public void Clear()
+    {
+        delays.Clear();
+        updateBools.Clear();
+    }
+
+    public void Process<S>(Span<S> buffer, int delayMilliseconds, float feedback, float DryWet) where S : unmanaged, IAudioSample<S>
+    {
+        object delay;
+        if (!delays.TryGetValue(typeof(S), out delay))
+        {
+            delay = new DelayEffect<S>(delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
+            delays.Add(typeof(S), delay);
+            UniLog.Log("Created new delay");
+        }
+
+        bool update;
+        if (!updateBools.TryGetValue(typeof(S), out update))
+        {
+            update = true;
+            updateBools[typeof(S)] = update;
+        }
+
+        ((DelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
+
+        if (update)
+        {
+            updateBools[typeof(S)] = false;
+        }
+    }
+}
+
+public class ReverbController
+{
+    public Dictionary<Type, object> reverbs = new();
+
+    public Dictionary<Type, bool> updateBools = new();
+
+    public Dictionary<Type, object> lastBuffers = new();
+
+    public void Clear()
+    {
+        reverbs.Clear();
+        updateBools.Clear();
+        lastBuffers.Clear();
+    }
+
+    public void Process<S>(Span<S> buffer, ZitaParameters parameters) where S : unmanaged, IAudioSample<S>
+    {
+        object reverb;
+        if (!reverbs.TryGetValue(typeof(S), out reverb))
+        {
+            reverb = new BufferReverber<S>(Engine.Current.AudioSystem.SampleRate, parameters);
+            reverbs.Add(typeof(S), reverb);
+            UniLog.Log("Created new reverb");
+        }
+
+        bool update;
+        if (!updateBools.TryGetValue(typeof(S), out update))
+        {
+            update = true;
+            updateBools[typeof(S)] = update;
+        }
+
+        bool lastBufferIsNull = false;
+        if (!lastBuffers.TryGetValue(typeof(S), out var lastBuffer))
+        {
+            lastBufferIsNull = true;
+        }
+
+        if (!update && !lastBufferIsNull)
+        {
+            // check if buffer size changed
+            if (((S[])lastBuffer).Length != buffer.Length)
+            {
+                lastBufferIsNull = true;
+            }
+            else
+            {
+                ((S[])lastBuffer).CopyTo(buffer);
+                return;
+            }
+        }
+
+        ((BufferReverber<S>)reverb).ApplyReverb(buffer);
+
+        if (update || lastBufferIsNull)
+        {
+            updateBools[typeof(S)] = false;
+            lastBuffer = buffer.ToArray();
+            lastBuffers[typeof(S)] = lastBuffer;
+        }
     }
 }
 

@@ -9,6 +9,7 @@ using Elements.Core;
 using System.Collections.Generic;
 using System.Linq;
 using Awwdio;
+using Valve.VR;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
@@ -22,69 +23,40 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public float DryWet;
 
-        public Dictionary<Type, object> delays = new();
-
-        public Dictionary<Type, bool> updateBools = new();
-
         public bool Active;
 
         public bool IsActive => Active;
 
         public int ChannelCount => AudioInput?.ChannelCount ?? 0;
 
+        public DelayController _controller = new();
+
         public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive || AudioInput == null || !AudioInput.IsActive)
             {
                 buffer.Fill(default(S));
-                lock (delays)
-                    delays.Clear();
+                lock (_controller)
+                    _controller.Clear();
                 return;
             }
 
             AudioInput.Read(buffer, simulator);
 
-            object delay;
-            lock (delays)
-            {
-                if (!delays.TryGetValue(typeof(S), out delay))
-                {
-                    delay = new DelayEffect<S>(delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
-                    delays.Add(typeof(S), delay);
-                    UniLog.Log("Created new delay");
-                }
-            }
-
-            bool update;
-            lock (updateBools)
-            {
-                if (!updateBools.TryGetValue(typeof(S), out update))
-                {
-                    update = true;
-                    updateBools[typeof(S)] = update;
-                }
-            }
-
-            lock ((DelayEffect<S>)delay)
-            {
-                ((DelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
-            }
-
-            if (update)
-            {
-                lock (updateBools)
-                    updateBools[typeof(S)] = false;
-            }
+            lock (_controller)
+                _controller.Process(buffer, delayMilliseconds, feedback, DryWet);
         }
 
         protected override void OnStart()
         {
             Engine.AudioSystem.AudioUpdate += () =>
             {
-                foreach (var key in updateBools.Keys.ToArray())
+                lock (_controller)
                 {
-                    lock (updateBools)
-                        updateBools[key] = true;
+                    foreach (var key in _controller.updateBools.Keys.ToArray())
+                    {
+                        _controller.updateBools[key] = true;
+                    }
                 }
             };
         }
@@ -185,9 +157,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             }
             proxy.AudioInput = AudioInput.Evaluate(context);
             proxy.delayMilliseconds = DelayMilliseconds.Evaluate(context);
-            foreach (var delay in proxy.delays.Values)
+            lock (proxy._controller)
             {
-                ((IDelayEffect)delay).SetDelayTime(proxy.delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
+                foreach (var delay in proxy._controller.delays.Values)
+                {
+                    ((IDelayEffect)delay).SetDelayTime(proxy.delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
+                }
             }
             proxy.feedback = Feedback.Evaluate(context);
             proxy.DryWet = DryWet.Evaluate(context);

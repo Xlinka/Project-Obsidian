@@ -20,58 +20,31 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public float DryWet;
 
-        public Dictionary<Type, object> delays = new();
-
-        public Dictionary<Type, bool> updateBools = new();
-
         public bool Active;
 
         public bool IsActive => Active;
 
         public int ChannelCount => AudioInput?.ChannelCount ?? 0;
 
+        public DelayController _controller = new();
+
         public void Read<S>(Span<S> buffer,  AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive || AudioInput == null || !AudioInput.IsActive)
             {
                 buffer.Fill(default(S));
-                lock (delays)
-                    delays.Clear();
+                lock (_controller)
+                {
+                    _controller.Clear();
+                }
                 return;
             }
 
             AudioInput.Read(buffer, simulator);
 
-            object delay;
-            lock (delays)
+            lock (_controller)
             {
-                if (!delays.TryGetValue(typeof(S), out delay))
-                {
-                    delay = new DelayEffect<S>(0, Engine.Current.AudioSystem.SampleRate);
-                    delays.Add(typeof(S), delay);
-                    UniLog.Log("Created new delay");
-                }
-            }
-
-            bool update;
-            lock (updateBools)
-            {
-                if (!updateBools.TryGetValue(typeof(S), out update))
-                {
-                    update = true;
-                    updateBools[typeof(S)] = update;
-                }
-            }
-
-            lock ((DelayEffect<S>)delay)
-            {
-                ((DelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
-            }
-
-            if (update)
-            {
-                lock (updateBools)
-                    updateBools[typeof(S)] = false;
+                _controller.Process(buffer, 0, feedback, DryWet);
             }
         }
 
@@ -79,10 +52,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         {
             Engine.AudioSystem.AudioUpdate += () =>
             {
-                foreach (var key in updateBools.Keys.ToArray())
+                lock (_controller)
                 {
-                    lock (updateBools)
-                        updateBools[key] = true;
+                    foreach (var key in _controller.updateBools.Keys.ToArray())
+                    {
+                        _controller.updateBools[key] = true;
+                    }
                 }
             };
         }

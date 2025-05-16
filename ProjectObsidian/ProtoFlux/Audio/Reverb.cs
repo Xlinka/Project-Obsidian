@@ -9,16 +9,13 @@ using System.Collections.Generic;
 using SharpPipe;
 using System.Linq;
 using Awwdio;
+using Obsidian.Elements;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
     public class ReverbProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
         public IWorldAudioDataSource AudioInput;
-
-        public Dictionary<Type, object> reverbs = new();
-
-        public Dictionary<Type, bool> updateBools = new();
 
         public ZitaParameters parameters;
 
@@ -30,73 +27,23 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         private ZitaParameters defaultParameters = new ZitaParameters();
 
-        public Dictionary<Type, object> lastBuffers = new();
+        public ReverbController _controller = new();
 
         public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive || AudioInput == null || !AudioInput.IsActive || parameters.Equals(defaultParameters))
             {
                 buffer.Fill(default(S));
-                lock (reverbs)
-                    reverbs.Clear();
+                lock (_controller)
+                    _controller.Clear();
                 return;
             }
 
             AudioInput.Read(buffer, simulator);
 
-            object reverb;
-            lock (reverbs)
+            lock (_controller)
             {
-                if (!reverbs.TryGetValue(typeof(S), out reverb))
-                {
-                    reverb = new BufferReverber<S>(Engine.Current.AudioSystem.SampleRate, parameters);
-                    reverbs.Add(typeof(S), reverb);
-                    UniLog.Log("Created new reverb");
-                }
-            }
-
-            bool update;
-            lock (updateBools)
-            {
-                if (!updateBools.TryGetValue(typeof(S), out update))
-                {
-                    update = true;
-                    updateBools[typeof(S)] = update;
-                }
-            }
-
-            bool lastBufferIsNull = false;
-            if (!lastBuffers.TryGetValue(typeof(S), out var lastBuffer))
-            {
-                lastBufferIsNull = true;
-            }
-
-            if (!update && !lastBufferIsNull)
-            {
-                // check if buffer size changed
-                if (((S[])lastBuffer).Length != buffer.Length)
-                {
-                    lastBufferIsNull = true;
-                }
-                else
-                {
-                    ((S[])lastBuffer).CopyTo(buffer);
-                    return;
-                }
-            }
-
-            lock ((BufferReverber<S>)reverb)
-            {
-                ((BufferReverber<S>)reverb).ApplyReverb(buffer);
-            }
-
-            if (update || lastBufferIsNull)
-            {
-                lock (updateBools)
-                    updateBools[typeof(S)] = false;
-                lastBuffer = buffer.ToArray();
-                lock (lastBuffers)
-                    lastBuffers[typeof(S)] = lastBuffer;
+                _controller.Process(buffer, parameters);
             }
         }
 
@@ -104,10 +51,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         {
             Engine.AudioSystem.AudioUpdate += () =>
             {
-                foreach (var key in updateBools.Keys.ToArray())
+                lock (_controller)
                 {
-                    lock (updateBools)
-                        updateBools[key] = true;
+                    foreach (var key in _controller.updateBools.Keys.ToArray())
+                    {
+                        _controller.updateBools[key] = true;
+                    }
                 }
             };
         }
@@ -206,7 +155,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             proxy.parameters = Parameters.Evaluate(context);
             if (!proxy.parameters.Equals(lastParameters))
             {
-                proxy.reverbs.Clear();
+                lock (proxy._controller)
+                    proxy._controller.Clear();
             }
             lastParameters = proxy.parameters;
         }
