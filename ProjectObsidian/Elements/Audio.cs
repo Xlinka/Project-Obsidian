@@ -187,6 +187,44 @@ public class ReverbController
     }
 }
 
+public class FIR_FilterController
+{
+    public Dictionary<Type, object> filters = new();
+
+    public Dictionary<Type, bool> updateBools = new();
+
+    public void Clear()
+    {
+        filters.Clear();
+        updateBools.Clear();
+    }
+
+    public void Process<S>(Span<S> buffer, float[] coeffs) where S : unmanaged, IAudioSample<S>
+    {
+        object filter;
+        if (!filters.TryGetValue(typeof(S), out filter))
+        {
+            filter = new FirFilter<S>(coeffs);
+            filters.Add(typeof(S), filter);
+            UniLog.Log("Created new FIR filter");
+        }
+
+        bool update;
+        if (!updateBools.TryGetValue(typeof(S), out update))
+        {
+            update = true;
+            updateBools[typeof(S)] = update;
+        }
+
+        ((FirFilter<S>)filter).ProcessBuffer(buffer, update);
+
+        if (update)
+        {
+            updateBools[typeof(S)] = false;
+        }
+    }
+}
+
 public class ButterworthFilterController
 {
     private Dictionary<Type, object> filters = new();
@@ -309,7 +347,7 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     /// </summary>
     /// <param name="input">The input sample</param>
     /// <returns>The filtered output sample</returns>
-    public S ProcessSample(S input, bool update)
+    public S ProcessSample(S input)
     {
         // Store the current input in the delay line
         delayLine[delayLineIndex] = input;
@@ -364,7 +402,7 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
         }
         for (int i = 0; i < inputBuffer.Length; i++)
         {
-            inputBuffer[i] = ProcessSample(inputBuffer[i], update);
+            inputBuffer[i] = ProcessSample(inputBuffer[i]);
         }
         if (update || lastBuffer == null)
         {

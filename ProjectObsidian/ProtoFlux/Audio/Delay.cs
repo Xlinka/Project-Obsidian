@@ -9,7 +9,6 @@ using Elements.Core;
 using System.Collections.Generic;
 using System.Linq;
 using Awwdio;
-using Valve.VR;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
