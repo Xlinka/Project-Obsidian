@@ -8,6 +8,7 @@ using FrooxEngine.Undo;
 
 namespace Obsidian
 {
+    [DataModelType]
     public enum ReplacementColliderComponent
     {
         BoxCollider,
@@ -17,6 +18,7 @@ namespace Obsidian
         ConvexHullCollider
     }
 
+    [DataModelType]
     public enum SetupBoundsType
     {
         None,
@@ -24,6 +26,7 @@ namespace Obsidian
         SetupFromPreciseBounds,
     }
 
+    [DataModelType]
     public enum UseTagMode
     {
         IgnoreTag,
