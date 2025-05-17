@@ -36,12 +36,22 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void OnChanged(IChangeable changeable)
         {
+            float[] coeffs = null;
+            lock (Coefficients)
+            {
+                if (!Coefficients.IsDisposed)
+                    coeffs = Coefficients.ToArray();
+            }
             lock (_controller)
             {
+                if (coeffs == null)
+                {
+                    _controller.Clear();
+                    return;
+                }
                 foreach (var filter in _controller.filters.Values)
                 {
-                    lock ((IFirFilter)filter)
-                        ((IFirFilter)filter).SetCoefficients(Coefficients.ToArray());
+                    ((IFirFilter)filter).SetCoefficients(coeffs);
                 }
             }
         }
