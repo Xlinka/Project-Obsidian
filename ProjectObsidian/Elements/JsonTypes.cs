@@ -9,19 +9,19 @@ public static class JsonTypeHelper
 {
     public static readonly Type[] JsonTokens =
     {
-        typeof(IJsonToken), typeof(JsonObject), typeof(JsonArray),
+        typeof(IJsonToken), typeof(JsonObject), typeof(JsonArray), typeof(JsonToken)
     };
     public static readonly Type[] AllValidTypes =
     {
         typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
         typeof(long), typeof(ulong), typeof(float), typeof(double), typeof(string), typeof(Uri),
-        typeof(IJsonToken), typeof(JsonObject), typeof(JsonArray),
+        typeof(IJsonToken), typeof(JsonObject), typeof(JsonArray), typeof(JsonToken)
     };
     public static readonly Type[] AllValidGetTypes =
     {
         typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
         typeof(long), typeof(ulong), typeof(float), typeof(double), typeof(string), typeof(Uri),
-        typeof(JsonObject), typeof(JsonArray),
+        typeof(JsonObject), typeof(JsonArray), typeof(JsonToken)
     };
     public static readonly Type[] ValidValueTypes =
     {
@@ -30,11 +30,11 @@ public static class JsonTypeHelper
     };
     public static readonly Type[] ValidObjectGetTypes =
     {
-        typeof(string), typeof(Uri), typeof(JsonObject), typeof(JsonArray),
+        typeof(string), typeof(Uri), typeof(JsonObject), typeof(JsonArray), typeof(JsonToken)
     };
     public static readonly Type[] ValidObjectSetTypes =
     {
-        typeof(string), typeof(Uri), typeof(IJsonToken), typeof(JsonObject), typeof(JsonArray),
+        typeof(string), typeof(Uri), typeof(JsonToken), typeof(JsonObject), typeof(JsonArray), typeof(IJsonToken)
     };
 }
 
@@ -42,6 +42,25 @@ public static class JsonTypeHelper
 public interface IJsonToken
 {
     public JToken Wrapped { get; }
+}
+[DataModelType]
+public class JsonToken : IJsonToken
+{
+    public JToken WrappedObject { get; private set; }
+    public JToken Wrapped => WrappedObject;
+    public JsonToken(JToken wrap) => WrappedObject = wrap;
+    public override string ToString() => WrappedObject.ToString();
+    public static JsonToken FromString(string str)
+    {
+        try
+        {
+            return new JsonToken(JToken.Parse(str));
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }
 [DataModelType]
 public class JsonObject : IJsonToken
@@ -67,6 +86,7 @@ public class JsonObject : IJsonToken
         try
         {
             //TODO: theres probably a better way to do this than boxing the value
+            if (typeof(T) == typeof(JsonToken)) return (T)(object)new JsonToken(WrappedObject[tag].Value<JToken>());
             if (typeof(T) == typeof(JsonObject)) return (T)(object)new JsonObject(WrappedObject[tag].Value<JObject>());
             if (typeof(T) == typeof(JsonArray)) return (T)(object)new JsonArray(WrappedObject[tag].Value<JArray>());
             return WrappedObject[tag].Value<T>() ?? default;
@@ -91,6 +111,12 @@ public class JsonObject : IJsonToken
     {
         try
         {
+            if (typeof(T) == typeof(JsonToken))
+            {
+                var value = WrappedObject[tag]?.Value<JToken>();
+                if (value is null) return null;
+                return new JsonToken(value) as T;
+            }
             if (typeof(T) == typeof(JsonObject))
             {
                 var value = WrappedObject[tag]?.Value<JObject>();
@@ -113,7 +139,12 @@ public class JsonObject : IJsonToken
     public JsonObject Add<T>(string tag, T value)
     {
         var cloned = (JObject)WrappedObject.DeepClone();
-        var token = value is IJsonToken jToken ? jToken.Wrapped.DeepClone() : new JValue(value);
+        var token = value switch
+        {
+            null => JValue.CreateNull(),
+            IJsonToken jToken => jToken.Wrapped.DeepClone(),
+            _ => new JValue(value),
+        };
         cloned.Add(tag, token);
         var output = new JsonObject(cloned);
         return output;
@@ -139,7 +170,6 @@ public class JsonArray : IJsonToken
 {
     public JArray WrappedObject { get; private set; }
     public JToken Wrapped => WrappedObject;
-
     public JsonArray(JArray wrap) => WrappedObject = wrap;
 
     public int Count => WrappedObject.Count;
@@ -159,6 +189,7 @@ public class JsonArray : IJsonToken
     {
         try
         {
+            if (typeof(T) == typeof(JsonToken)) return (T)(object)new JsonToken(WrappedObject[index].Value<JToken>());
             if (typeof(T) == typeof(JsonObject)) return (T)(object)new JsonObject(WrappedObject[index].Value<JObject>());
             if (typeof(T) == typeof(JsonArray)) return (T)(object)new JsonArray(WrappedObject[index].Value<JArray>());
             return WrappedObject[index].Value<T>() ?? default;
@@ -183,6 +214,12 @@ public class JsonArray : IJsonToken
     {
         try
         {
+            if (typeof(T) == typeof(JsonToken))
+            {
+                var value = WrappedObject[index].Value<JToken>();
+                if (value is null) return null;
+                return new JsonToken(value) as T;
+            }
             if (typeof(T) == typeof(JsonObject))
             {
                 var value = WrappedObject[index].Value<JObject>();

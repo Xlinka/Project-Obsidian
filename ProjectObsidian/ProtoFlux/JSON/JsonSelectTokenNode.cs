@@ -12,11 +12,11 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json;
 
 [NodeName("Select Token")]
 [NodeCategory("Obsidian/Json")]
-public class JsonSelectTokenNode : ObjectFunctionNode<FrooxEngineContext, string>
+public class JsonSelectTokenNode : ObjectFunctionNode<FrooxEngineContext, JsonToken>
 {
     public readonly ObjectInput<JsonObject> JsonObject;
     public readonly ObjectInput<string> Path;
-    protected override string Compute(FrooxEngineContext context)
+    protected override JsonToken Compute(FrooxEngineContext context)
     {
         var json = JsonObject.Evaluate(context);
         var path = Path.Evaluate(context);
@@ -26,7 +26,8 @@ public class JsonSelectTokenNode : ObjectFunctionNode<FrooxEngineContext, string
         try
         {
             JToken thing = json.Wrapped.SelectToken(path);
-            return thing.ToString();
+            if (thing is null) return null;
+            return new JsonToken(thing);
         }
         catch (Exception ex)
         {
