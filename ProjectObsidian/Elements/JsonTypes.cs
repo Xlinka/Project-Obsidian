@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Elements.Assets;
 using Elements.Core;
 using Newtonsoft.Json.Linq;
 
@@ -46,7 +47,7 @@ public interface IJsonToken
 [DataModelType]
 public class JsonToken : IJsonToken
 {
-    public JToken WrappedObject { get; private set; }
+    private JToken WrappedObject;
     public JToken Wrapped => WrappedObject;
     public JsonToken(JToken wrap) => WrappedObject = wrap;
     public override string ToString() => WrappedObject.ToString();
@@ -65,7 +66,7 @@ public class JsonToken : IJsonToken
 [DataModelType]
 public class JsonObject : IJsonToken
 {
-    public JObject WrappedObject { get; private set; }
+    private JObject WrappedObject;
     public JToken Wrapped => WrappedObject;
     public JsonObject(JObject wrap) => WrappedObject = wrap;
     public int Count => WrappedObject.Count;
@@ -168,7 +169,7 @@ public class JsonObject : IJsonToken
 [DataModelType]
 public class JsonArray : IJsonToken
 {
-    public JArray WrappedObject { get; private set; }
+    private JArray WrappedObject;
     public JToken Wrapped => WrappedObject;
     public JsonArray(JArray wrap) => WrappedObject = wrap;
 
