@@ -12,7 +12,7 @@ using System;
 using System.ComponentModel;
 using System.Net;
 using System.Reflection;
-
+using System.Runtime.CompilerServices;
 using Elements.Core;
 using Newtonsoft.Json.Linq;
 

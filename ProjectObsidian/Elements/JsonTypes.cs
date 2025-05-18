@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Elements.Assets;
 using Elements.Core;
 using Newtonsoft.Json.Linq;
 
@@ -9,19 +10,19 @@ public static class JsonTypeHelper
 {
     public static readonly Type[] JsonTokens =
     {
-        typeof(IJsonToken), typeof(JsonObject), typeof(JsonArray),
+        typeof(IJsonToken), typeof(JsonObject), typeof(JsonArray), typeof(JsonToken)
     };
     public static readonly Type[] AllValidTypes =
     {
         typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
         typeof(long), typeof(ulong), typeof(float), typeof(double), typeof(string), typeof(Uri),
-        typeof(IJsonToken), typeof(JsonObject), typeof(JsonArray),
+        typeof(IJsonToken), typeof(JsonObject), typeof(JsonArray), typeof(JsonToken)
     };
     public static readonly Type[] AllValidGetTypes =
     {
         typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
         typeof(long), typeof(ulong), typeof(float), typeof(double), typeof(string), typeof(Uri),
-        typeof(JsonObject), typeof(JsonArray),
+        typeof(JsonObject), typeof(JsonArray), typeof(JsonToken)
     };
     public static readonly Type[] ValidValueTypes =
     {
@@ -30,11 +31,11 @@ public static class JsonTypeHelper
     };
     public static readonly Type[] ValidObjectGetTypes =
     {
-        typeof(string), typeof(Uri), typeof(JsonObject), typeof(JsonArray),
+        typeof(string), typeof(Uri), typeof(JsonObject), typeof(JsonArray), typeof(JsonToken)
     };
     public static readonly Type[] ValidObjectSetTypes =
     {
-        typeof(string), typeof(Uri), typeof(IJsonToken), typeof(JsonObject), typeof(JsonArray),
+        typeof(string), typeof(Uri), typeof(JsonToken), typeof(JsonObject), typeof(JsonArray), typeof(IJsonToken)
     };
 }
 
@@ -44,9 +45,28 @@ public interface IJsonToken
     public JToken Wrapped { get; }
 }
 [DataModelType]
+public class JsonToken : IJsonToken
+{
+    public JToken WrappedToken;
+    public JToken Wrapped => WrappedToken;
+    public JsonToken(JToken wrap) => WrappedToken = wrap;
+    public override string ToString() => WrappedToken.ToString();
+    public static JsonToken FromString(string str)
+    {
+        try
+        {
+            return new JsonToken(JToken.Parse(str));
+        }
+        catch
+        {
+            return null;
+        }
+    }
+}
+[DataModelType]
 public class JsonObject : IJsonToken
 {
-    public JObject WrappedObject { get; private set; }
+    public JObject WrappedObject;
     public JToken Wrapped => WrappedObject;
     public JsonObject(JObject wrap) => WrappedObject = wrap;
     public int Count => WrappedObject.Count;
@@ -67,6 +87,7 @@ public class JsonObject : IJsonToken
         try
         {
             //TODO: theres probably a better way to do this than boxing the value
+            if (typeof(T) == typeof(JsonToken)) return (T)(object)new JsonToken(WrappedObject[tag].Value<JToken>());
             if (typeof(T) == typeof(JsonObject)) return (T)(object)new JsonObject(WrappedObject[tag].Value<JObject>());
             if (typeof(T) == typeof(JsonArray)) return (T)(object)new JsonArray(WrappedObject[tag].Value<JArray>());
             return WrappedObject[tag].Value<T>() ?? default;
@@ -91,6 +112,12 @@ public class JsonObject : IJsonToken
     {
         try
         {
+            if (typeof(T) == typeof(JsonToken))
+            {
+                var value = WrappedObject[tag]?.Value<JToken>();
+                if (value is null) return null;
+                return new JsonToken(value) as T;
+            }
             if (typeof(T) == typeof(JsonObject))
             {
                 var value = WrappedObject[tag]?.Value<JObject>();
@@ -113,7 +140,12 @@ public class JsonObject : IJsonToken
     public JsonObject Add<T>(string tag, T value)
     {
         var cloned = (JObject)WrappedObject.DeepClone();
-        var token = value is IJsonToken jToken ? jToken.Wrapped.DeepClone() : new JValue(value);
+        var token = value switch
+        {
+            null => JValue.CreateNull(),
+            IJsonToken jToken => jToken.Wrapped.DeepClone(),
+            _ => new JValue(value),
+        };
         cloned.Add(tag, token);
         var output = new JsonObject(cloned);
         return output;
@@ -137,13 +169,12 @@ public class JsonObject : IJsonToken
 [DataModelType]
 public class JsonArray : IJsonToken
 {
-    public JArray WrappedObject { get; private set; }
-    public JToken Wrapped => WrappedObject;
+    public JArray WrappedArray;
+    public JToken Wrapped => WrappedArray;
+    public JsonArray(JArray wrap) => WrappedArray = wrap;
 
-    public JsonArray(JArray wrap) => WrappedObject = wrap;
-
-    public int Count => WrappedObject.Count;
-    public override string ToString() => WrappedObject.ToString();
+    public int Count => WrappedArray.Count;
+    public override string ToString() => WrappedArray.ToString();
     public static JsonArray FromString(string str)
     {
         try
@@ -159,9 +190,10 @@ public class JsonArray : IJsonToken
     {
         try
         {
-            if (typeof(T) == typeof(JsonObject)) return (T)(object)new JsonObject(WrappedObject[index].Value<JObject>());
-            if (typeof(T) == typeof(JsonArray)) return (T)(object)new JsonArray(WrappedObject[index].Value<JArray>());
-            return WrappedObject[index].Value<T>() ?? default;
+            if (typeof(T) == typeof(JsonToken)) return (T)(object)new JsonToken(WrappedArray[index].Value<JToken>());
+            if (typeof(T) == typeof(JsonObject)) return (T)(object)new JsonObject(WrappedArray[index].Value<JObject>());
+            if (typeof(T) == typeof(JsonArray)) return (T)(object)new JsonArray(WrappedArray[index].Value<JArray>());
+            return WrappedArray[index].Value<T>() ?? default;
         }
         catch
         {
@@ -172,7 +204,7 @@ public class JsonArray : IJsonToken
     {
         try
         {
-            return WrappedObject[index].Value<T>();
+            return WrappedArray[index].Value<T>();
         }
         catch
         {
@@ -183,19 +215,25 @@ public class JsonArray : IJsonToken
     {
         try
         {
+            if (typeof(T) == typeof(JsonToken))
+            {
+                var value = WrappedArray[index].Value<JToken>();
+                if (value is null) return null;
+                return new JsonToken(value) as T;
+            }
             if (typeof(T) == typeof(JsonObject))
             {
-                var value = WrappedObject[index].Value<JObject>();
+                var value = WrappedArray[index].Value<JObject>();
                 if (value is null) return null;
                 return new JsonObject(value) as T;
             }
             if (typeof(T) == typeof(JsonArray))
             {
-                var value = WrappedObject[index].Value<JArray>();
+                var value = WrappedArray[index].Value<JArray>();
                 if (value is null) return null;
                 return new JsonArray(value) as T;
             }
-            return WrappedObject[index].Value<T>();
+            return WrappedArray[index].Value<T>();
         }
         catch
         {
@@ -206,7 +244,7 @@ public class JsonArray : IJsonToken
     {
         try
         {
-            var cloned = (JArray)WrappedObject.DeepClone();
+            var cloned = (JArray)WrappedArray.DeepClone();
             var token = value switch
             {
                 null => JValue.CreateNull(),
@@ -226,7 +264,7 @@ public class JsonArray : IJsonToken
     {
         try
         {
-            var cloned = (JArray)WrappedObject.DeepClone();
+            var cloned = (JArray)WrappedArray.DeepClone();
             var token = value switch
             {
                 null => JValue.CreateNull(),
@@ -247,7 +285,7 @@ public class JsonArray : IJsonToken
         try
         {
             if (index < 0 || index >= Count) return this;
-            var output = (JArray)WrappedObject.DeepClone();
+            var output = (JArray)WrappedArray.DeepClone();
             output.RemoveAt(index);
             return new JsonArray(output);
         }
