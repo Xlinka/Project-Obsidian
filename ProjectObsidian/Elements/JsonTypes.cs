@@ -47,10 +47,10 @@ public interface IJsonToken
 [DataModelType]
 public class JsonToken : IJsonToken
 {
-    private JToken WrappedObject;
-    public JToken Wrapped => WrappedObject;
-    public JsonToken(JToken wrap) => WrappedObject = wrap;
-    public override string ToString() => WrappedObject.ToString();
+    public JToken WrappedToken;
+    public JToken Wrapped => WrappedToken;
+    public JsonToken(JToken wrap) => WrappedToken = wrap;
+    public override string ToString() => WrappedToken.ToString();
     public static JsonToken FromString(string str)
     {
         try
@@ -66,7 +66,7 @@ public class JsonToken : IJsonToken
 [DataModelType]
 public class JsonObject : IJsonToken
 {
-    private JObject WrappedObject;
+    public JObject WrappedObject;
     public JToken Wrapped => WrappedObject;
     public JsonObject(JObject wrap) => WrappedObject = wrap;
     public int Count => WrappedObject.Count;
@@ -169,12 +169,12 @@ public class JsonObject : IJsonToken
 [DataModelType]
 public class JsonArray : IJsonToken
 {
-    private JArray WrappedObject;
-    public JToken Wrapped => WrappedObject;
-    public JsonArray(JArray wrap) => WrappedObject = wrap;
+    public JArray WrappedArray;
+    public JToken Wrapped => WrappedArray;
+    public JsonArray(JArray wrap) => WrappedArray = wrap;
 
-    public int Count => WrappedObject.Count;
-    public override string ToString() => WrappedObject.ToString();
+    public int Count => WrappedArray.Count;
+    public override string ToString() => WrappedArray.ToString();
     public static JsonArray FromString(string str)
     {
         try
@@ -190,10 +190,10 @@ public class JsonArray : IJsonToken
     {
         try
         {
-            if (typeof(T) == typeof(JsonToken)) return (T)(object)new JsonToken(WrappedObject[index].Value<JToken>());
-            if (typeof(T) == typeof(JsonObject)) return (T)(object)new JsonObject(WrappedObject[index].Value<JObject>());
-            if (typeof(T) == typeof(JsonArray)) return (T)(object)new JsonArray(WrappedObject[index].Value<JArray>());
-            return WrappedObject[index].Value<T>() ?? default;
+            if (typeof(T) == typeof(JsonToken)) return (T)(object)new JsonToken(WrappedArray[index].Value<JToken>());
+            if (typeof(T) == typeof(JsonObject)) return (T)(object)new JsonObject(WrappedArray[index].Value<JObject>());
+            if (typeof(T) == typeof(JsonArray)) return (T)(object)new JsonArray(WrappedArray[index].Value<JArray>());
+            return WrappedArray[index].Value<T>() ?? default;
         }
         catch
         {
@@ -204,7 +204,7 @@ public class JsonArray : IJsonToken
     {
         try
         {
-            return WrappedObject[index].Value<T>();
+            return WrappedArray[index].Value<T>();
         }
         catch
         {
@@ -217,23 +217,23 @@ public class JsonArray : IJsonToken
         {
             if (typeof(T) == typeof(JsonToken))
             {
-                var value = WrappedObject[index].Value<JToken>();
+                var value = WrappedArray[index].Value<JToken>();
                 if (value is null) return null;
                 return new JsonToken(value) as T;
             }
             if (typeof(T) == typeof(JsonObject))
             {
-                var value = WrappedObject[index].Value<JObject>();
+                var value = WrappedArray[index].Value<JObject>();
                 if (value is null) return null;
                 return new JsonObject(value) as T;
             }
             if (typeof(T) == typeof(JsonArray))
             {
-                var value = WrappedObject[index].Value<JArray>();
+                var value = WrappedArray[index].Value<JArray>();
                 if (value is null) return null;
                 return new JsonArray(value) as T;
             }
-            return WrappedObject[index].Value<T>();
+            return WrappedArray[index].Value<T>();
         }
         catch
         {
@@ -244,7 +244,7 @@ public class JsonArray : IJsonToken
     {
         try
         {
-            var cloned = (JArray)WrappedObject.DeepClone();
+            var cloned = (JArray)WrappedArray.DeepClone();
             var token = value switch
             {
                 null => JValue.CreateNull(),
@@ -264,7 +264,7 @@ public class JsonArray : IJsonToken
     {
         try
         {
-            var cloned = (JArray)WrappedObject.DeepClone();
+            var cloned = (JArray)WrappedArray.DeepClone();
             var token = value switch
             {
                 null => JValue.CreateNull(),
@@ -285,7 +285,7 @@ public class JsonArray : IJsonToken
         try
         {
             if (index < 0 || index >= Count) return this;
-            var output = (JArray)WrappedObject.DeepClone();
+            var output = (JArray)WrappedArray.DeepClone();
             output.RemoveAt(index);
             return new JsonArray(output);
         }
