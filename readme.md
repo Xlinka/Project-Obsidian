@@ -50,7 +50,7 @@ Upon doing this, start Resonite. Navigate to the Obsidian category in your dash 
 For a comprehensive guide, please refer to our [installation wiki](https://github.com/Xlinka/Project-Obsidian/wiki/Installation).
 
 ## Features
-The detailed feature list is available in the [wiki](https://github.com/Xlinka/Project-Obsidian/wiki/Protoflux-Nodes).
+The detailed feature list is available in the [wiki](https://github.com/Xlinka/Project-Obsidian/wiki/ProtoFlux-Nodes).
 
 
 ## Project Obsidian プラグインのインストール
