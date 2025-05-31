@@ -6,6 +6,7 @@ using Awwdio;
 using Elements.Assets;
 using Elements.Core;
 using FrooxEngine;
+using SharpPipe;
 
 namespace Obsidian.Elements;
 
@@ -82,6 +83,145 @@ public class FilterButterworth<S> where S : unmanaged, IAudioSample<S>
     public S Value
     {
         get { return this.outputHistory[0]; }
+    }
+}
+
+public class DelayController
+{
+    public Dictionary<Type, object> delays = new();
+
+    public Dictionary<Type, bool> updateBools = new();
+
+    public void Clear()
+    {
+        delays.Clear();
+        updateBools.Clear();
+    }
+
+    public void Process<S>(Span<S> buffer, int delayMilliseconds, float feedback, float DryWet) where S : unmanaged, IAudioSample<S>
+    {
+        object delay;
+        if (!delays.TryGetValue(typeof(S), out delay))
+        {
+            delay = new DelayEffect<S>(delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
+            delays.Add(typeof(S), delay);
+            UniLog.Log("Created new delay");
+        }
+
+        bool update;
+        if (!updateBools.TryGetValue(typeof(S), out update))
+        {
+            update = true;
+            updateBools[typeof(S)] = update;
+        }
+
+        ((DelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
+
+        if (update)
+        {
+            updateBools[typeof(S)] = false;
+        }
+    }
+}
+
+public class ReverbController
+{
+    public Dictionary<Type, object> reverbs = new();
+
+    public Dictionary<Type, bool> updateBools = new();
+
+    public Dictionary<Type, object> lastBuffers = new();
+
+    public void Clear()
+    {
+        reverbs.Clear();
+        updateBools.Clear();
+        lastBuffers.Clear();
+    }
+
+    public void Process<S>(Span<S> buffer, ZitaParameters parameters) where S : unmanaged, IAudioSample<S>
+    {
+        object reverb;
+        if (!reverbs.TryGetValue(typeof(S), out reverb))
+        {
+            reverb = new BufferReverber<S>(Engine.Current.AudioSystem.SampleRate, parameters);
+            reverbs.Add(typeof(S), reverb);
+            UniLog.Log("Created new reverb");
+        }
+
+        bool update;
+        if (!updateBools.TryGetValue(typeof(S), out update))
+        {
+            update = true;
+            updateBools[typeof(S)] = update;
+        }
+
+        bool lastBufferIsNull = false;
+        if (!lastBuffers.TryGetValue(typeof(S), out var lastBuffer))
+        {
+            lastBufferIsNull = true;
+        }
+
+        if (!update && !lastBufferIsNull)
+        {
+            // check if buffer size changed
+            if (((S[])lastBuffer).Length != buffer.Length)
+            {
+                lastBufferIsNull = true;
+            }
+            else
+            {
+                ((S[])lastBuffer).CopyTo(buffer);
+                return;
+            }
+        }
+
+        ((BufferReverber<S>)reverb).ApplyReverb(buffer);
+
+        if (update || lastBufferIsNull)
+        {
+            updateBools[typeof(S)] = false;
+            lastBuffer = buffer.ToArray();
+            lastBuffers[typeof(S)] = lastBuffer;
+        }
+    }
+}
+
+public class FIR_FilterController
+{
+    public Dictionary<Type, object> filters = new();
+
+    public Dictionary<Type, bool> updateBools = new();
+
+    public void Clear()
+    {
+        filters.Clear();
+        updateBools.Clear();
+    }
+
+    public void Process<S>(Span<S> buffer, float[] coeffs) where S : unmanaged, IAudioSample<S>
+    {
+        object filter;
+        if (!filters.TryGetValue(typeof(S), out filter))
+        {
+            filter = new FirFilter<S>(coeffs);
+            filters.Add(typeof(S), filter);
+            UniLog.Log("Created new FIR filter");
+        }
+
+        bool update;
+        if (!updateBools.TryGetValue(typeof(S), out update))
+        {
+            update = true;
+            updateBools[typeof(S)] = update;
+        }
+
+        ((FirFilter<S>)filter).ProcessBuffer(buffer, update);
+
+        if (update)
+        {
+            updateBools[typeof(S)] = false;
+        }
     }
 }
 
@@ -207,7 +347,7 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     /// </summary>
     /// <param name="input">The input sample</param>
     /// <returns>The filtered output sample</returns>
-    public S ProcessSample(S input, bool update)
+    public S ProcessSample(S input)
     {
         // Store the current input in the delay line
         delayLine[delayLineIndex] = input;
@@ -249,12 +389,20 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
     {
         if (!update && lastBuffer != null)
         {
-            lastBuffer.CopyTo(inputBuffer);
-            return;
+            // check if buffer size changed
+            if (lastBuffer.Length != inputBuffer.Length)
+            {
+                lastBuffer = null;
+            }
+            else
+            {
+                lastBuffer.CopyTo(inputBuffer);
+                return;
+            }
         }
         for (int i = 0; i < inputBuffer.Length; i++)
         {
-            inputBuffer[i] = ProcessSample(inputBuffer[i], update);
+            inputBuffer[i] = ProcessSample(inputBuffer[i]);
         }
         if (update || lastBuffer == null)
         {
@@ -273,7 +421,13 @@ public class FirFilter<S> : IFirFilter where S : unmanaged, IAudioSample<S>
 
     public void SetCoefficients(float[] _coefficients)
     {
+        int prevLen = coefficients.Length;
         coefficients = (float[])_coefficients.Clone();
+        if (prevLen != coefficients.Length)
+        {
+            delayLine = new S[coefficients.Length];
+            delayLineIndex = 0;
+        }
     }
 }
 
@@ -366,8 +520,16 @@ public class DelayEffect<S> : IDelayEffect where S : unmanaged, IAudioSample<S>
     {
         if (!update && lastBuffer != null)
         {
-            lastBuffer.CopyTo(samples);
-            return;
+            // check if buffer size changed
+            if (lastBuffer.Length != samples.Length)
+            {
+                lastBuffer = null;
+            }
+            else
+            {
+                lastBuffer.CopyTo(samples);
+                return;
+            }
         }
         ProcessLarge(samples, dryWet, feedback);
         if (update || lastBuffer == null)

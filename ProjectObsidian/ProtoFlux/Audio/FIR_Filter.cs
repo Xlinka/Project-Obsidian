@@ -18,15 +18,13 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public readonly SyncFieldList<float> Coefficients;
 
-        public Dictionary<Type, object> filters = new();
-
-        public Dictionary<Type, bool> updateBools = new();
-
         public bool Active;
 
         public bool IsActive => Active;
 
         public int ChannelCount => AudioInput?.ChannelCount ?? 0;
+
+        public FIR_FilterController _controller = new();
 
         protected override void OnAwake()
         {
@@ -38,46 +36,53 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void OnChanged(IChangeable changeable)
         {
-            foreach (var filter in filters.Values)
+            float[] coeffs = null;
+            lock (Coefficients)
             {
-                ((IFirFilter)filter).SetCoefficients(Coefficients.ToArray());
+                if (!Coefficients.IsDisposed)
+                    coeffs = Coefficients.ToArray();
+            }
+            lock (_controller)
+            {
+                if (coeffs == null)
+                {
+                    _controller.Clear();
+                    return;
+                }
+                foreach (var filter in _controller.filters.Values)
+                {
+                    ((IFirFilter)filter).SetCoefficients(coeffs);
+                }
             }
         }
 
         public void OnElementsAddedOrRemoved(SyncElementList<Sync<float>> list, int startIndex, int count)
         {
-            filters.Clear();
+            lock (_controller)
+                _controller.Clear();
         }
 
         public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
-            if (!IsActive || AudioInput == null || !AudioInput.IsActive || Coefficients == null || Coefficients.Count == 0)
+            float[] coeffs = null;
+            lock (Coefficients)
+            {
+                if (Coefficients != null && !Coefficients.IsDisposed)
+                    coeffs = Coefficients.ToArray();
+            }
+            if (!IsActive || AudioInput == null || !AudioInput.IsActive || coeffs == null || coeffs.Length == 0)
             {
                 buffer.Fill(default(S));
-                filters.Clear();
+                lock (_controller)
+                    _controller.Clear();
                 return;
             }
 
             AudioInput.Read(buffer, simulator);
 
-            if (!filters.TryGetValue(typeof(S), out var filter))
+            lock (_controller)
             {
-                filter = new FirFilter<S>(Coefficients.ToArray());
-                filters.Add(typeof(S), filter);
-                UniLog.Log("Created new FIR filter");
-            }
-
-            if (!updateBools.TryGetValue(typeof(S), out bool update))
-            {
-                update = true;
-                updateBools[typeof(S)] = update;
-            }
-
-            ((FirFilter<S>)filter).ProcessBuffer(buffer, update);
-
-            if (update)
-            {
-                updateBools[typeof(S)] = false;
+                _controller.Process(buffer, coeffs);
             }
         }
 
@@ -85,9 +90,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
         {
             Engine.AudioSystem.AudioUpdate += () =>
             {
-                foreach (var key in updateBools.Keys.ToArray())
+                lock (_controller)
                 {
-                    updateBools[key] = true;
+                    foreach (var key in _controller.updateBools.Keys.ToArray())
+                    {
+                        _controller.updateBools[key] = true;
+                    }
                 }
             };
         }
@@ -195,21 +203,32 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             if (index < 0) return null;
             float value = CoefficientValue.Evaluate(context);
             int prevCount = proxy.Coefficients.Count;
-            proxy.Changed -= proxy.OnChanged;
+            proxy.Coefficients.Changed -= proxy.OnChanged;
             proxy.Coefficients.ElementsAdded -= proxy.OnElementsAddedOrRemoved;
-            proxy.Coefficients.EnsureMinimumCount(index + 1);
+            lock (proxy.Coefficients)
+                proxy.Coefficients.EnsureMinimumCount(index + 1);
             proxy.Coefficients.ElementsAdded += proxy.OnElementsAddedOrRemoved;
-            proxy.Coefficients[index] = value;
-            proxy.Changed += proxy.OnChanged;
+            lock (proxy.Coefficients)
+                proxy.Coefficients[index] = value;
+            proxy.Coefficients.Changed += proxy.OnChanged;
             if (prevCount != proxy.Coefficients.Count)
             {
-                proxy.filters.Clear();
+                lock (proxy._controller)
+                    proxy._controller.Clear();
             }
             else
             {
-                foreach (var filter in proxy.filters.Values)
+                float[] coeffs;
+                lock (proxy.Coefficients)
                 {
-                    ((IFirFilter)filter).SetCoefficients(proxy.Coefficients.ToArray());
+                    coeffs = proxy.Coefficients.ToArray();
+                }
+                lock (proxy._controller)
+                {
+                    foreach (var filter in proxy._controller.filters.Values)
+                    {
+                        ((IFirFilter)filter).SetCoefficients(coeffs);
+                    }
                 }
             }
             return OnSetCoefficient.Target;
@@ -222,12 +241,14 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             {
                 return null;
             }
-            proxy.Changed -= proxy.OnChanged;
+            proxy.Coefficients.Changed -= proxy.OnChanged;
             proxy.Coefficients.ElementsRemoved -= proxy.OnElementsAddedOrRemoved;
-            proxy.Coefficients.Clear();
+            lock (proxy.Coefficients)
+                proxy.Coefficients.Clear();
             proxy.Coefficients.ElementsRemoved += proxy.OnElementsAddedOrRemoved;
-            proxy.Changed += proxy.OnChanged;
-            proxy.filters.Clear();
+            proxy.Coefficients.Changed += proxy.OnChanged;
+            lock (proxy._controller)
+                proxy._controller.Clear();
             return OnClearCoefficients.Target;
         }
 

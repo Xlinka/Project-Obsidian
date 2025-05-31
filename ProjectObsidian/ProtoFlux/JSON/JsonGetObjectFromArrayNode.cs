@@ -12,7 +12,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json;
 
 [NodeName("Get From Array")]
 [NodeCategory("Obsidian/Json")]
-[GenericTypes(typeof(string), typeof(Uri), typeof(JsonObject), typeof(JsonArray))]
+[GenericTypes(typeof(string), typeof(Uri), typeof(JsonObject), typeof(JsonArray), typeof(JsonToken))]
 public class JsonGetObjectFromArrayNode<T> : ObjectFunctionNode<FrooxEngineContext, T> where T : class
 {
     public readonly ObjectInput<JsonArray> Input;

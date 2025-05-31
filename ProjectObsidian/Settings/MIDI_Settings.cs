@@ -5,6 +5,7 @@ using FrooxEngine;
 using Elements.Core;
 using Elements.Assets;
 using Commons.Music.Midi;
+using System.Threading.Tasks;
 
 namespace Obsidian;
 
@@ -83,7 +84,8 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
 
     protected override void OnStart()
     {
-        base.OnStart();
+        RefreshDeviceLists();
+
         _localeData = new LocaleData();
         _localeData.LocaleCode = "en";
         _localeData.Authors = new List<string>() { "Nytra" };
@@ -100,25 +102,7 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
         _localeData.Messages.Add("Settings.MIDI_Settings.DeviceFound", "Device Found");
         _localeData.Messages.Add("Settings.MIDI_Settings.Remove", "Remove");
 
-        // Sometimes the locale is null in here, so wait a bit I guess
-
-        RunInUpdates(15, () =>
-        {
-            UpdateLocale();
-            Settings.RegisterValueChanges<LocaleSettings>(UpdateLocale);
-            RefreshDeviceLists();
-        });
-    }
-
-    protected override void OnDispose()
-    {
-        base.OnDispose();
-        Settings.UnregisterValueChanges<LocaleSettings>(UpdateLocale);
-    }
-
-    private void UpdateLocale(LocaleSettings settings = null)
-    {
-        this.GetCoreLocale()?.Asset?.Data.LoadDataAdditively(_localeData);
+        SettingsLocaleHelper.Update(_localeData);
     }
 
     [SettingProperty(null, null, null, false, 0L, null, null)]

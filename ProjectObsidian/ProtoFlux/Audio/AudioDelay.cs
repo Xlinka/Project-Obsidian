@@ -12,7 +12,7 @@ using Awwdio;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
-    public class DelayProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
+    public class AudioDelayProxy : ProtoFluxEngineProxy, Awwdio.IAudioDataSource, IWorldAudioDataSource
     {
         public IWorldAudioDataSource AudioInput;
 
@@ -22,61 +22,47 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public float DryWet;
 
-        public Dictionary<Type, object> delays = new();
-
-        public Dictionary<Type, bool> updateBools = new();
-
         public bool Active;
 
         public bool IsActive => Active;
 
         public int ChannelCount => AudioInput?.ChannelCount ?? 0;
 
+        public DelayController _controller = new();
+
         public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
             if (!IsActive || AudioInput == null || !AudioInput.IsActive)
             {
                 buffer.Fill(default(S));
-                delays.Clear();
+                lock (_controller)
+                    _controller.Clear();
                 return;
             }
 
             AudioInput.Read(buffer, simulator);
 
-            if (!delays.TryGetValue(typeof(S), out var delay))
-            {
-                delay = new DelayEffect<S>(delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
-                delays.Add(typeof(S), delay);
-                UniLog.Log("Created new delay");
-            }
-
-            if (!updateBools.TryGetValue(typeof(S), out bool update))
-            {
-                update = true;
-                updateBools[typeof(S)] = update;
-            }
-
-            ((DelayEffect<S>)delay).Process(buffer, DryWet, feedback, update);
-
-            if (update)
-            {
-                updateBools[typeof(S)] = false;
-            }
+            lock (_controller)
+                _controller.Process(buffer, delayMilliseconds, feedback, DryWet);
         }
 
         protected override void OnStart()
         {
             Engine.AudioSystem.AudioUpdate += () =>
             {
-                foreach (var key in updateBools.Keys.ToArray())
+                lock (_controller)
                 {
-                    updateBools[key] = true;
+                    foreach (var key in _controller.updateBools.Keys.ToArray())
+                    {
+                        _controller.updateBools[key] = true;
+                    }
                 }
             };
         }
     }
+    [NodeName("Delay")]
     [NodeCategory("Obsidian/Audio/Effects")]
-    public class Delay : ProxyVoidNode<FrooxEngineContext, DelayProxy>, IExecutionChangeListener<FrooxEngineContext>
+    public class AudioDelay : ProxyVoidNode<FrooxEngineContext, AudioDelayProxy>, IExecutionChangeListener<FrooxEngineContext>
     {
         [ChangeListener]
         public readonly ObjectInput<IWorldAudioDataSource> AudioInput;
@@ -98,7 +84,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public bool ValueListensToChanges { get; private set; }
 
-        private bool ShouldListen(DelayProxy proxy)
+        private bool ShouldListen(AudioDelayProxy proxy)
         {
             if (proxy.Enabled)
             {
@@ -107,7 +93,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             return false;
         }
 
-        protected override void ProxyAdded(DelayProxy proxy, FrooxEngineContext context)
+        protected override void ProxyAdded(AudioDelayProxy proxy, FrooxEngineContext context)
         {
             base.ProxyAdded(proxy, context);
             NodeContextPath path = context.CaptureContextPath();
@@ -135,7 +121,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             proxy.Active = ValueListensToChanges;
         }
 
-        protected override void ProxyRemoved(DelayProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
+        protected override void ProxyRemoved(AudioDelayProxy proxy, FrooxEngineContext context, bool inUseByAnotherInstance)
         {
             if (!inUseByAnotherInstance)
             {
@@ -149,7 +135,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         protected void UpdateListenerState(FrooxEngineContext context)
         {
-            DelayProxy proxy = GetProxy(context);
+            AudioDelayProxy proxy = GetProxy(context);
             if (proxy != null)
             {
                 bool shouldListen = ShouldListen(proxy);
@@ -164,16 +150,19 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Changed(FrooxEngineContext context)
         {
-            DelayProxy proxy = GetProxy(context);
+            AudioDelayProxy proxy = GetProxy(context);
             if (proxy == null)
             {
                 return;
             }
             proxy.AudioInput = AudioInput.Evaluate(context);
             proxy.delayMilliseconds = DelayMilliseconds.Evaluate(context);
-            foreach (var delay in proxy.delays.Values)
+            lock (proxy._controller)
             {
-                ((IDelayEffect)delay).SetDelayTime(proxy.delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
+                foreach (var delay in proxy._controller.delays.Values)
+                {
+                    ((IDelayEffect)delay).SetDelayTime(proxy.delayMilliseconds, Engine.Current.AudioSystem.SampleRate);
+                }
             }
             proxy.feedback = Feedback.Evaluate(context);
             proxy.DryWet = DryWet.Evaluate(context);
@@ -181,11 +170,11 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         protected override void ComputeOutputs(FrooxEngineContext context)
         {
-            DelayProxy proxy = GetProxy(context);
+            AudioDelayProxy proxy = GetProxy(context);
             AudioOutput.Write(proxy, context);
         }
 
-        public Delay()
+        public AudioDelay()
         {
             AudioOutput = new ObjectOutput<IWorldAudioDataSource>(this);
         }

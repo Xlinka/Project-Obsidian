@@ -8,11 +8,20 @@ using System;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {
+    [DataModelType]
+    public enum LevelMonitorMode
+    {
+        Average,
+        Peak,
+        RMS
+    }
     [ContinuouslyChanging]
     [NodeCategory("Obsidian/Audio")]
     public class LevelMonitor : ValueFunctionNode<FrooxEngineContext, float>
     {
         public readonly ObjectInput<IWorldAudioDataSource> AudioInput;
+
+        public readonly ValueInput<LevelMonitorMode> Mode;
 
         private float lastValue = 0f;
 
@@ -32,6 +41,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             }
 
             IWorldAudioDataSource audio = AudioInput.Evaluate(context);
+            var mode = Mode.Evaluate(context);
 
             if (audio == null)
             {
@@ -41,10 +51,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
             if (!update) return lastValue;
 
-            int amt = Engine.Current.AudioSystem.FrameSize;
+            int amt = Engine.Current.AudioSystem.SimulationFrameSize;
             var simulator = Engine.Current.AudioSystem.Simulator;
 
-            float sum = 0;
+            float sumOfSquares = 0;
+            float absSum = 0;
+            float peak = 0;
 
             try
             {
@@ -55,7 +67,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                         audio.Read(monoBuf, simulator);
                         for (int i = 0; i < monoBuf.Length; i++)
                         {
-                            sum += monoBuf[i].AbsoluteAmplitude;
+                            absSum += monoBuf[i].AbsoluteAmplitude;
+                            sumOfSquares += MathX.Pow(monoBuf[i].AbsoluteAmplitude, 2);
+                            if (monoBuf[i].AbsoluteAmplitude > peak)
+                                peak = monoBuf[i].AbsoluteAmplitude;
                         }
                         break;
                     case 2:
@@ -63,7 +78,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                         audio.Read(stereoBuf, simulator);
                         for (int i = 0; i < stereoBuf.Length; i++)
                         {
-                            sum += stereoBuf[i].AbsoluteAmplitude;
+                            absSum += stereoBuf[i].AbsoluteAmplitude;
+                            sumOfSquares += MathX.Pow(stereoBuf[i].AbsoluteAmplitude, 2);
+                            if (stereoBuf[i].AbsoluteAmplitude > peak)
+                                peak = stereoBuf[i].AbsoluteAmplitude;
                         }
                         break;
                     case 4:
@@ -71,7 +89,10 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                         audio.Read(quadBuf, simulator);
                         for (int i = 0; i < quadBuf.Length; i++)
                         {
-                            sum += quadBuf[i].AbsoluteAmplitude;
+                            absSum += quadBuf[i].AbsoluteAmplitude;
+                            sumOfSquares += MathX.Pow(quadBuf[i].AbsoluteAmplitude, 2);
+                            if (quadBuf[i].AbsoluteAmplitude > peak)
+                                peak = quadBuf[i].AbsoluteAmplitude;
                         }
                         break;
                     case 6:
@@ -79,11 +100,28 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                         audio.Read(surroundBuf, simulator);
                         for (int i = 0; i < surroundBuf.Length; i++)
                         {
-                            sum += surroundBuf[i].AbsoluteAmplitude;
+                            absSum += surroundBuf[i].AbsoluteAmplitude;
+                            sumOfSquares += MathX.Pow(surroundBuf[i].AbsoluteAmplitude, 2);
+                            if (surroundBuf[i].AbsoluteAmplitude > peak)
+                                peak = surroundBuf[i].AbsoluteAmplitude;
                         }
                         break;
                 }
-                lastValue = sum / amt;
+                switch (mode)
+                {
+                    case LevelMonitorMode.Average:
+                        lastValue = absSum / amt;
+                        break;
+                    case LevelMonitorMode.RMS:
+                        lastValue = MathX.Sqrt(sumOfSquares / amt);
+                        break;
+                    case LevelMonitorMode.Peak:
+                        lastValue = peak;
+                        break;
+                    default:
+                        lastValue = -1f;
+                        break;
+                }
             }
             catch (Exception e)
             {

@@ -29,7 +29,7 @@ public class JsonAddValueToObjectNode<T> : ObjectFunctionNode<FrooxEngineContext
 
         var tag = Tag.Evaluate(context);
         var obj = Object.Evaluate(context);
-            
+
         return string.IsNullOrEmpty(tag) ? input : input.Add(tag, obj);
     }
 }

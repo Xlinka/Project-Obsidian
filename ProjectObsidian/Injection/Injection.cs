@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Linq;
-using System.Reflection;
+using System.Collections.Generic;
+using Elements.Assets;
 using Elements.Core;
 using FrooxEngine;
-using FrooxEngine.ProtoFlux.Core;
 using Obsidian.Shaders;
 
 namespace Obsidian
@@ -23,7 +22,6 @@ namespace Obsidian
                 Engine.Current.OnReady += () =>
                 {
                     ShaderInjection.AppendShaders();
-                    Settings.GetActiveSetting<PluginSettings>();
                 };
             }
             catch (Exception e)

@@ -11,7 +11,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Json;
 
 [NodeName("To String")]
 [NodeCategory("Obsidian/Json")]
-[GenericTypes(typeof(IJsonToken), typeof(JsonObject), typeof(JsonArray))]
+[GenericTypes(typeof(JsonObject), typeof(JsonArray), typeof(JsonToken), typeof(IJsonToken))]
 public class JsonToStringNode<T> : ObjectFunctionNode<FrooxEngineContext, string>
 {
     public readonly ObjectInput<T> Input;
