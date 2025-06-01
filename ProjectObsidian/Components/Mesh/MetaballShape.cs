@@ -17,10 +17,10 @@ public class MetaballShape : MeshXShape
     public float3 FieldSize;
     public int Resolution;
 
-    public MetaballShape(MeshX mesh, List<MetaballPoint> points, Slot originSlot) : base(mesh)
+    private int vertIndex;
+
+    public MetaballShape(MeshX mesh) : base(mesh)
     {
-        Points = points;
-        OriginSlot = originSlot;
     }
 
     public float SampleField(float3 point)
@@ -28,7 +28,7 @@ public class MetaballShape : MeshXShape
         float value = 0;
         foreach (var metaball in Points)
         {
-            if (metaball == null) continue;
+            if (metaball == null || metaball.IsRemoved) continue;
             value += metaball.GetValue(point, OriginSlot);
         }
         return value;
@@ -62,12 +62,19 @@ public class MetaballShape : MeshXShape
             cubePos + new float3(0, step.Y, step.Z)
         };
 
+        bool hasPositive = false, hasNegative = false;
+
         // Sample field at each corner
         float[] values = new float[8];
         for (int i = 0; i < 8; i++)
         {
             values[i] = SampleField(corners[i]);
+            if (values[i] >= Threshold) hasPositive = true;
+            else hasNegative = true;
         }
+
+        // Skip cubes that are entirely inside or outside
+        if (!hasPositive || !hasNegative) return;
 
         // Determine cube configuration
         int cubeIndex = 0;
@@ -89,11 +96,30 @@ public class MetaballShape : MeshXShape
                 int edgeIndex = triangulation[i + j];
                 float3 vertPos = InterpolateVertex(corners, values, edgeIndex);
                 float3 normal = CalculateNormal(vertPos);
-                var v = Mesh.AddVertex();
+                Vertex v;
+                if (Mesh.VertexCount < vertIndex + 1)
+                {
+                    v = Mesh.AddVertex();
+                }
+                else
+                {
+                    v = Mesh.GetVertex(vertIndex);
+                }
                 v.Position = vertPos;
                 v.Normal = normal;
+                vertIndex++;
             }
-            Mesh.AddTriangle(Mesh.GetVertex(Mesh.VertexCount - 3), Mesh.GetVertex(Mesh.VertexCount - 2), Mesh.GetVertex(Mesh.VertexCount - 1));
+            if (Mesh.TotalTriangleCount < (vertIndex / 3))
+            {
+                Mesh.AddTriangle(Mesh.GetVertex(Mesh.VertexCount - 3), Mesh.GetVertex(Mesh.VertexCount - 2), Mesh.GetVertex(Mesh.VertexCount - 1));
+            }
+            else
+            {
+                var tri = Mesh.GetTriangle((vertIndex / 3) - 1);
+                tri.Vertex0 = Mesh.GetVertex(vertIndex - 3);
+                tri.Vertex1 = Mesh.GetVertex(vertIndex - 2);
+                tri.Vertex2 = Mesh.GetVertex(vertIndex - 1);
+            }
         }
     }
 
@@ -140,6 +166,7 @@ public class MetaballShape : MeshXShape
 
     public override void Update()
     {
+        vertIndex = 0;
         Generate(Mesh);
     }
 }
