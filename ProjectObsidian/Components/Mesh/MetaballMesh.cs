@@ -2,7 +2,6 @@
 using Elements.Core;
 using FrooxEngine;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Obsidian
 {
@@ -23,11 +22,21 @@ namespace Obsidian
             Points.Changed += OnListChange;
             foreach (var point in Points)
             {
-                point.Slot.WorldTransformChanged += OnWorldTransformChanged;
-                point.Changed += OnPointChange;
-                point.Destroyed += OnPointDestroyed;
-                _subscribedPoints.Add(point);
+                if (point != null)
+                {
+                    point.Slot.WorldTransformChanged += OnWorldTransformChanged;
+                    point.Changed += OnPointChange;
+                    point.Destroyed += OnPointDestroyed;
+                    _subscribedPoints.Add(point);
+                }
             }
+        }
+
+        protected override void OnAwake()
+        {
+            Threshold.Value = 1f;
+            FieldSize.Value = float3.One * 10f;
+            Resolution.Value = 32;
         }
 
         private void OnListChange(IChangeable change)

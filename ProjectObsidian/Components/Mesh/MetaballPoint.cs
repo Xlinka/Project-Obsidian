@@ -9,6 +9,12 @@ namespace Obsidian
         public readonly Sync<float> Radius;
         public readonly Sync<float> Strength;
 
+        protected override void OnAwake()
+        {
+            Radius.Value = 1f;
+            Strength.Value = 1f;
+        }
+
         public float GetValue(float3 point, Slot space = null)
         {
             float distance = MathX.Distance(point, (space ?? World.RootSlot).GlobalPointToLocal(Slot.GlobalPosition));
