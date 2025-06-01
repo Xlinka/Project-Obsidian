@@ -157,7 +157,7 @@ public class MetaballShape : MeshXShape
             {
                 for (int z = 0; z < Resolution - 1; z++)
                 {
-                    Vector3 cubePos = new Vector3(x, y, z) * step - FieldSize * 0.5f;
+                    float3 cubePos = new float3(x, y, z) * step - FieldSize * 0.5f;
                     MarchCube(cubePos, step);
                 }
             }
