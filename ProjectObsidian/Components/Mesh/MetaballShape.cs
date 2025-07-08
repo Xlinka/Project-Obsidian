@@ -19,14 +19,37 @@ public class MetaballShape : MeshXShape
 
     private int vertIndex;
 
+    public bool scheduleRangeDatasRecompute = true;
+
+    private struct RangeData
+    {
+        public float effectiveRange;
+        public float3 position;
+    }
+
+    private List<RangeData> rangeDatas = new();
+
     public MetaballShape(MeshX mesh) : base(mesh)
     {
+    }
+
+    private void ComputeRangeData()
+    {
+        rangeDatas.Clear();
+        foreach (var point in Points.ToArray())
+        {
+            RangeData data = new();
+            data.effectiveRange = point.Radius.Value + point.Strength.Value;
+            data.position = OriginSlot.GlobalPointToLocal(point.Slot.GlobalPosition);
+            rangeDatas.Add(data);
+        }
+        scheduleRangeDatasRecompute = false;
     }
 
     public float SampleField(float3 point)
     {
         float value = 0;
-        foreach (var metaball in Points)
+        foreach (var metaball in Points.ToArray()) // Use ToArray() to avoid collection modified exception
         {
             if (metaball == null || metaball.IsRemoved) continue;
             value += metaball.GetValue(point, OriginSlot);
@@ -149,6 +172,9 @@ public class MetaballShape : MeshXShape
 
     private void Generate(MeshX mesh)
     {
+        if (scheduleRangeDatasRecompute)
+            ComputeRangeData();
+
         float3 step = FieldSize / Resolution;
 
         for (int x = 0; x < Resolution - 1; x++)
@@ -158,6 +184,28 @@ public class MetaballShape : MeshXShape
                 for (int z = 0; z < Resolution - 1; z++)
                 {
                     float3 cubePos = new float3(x, y, z) * step - FieldSize * 0.5f;
+
+                    if (rangeDatas.Count > 0)
+                    {
+                        bool anyIn = false;
+                        foreach (var rangeData in rangeDatas.ToArray())
+                        {
+                            //var low = rangeData.position - float3.One * rangeData.effectiveRange;
+                            //var high = rangeData.position + float3.One * rangeData.effectiveRange;
+                            //if (cubePos.IsBetween(low, high))
+                            //{
+                            //    anyIn = true;
+                            //    break;
+                            //}
+                            if (MathX.DistanceSqr(cubePos, rangeData.position) < MathX.Pow(rangeData.effectiveRange, 2f))
+                            {
+                                anyIn = true;
+                                break;
+                            }
+                        }
+                        if (!anyIn) continue;
+                    }
+
                     MarchCube(cubePos, step);
                 }
             }

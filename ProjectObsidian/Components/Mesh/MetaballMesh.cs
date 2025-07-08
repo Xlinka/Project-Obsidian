@@ -59,16 +59,23 @@ namespace Obsidian
                 }
             }
             MarkChangeDirty();
+            if (shape != null)
+                shape.scheduleRangeDatasRecompute = true;
+
         }
 
         private void OnPointChange(IChangeable change)
         {
             MarkChangeDirty();
+            if (shape != null)
+                shape.scheduleRangeDatasRecompute = true;
         }
 
         private void OnPointDestroyed(IDestroyable destroy)
         {
             MarkChangeDirty();
+            if (shape != null)
+                shape.scheduleRangeDatasRecompute = true;
         }
 
         private void OnWorldTransformChanged(Slot s)
