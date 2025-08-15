@@ -5,6 +5,7 @@ using ProtoFlux.Runtimes.Execution;
 using Elements.Core;
 using Elements.Assets;
 using System;
+using Elements.Data;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 {

@@ -8,6 +8,7 @@ using FrooxEngine;
 using FrooxEngine.ProtoFlux;
 using Obsidian.Elements;
 using Components.Devices.MIDI;
+using Elements.Data;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Devices;
 

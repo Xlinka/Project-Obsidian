@@ -7,6 +7,7 @@ using Commons.Music.Midi;
 using Obsidian.Elements;
 using Obsidian;
 using System;
+using Elements.Data;
 
 namespace Components.Devices.MIDI;
 
