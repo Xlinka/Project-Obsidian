@@ -15,7 +15,7 @@ namespace Obsidian
 #pragma warning disable CS1591
         public PlatformInterface Platform { get; private set; }
         public int Priority => -10;
-        public string PlatformName => "ResoniteModLoader";
+        public string PlatformName => "Project Obsidian";
         public string Username => null;
         public string PlatformUserId => null;
         public bool IsPlatformNameUnique => false;
