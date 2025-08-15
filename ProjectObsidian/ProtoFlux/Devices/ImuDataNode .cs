@@ -87,6 +87,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Devices
 
         private bool OpenBuffer(string path)
         {
+            EnsureOpenVR_Initialized();
             unsafe
             {
                 ulong buffer = default;
