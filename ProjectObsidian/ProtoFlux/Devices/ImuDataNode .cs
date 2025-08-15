@@ -58,6 +58,8 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Devices
             }
         }
 
+        
+
         protected override async Task<IOperation> RunAsync(FrooxEngineContext context)
         {
             User user = SimulatingUser.Evaluate(context);
