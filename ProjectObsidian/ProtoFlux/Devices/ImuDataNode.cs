@@ -7,6 +7,7 @@ using Valve.VR;
 using ProtoFlux.Runtimes.Execution;
 using Elements.Core;
 using System.Threading.Tasks;
+using Obsidian;
 
 
 
@@ -31,31 +32,12 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Devices
         private ulong _buffer;
         private string _previousPath;
 
-        private static bool _openVrInitialized = false;
-        private static CVRSystem _vrSystem = null;
-
         public ImuDataNode()
         {
             SampleTime = new ValueOutput<double>(this);
             VAccel = new ValueOutput<double3>(this);
             VGyro = new ValueOutput<double3>(this);
             OffScaleFlags = new ValueOutput<Imu_OffScaleFlags>(this);
-        }
-
-        private static void EnsureOpenVR_Initialized()
-        {
-            if (_openVrInitialized) return;
-            EVRInitError error = EVRInitError.None;
-            _vrSystem = OpenVR.Init(ref error, eApplicationType: EVRApplicationType.VRApplication_Background);
-            if (error == EVRInitError.Init_NoServerForBackgroundApp)
-            {
-                UniLog.Log("SteamVR not already running");
-            }
-            else
-            {
-                UniLog.Log("Got SteamVR connection");
-                _openVrInitialized = true;
-            }
         }
 
         protected override async Task<IOperation> RunAsync(FrooxEngineContext context)
@@ -87,7 +69,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Devices
 
         private bool OpenBuffer(string path)
         {
-            EnsureOpenVR_Initialized();
+            if (!OpenVR_Helper.TryInitialize()) return false;
             unsafe
             {
                 ulong buffer = default;

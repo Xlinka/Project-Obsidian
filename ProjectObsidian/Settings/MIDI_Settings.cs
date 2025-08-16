@@ -19,7 +19,7 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
         [SettingIndicatorProperty(null, null, null, null, false, 0L)]
         public readonly Sync<string> DeviceName;
 
-        [NonPersistent]
+        //[NonPersistent]
         [SettingIndicatorProperty(null, null, null, null, false, 0L)]
         public readonly Sync<bool> DeviceFound;
 
@@ -32,6 +32,7 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
 
         protected override void OnAwake()
         {
+            //DeviceFound.Value = false;
             base.OnAwake();
         }
 
@@ -102,7 +103,7 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
         _localeData.Messages.Add("Settings.MIDI_Settings.DeviceFound", "Device Found");
         _localeData.Messages.Add("Settings.MIDI_Settings.Remove", "Remove");
 
-        SettingsLocaleHelper.Update(_localeData);
+        //SettingsLocaleHelper.Update(_localeData);
     }
 
     [SettingProperty(null, null, null, false, 0L, null, null)]

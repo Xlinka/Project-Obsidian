@@ -6,6 +6,8 @@ using Elements.Assets;
 using Elements.Core;
 using FrooxEngine;
 using Obsidian.Shaders;
+using System.Reflection;
+using System.IO;
 
 namespace Obsidian
 {
