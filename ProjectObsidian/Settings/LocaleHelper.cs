@@ -10,7 +10,6 @@ public static class SettingsLocaleHelper
     private static StaticLocaleProvider localeProvider;
     private static string lastOverrideLocale;
     private const string overrideLocaleString = "somethingRandomJustToMakeItChange";
-    //private static MethodInfo _forceAssetUpdateMethod = typeof(Asset<>).GetMethod("ForceAssetUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
     public static void Update(LocaleData _localeData)
     {
         UpdateDelayed(_localeData);
@@ -21,7 +20,6 @@ public static class SettingsLocaleHelper
     {
         // I hate having to do an arbitrary delay, but it doesn't work otherwise
         Userspace.UserspaceWorld.RunInUpdates(7, () => UpdateIntern(_localeData));
-        //UpdateIntern(_localeData);
     }
     private static void UpdateIntern(LocaleData _localeData)
     {
@@ -30,7 +28,6 @@ public static class SettingsLocaleHelper
             Userspace.UserspaceWorld.RunSynchronously(() => UpdateIntern(_localeData));
         else
         {
-            //Userspace.UserspaceWorld.RunSynchronously(() => UpdateLocale(_localeData));
             UpdateLocale(_localeData);
         }
     }
@@ -44,8 +41,6 @@ public static class SettingsLocaleHelper
         if (localeProvider?.Asset?.Data != null)
         {
             localeProvider.Asset.Data.LoadDataAdditively(_localeData);
-
-            //_forceAssetUpdateMethod.Invoke(localeProvider.Asset, null);
 
             // force asset update for locale provider
             if (localeProvider.OverrideLocale.Value != null && localeProvider.OverrideLocale.Value != overrideLocaleString)
