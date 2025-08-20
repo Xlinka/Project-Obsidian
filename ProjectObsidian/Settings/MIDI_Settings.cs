@@ -33,7 +33,6 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
 
         protected override void OnAwake()
         {
-            //DeviceFound.Value = false;
             base.OnAwake();
         }
 
