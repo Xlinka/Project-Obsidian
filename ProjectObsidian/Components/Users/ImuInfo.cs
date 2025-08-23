@@ -1,12 +1,15 @@
 using System;
 using System.Runtime.InteropServices;
 using Elements.Core;
+using Elements.Data;
 using Obsidian;
 using Valve.VR;
+using FrooxEngine;
 
-namespace FrooxEngine;
+namespace Obsidian.Devices;
 
 [Category("Obsidian/Devices")]
+[OldTypeName("FrooxEngine.ImuInfo")]
 public class ImuInfo : Component
 {
     public readonly Sync<bool> Simulate;
