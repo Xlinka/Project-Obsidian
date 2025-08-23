@@ -73,3 +73,11 @@ The detailed feature list is available in the [wiki](https://github.com/Xlinka/P
 3. 실행 시 `-LoadAssembly` 실행 인자와 함께 플러그인의 파일 경로를 추가합니다: `-LoadAssembly Libraries/Project-Obsidian.dll`
 
 이 작업을 완료한 후 Resonite를 시작하세요. 대시 설정에서 Obsidian 카테고리로 이동하여 *Plugin Loaded* 설정이 True로 되어 있는지 확인하세요. 자세한 내용은 로그 파일을 참조하세요.
+
+
+## Libraries used
+
+https://github.com/ValveSoftware/openvr
+https://github.com/ValveSoftware/steamvr_unity_plugin
+https://github.com/Nytra/managed-midi
+https://github.com/Nytra/alsa-sharp
