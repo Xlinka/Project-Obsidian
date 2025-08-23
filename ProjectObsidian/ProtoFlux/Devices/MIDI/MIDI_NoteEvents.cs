@@ -6,7 +6,7 @@ using Elements.Core;
 using FrooxEngine;
 using FrooxEngine.ProtoFlux;
 using Obsidian.Elements;
-using Components.Devices.MIDI;
+using Obsidian.Components.Devices.MIDI;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Devices;
 

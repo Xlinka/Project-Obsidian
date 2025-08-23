@@ -9,10 +9,11 @@ using Obsidian;
 using System;
 using Elements.Data;
 
-namespace Components.Devices.MIDI;
+namespace Obsidian.Components.Devices.MIDI;
 
 [Category(new string[] { "Obsidian/Devices/MIDI" })]
 [OldTypeName("Obsidian.MIDI_InputDevice")]
+[OldTypeName("Components.Devices.MIDI.MIDI_InputDevice")]
 public class MIDI_InputDevice : Component, IMidiInputListener
 {
     [NoContinuousParsing]
