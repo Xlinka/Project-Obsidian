@@ -78,6 +78,9 @@ The detailed feature list is available in the [wiki](https://github.com/Xlinka/P
 ## Libraries used
 
 https://github.com/ValveSoftware/openvr
+
 https://github.com/ValveSoftware/steamvr_unity_plugin
+
 https://github.com/Nytra/managed-midi
+
 https://github.com/Nytra/alsa-sharp
