@@ -51,8 +51,6 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
     [SettingSubcategoryList("DeviceToItem", null, null, null, null, null)]
     public readonly SyncList<MIDI_Device> OutputDevices;
 
-    private LocaleData _localeData;
-
     private DataFeedItem DeviceToItem(ISyncMember item)
     {
         MIDI_Device device = (MIDI_Device)item;
@@ -93,6 +91,7 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
     [SyncMethod(typeof(Action), new string[] { })]
     public void RefreshDeviceLists()
     {
+        UniLog.Log("Refreshing MIDI device lists!");
         foreach(var device in InputDevices.Concat(OutputDevices)) 
         {
             device.DeviceFound.Value = false;

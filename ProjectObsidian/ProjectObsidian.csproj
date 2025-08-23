@@ -30,6 +30,9 @@
     <Reference Include="Awwdio">
       <HintPath>$(ResonitePath)Awwdio.dll</HintPath>
     </Reference>
+    <Reference Include="Commons.Music.Midi">
+      <HintPath>..\lib\Commons.Music.Midi.dll</HintPath>
+    </Reference>
     <Reference Include="Elements.Core">
       <HintPath>$(ResonitePath)Elements.Core.dll</HintPath>
     </Reference>
@@ -82,7 +85,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ProjectObsidian.SourceGenerators\SourceGenerators.csproj" OutputItemType="Analyzer" />
-    <PackageReference Include="managed-midi" Version="1.10.1" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3"> </PackageReference>
     <PackageReference Include="System.Memory" Version="4.6.0" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.0" />
