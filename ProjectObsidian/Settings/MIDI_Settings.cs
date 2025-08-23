@@ -20,6 +20,7 @@ public class MIDI_Settings : SettingComponent<MIDI_Settings>
         public readonly Sync<string> DeviceName;
 
         // Can't use the NonPersistent attribute until this is fixed: https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/5248
+        // This could be worked around by using a publicizer / IgnoresAccessChecksTo attribute, but it isn't a huge deal 
         //[NonPersistent]
         [SettingIndicatorProperty(null, null, null, null, false, 0L)]
         public readonly Sync<bool> DeviceFound;
