@@ -19,7 +19,7 @@ namespace Obsidian
         private int _resolution;
         private List<MetaballPoint> _subscribedPoints = new();
         private List<MetaballPoint> _subscribedPointsCopy;
-        private bool _scheduleRecompute;
+        private bool _scheduleRangeDatasRecompute;
         protected override void OnStart()
         {
             Points.Changed += OnListChange;
@@ -33,6 +33,7 @@ namespace Obsidian
                     _subscribedPoints.Add(point);
                 }
             }
+            _scheduleRangeDatasRecompute = true;
         }
 
         protected override void OnAwake()
@@ -61,25 +62,25 @@ namespace Obsidian
                     _subscribedPoints.Add(point);
                 }
             }
-            _scheduleRecompute = true;
+            _scheduleRangeDatasRecompute = true;
             MarkChangeDirty();
         }
 
         private void OnPointChange(IChangeable change)
         {
-            _scheduleRecompute = true;
+            _scheduleRangeDatasRecompute = true;
             MarkChangeDirty();
         }
 
         private void OnPointDestroyed(IDestroyable destroy)
         {
-            _scheduleRecompute = true;
+            _scheduleRangeDatasRecompute = true;
             MarkChangeDirty();
         }
 
         private void OnWorldTransformChanged(Slot s)
         {
-            _scheduleRecompute = true;
+            _scheduleRangeDatasRecompute = true;
             MarkChangeDirty();
         }
 
@@ -109,8 +110,8 @@ namespace Obsidian
             shape.Threshold = _threshold;
             shape.FieldSize = _fieldSize;
             shape.Resolution = _resolution;
-            shape.scheduleRangeDatasRecompute = _scheduleRecompute;
-            _scheduleRecompute = false;
+            shape.scheduleRangeDatasRecompute = _scheduleRangeDatasRecompute;
+            _scheduleRangeDatasRecompute = false;
 
             meshx.Clear();
             shape.Update();

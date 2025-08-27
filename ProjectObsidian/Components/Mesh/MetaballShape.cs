@@ -19,7 +19,7 @@ public class MetaballShape : MeshXShape
 
     private int vertIndex;
 
-    public bool scheduleRangeDatasRecompute = true;
+    public bool scheduleRangeDatasRecompute;
 
     private class RangeData
     {
@@ -42,7 +42,7 @@ public class MetaballShape : MeshXShape
                 rangeDatas.Add(new RangeData());
         }
         int j = 0;
-        foreach (var point in Points)
+        foreach (var point in Points) // reading from data model here might be bad?
         {
             var data = rangeDatas[j];
             if (point == null || point.IsRemoved)
@@ -62,7 +62,7 @@ public class MetaballShape : MeshXShape
     public float SampleField(float3 point)
     {
         float value = 0;
-        foreach (var metaball in Points)
+        foreach (var metaball in Points) // reading from data model here might be bad?
         {
             if (metaball == null || metaball.IsRemoved) continue;
             value += metaball.GetValue(point, OriginSlot);
@@ -185,6 +185,7 @@ public class MetaballShape : MeshXShape
 
     private void Generate(MeshX mesh)
     {
+        // might be better to do this in PrepareAssetUpdateData?
         if (scheduleRangeDatasRecompute)
             ComputeRangeData();
 
