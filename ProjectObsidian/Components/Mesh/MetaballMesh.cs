@@ -2,6 +2,7 @@
 using Elements.Core;
 using FrooxEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Obsidian
 {
@@ -17,6 +18,8 @@ namespace Obsidian
         private float3 _fieldSize;
         private int _resolution;
         private List<MetaballPoint> _subscribedPoints = new();
+        private List<MetaballPoint> _subscribedPointsCopy;
+        private bool _scheduleRecompute;
         protected override void OnStart()
         {
             Points.Changed += OnListChange;
@@ -58,28 +61,26 @@ namespace Obsidian
                     _subscribedPoints.Add(point);
                 }
             }
+            _scheduleRecompute = true;
             MarkChangeDirty();
-            if (shape != null)
-                shape.scheduleRangeDatasRecompute = true;
 
         }
 
         private void OnPointChange(IChangeable change)
         {
+            _scheduleRecompute = true;
             MarkChangeDirty();
-            if (shape != null)
-                shape.scheduleRangeDatasRecompute = true;
         }
 
         private void OnPointDestroyed(IDestroyable destroy)
         {
+            _scheduleRecompute = true;
             MarkChangeDirty();
-            if (shape != null)
-                shape.scheduleRangeDatasRecompute = true;
         }
 
         private void OnWorldTransformChanged(Slot s)
         {
+            _scheduleRecompute = true;
             MarkChangeDirty();
         }
 
@@ -88,6 +89,7 @@ namespace Obsidian
             _threshold = Threshold.Value;
             _fieldSize = FieldSize.Value;
             _resolution = Resolution.Value;
+            _subscribedPointsCopy = _subscribedPoints.ToList();
         }
 
         protected override void ClearMeshData()
@@ -103,11 +105,13 @@ namespace Obsidian
                 shape = new MetaballShape(meshx);
             }
 
-            shape.Points = _subscribedPoints;
+            shape.Points = _subscribedPointsCopy;
             shape.OriginSlot = Slot;
             shape.Threshold = _threshold;
             shape.FieldSize = _fieldSize;
             shape.Resolution = _resolution;
+            shape.scheduleRangeDatasRecompute = _scheduleRecompute;
+            _scheduleRecompute = false;
 
             meshx.Clear();
             shape.Update();
