@@ -19,14 +19,50 @@ public class MetaballShape : MeshXShape
 
     private int vertIndex;
 
+    public bool scheduleRangeDatasRecompute;
+
+    private class RangeData
+    {
+        public float effectiveRange;
+        public float3 position;
+    }
+
+    private List<RangeData> rangeDatas = new();
+
     public MetaballShape(MeshX mesh) : base(mesh)
     {
+    }
+
+    private void ComputeRangeData()
+    {
+        if (rangeDatas.Count != Points.Count)
+        {
+            rangeDatas.Clear();
+            for (int i = 0; i < Points.Count; i++)
+                rangeDatas.Add(new RangeData());
+        }
+        int j = 0;
+        foreach (var point in Points) // reading from data model here might be bad?
+        {
+            var data = rangeDatas[j];
+            if (point == null || point.IsRemoved)
+            {
+                data.effectiveRange = 0;
+            }
+            else
+            {
+                data.effectiveRange = point.Radius.Value + point.Strength.Value; // this formula may need tweaking?
+                data.position = OriginSlot.GlobalPointToLocal(point.Slot.GlobalPosition);
+            }
+            j++;
+        }
+        scheduleRangeDatasRecompute = false;
     }
 
     public float SampleField(float3 point)
     {
         float value = 0;
-        foreach (var metaball in Points)
+        foreach (var metaball in Points) // reading from data model here might be bad?
         {
             if (metaball == null || metaball.IsRemoved) continue;
             value += metaball.GetValue(point, OriginSlot);
@@ -149,6 +185,10 @@ public class MetaballShape : MeshXShape
 
     private void Generate(MeshX mesh)
     {
+        // might be better to do this in PrepareAssetUpdateData?
+        if (scheduleRangeDatasRecompute)
+            ComputeRangeData();
+
         float3 step = FieldSize / Resolution;
 
         for (int x = 0; x < Resolution - 1; x++)
@@ -158,6 +198,19 @@ public class MetaballShape : MeshXShape
                 for (int z = 0; z < Resolution - 1; z++)
                 {
                     float3 cubePos = new float3(x, y, z) * step - FieldSize * 0.5f;
+
+                    bool anyIn = false;
+                    foreach (var rangeData in rangeDatas)
+                    {
+                        if (rangeData.effectiveRange == 0) continue;
+                        if (MathX.DistanceSqr(cubePos, rangeData.position) < MathX.Pow(rangeData.effectiveRange, 2f))
+                        {
+                            anyIn = true;
+                            break;
+                        }
+                    }
+                    if (!anyIn) continue;
+
                     MarchCube(cubePos, step);
                 }
             }
