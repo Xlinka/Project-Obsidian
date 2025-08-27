@@ -2,7 +2,7 @@
   <PropertyGroup>
     <RootNamespace>Project-Obsidian</RootNamespace>
     <AssemblyName>Project-Obsidian</AssemblyName>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <LangVersion>12</LangVersion>
     <Copyright>Copyright ©  2025</Copyright>
     <Product>Project-Obsidian</Product>
@@ -28,58 +28,66 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Awwdio">
-      <HintPath>$(ResonitePath)Resonite_Data/Managed/Awwdio.dll</HintPath>
+      <HintPath>$(ResonitePath)Awwdio.dll</HintPath>
+    </Reference>
+    <Reference Include="Commons.Music.Midi">
+      <HintPath>..\lib\Commons.Music.Midi.dll</HintPath>
     </Reference>
     <Reference Include="Elements.Core">
-      <HintPath>$(ResonitePath)Resonite_Data/Managed/Elements.Core.dll</HintPath>
+      <HintPath>$(ResonitePath)Elements.Core.dll</HintPath>
     </Reference>
     <Reference Include="FrooxEngine">
-      <HintPath>$(ResonitePath)Resonite_Data/Managed/FrooxEngine.dll</HintPath>
+      <HintPath>$(ResonitePath)FrooxEngine.dll</HintPath>
     </Reference>
     <Reference Include="FrooxEngine.Store">
-      <HintPath>$(ResonitePath)Resonite_Data/Managed/FrooxEngine.Store.dll</HintPath>
+      <HintPath>$(ResonitePath)FrooxEngine.Store.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces">
-      <HintPath>$(ResonitePath)Resonite_Data/Managed/Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+      <HintPath>$(ResonitePath)Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>$(ResonitePath)Resonite_Data/Managed/Newtonsoft.Json.dll</HintPath>
+      <HintPath>$(ResonitePath)Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="ProtoFlux.Core">
-      <HintPath>$(ResonitePath)Resonite_Data/Managed/ProtoFlux.Core.dll</HintPath>
+      <HintPath>$(ResonitePath)ProtoFlux.Core.dll</HintPath>
     </Reference>
     <Reference Include="ProtoFlux.Nodes.Core">
-      <HintPath>$(ResonitePath)Resonite_Data/Managed/ProtoFlux.Nodes.Core.dll</HintPath>
+      <HintPath>$(ResonitePath)ProtoFlux.Nodes.Core.dll</HintPath>
     </Reference>
     <Reference Include="ProtoFlux.Nodes.FrooxEngine">
-      <HintPath>$(ResonitePath)Resonite_Data/Managed/ProtoFlux.Nodes.FrooxEngine.dll</HintPath>
+      <HintPath>$(ResonitePath)ProtoFlux.Nodes.FrooxEngine.dll</HintPath>
     </Reference>
     <Reference Include="ProtoFluxBindings">
-      <HintPath>$(ResonitePath)Resonite_Data/Managed/ProtoFluxBindings.dll</HintPath>
+      <HintPath>$(ResonitePath)ProtoFluxBindings.dll</HintPath>
     </Reference>
 	  <Reference Include="Elements.Assets">
-		  <HintPath>$(ResonitePath)Resonite_Data/Managed/Elements.Assets.dll</HintPath>
+		  <HintPath>$(ResonitePath)Elements.Assets.dll</HintPath>
 	  </Reference>
 	  <Reference Include="SharpPipe">
-	    <HintPath>$(ResonitePath)Resonite_Data/Managed/SharpPipe.dll</HintPath>
+	    <HintPath>$(ResonitePath)SharpPipe.dll</HintPath>
 	  </Reference>
 	  <Reference Include="SkyFrost.Base">
-	    <HintPath>$(ResonitePath)Resonite_Data/Managed/SkyFrost.Base.dll</HintPath>
+	    <HintPath>$(ResonitePath)SkyFrost.Base.dll</HintPath>
 	  </Reference>
 	  <Reference Include="SteamVR">
-	    <HintPath>$(ResonitePath)/Resonite_Data/Managed/SteamVR.dll</HintPath>
+	    <HintPath>$(ResonitePath)/Renderer/Renderite.Renderer_Data/Managed/SteamVR.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Elements.Data">
+	    <HintPath>$(ResonitePath)Elements.Data.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Renderite.Shared">
+	    <HintPath>$(ResonitePath)Renderite.Shared.dll</HintPath>
 	  </Reference>
 	  <Reference Include="System.Net.Http" />
 	  <Reference Include="System.ValueTuple">
-	    <HintPath>$(ResonitePath)/Resonite_Data/Managed/System.ValueTuple.dll</HintPath>
+	    <HintPath>$(ResonitePath)System.ValueTuple.dll</HintPath>
 	  </Reference>  
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ProjectObsidian.SourceGenerators\SourceGenerators.csproj" OutputItemType="Analyzer" />
-    <PackageReference Include="managed-midi" Version="1.10.1" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3"> </PackageReference>
-    <PackageReference Include="System.Memory" Version="4.6.0" />
-    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.0" />
+    <PackageReference Include="System.Memory" Version="4.6.3" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ResonitePath)Libraries" />

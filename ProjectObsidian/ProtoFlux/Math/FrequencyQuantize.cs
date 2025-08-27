@@ -7,6 +7,7 @@ using Elements.Assets;
 using Elements.Core;
 using System.Linq;
 using System.Collections.Generic;
+using Elements.Data;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Math
 {

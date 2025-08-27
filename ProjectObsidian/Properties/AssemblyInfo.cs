@@ -15,6 +15,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Elements.Core;
 using Newtonsoft.Json.Linq;
+using Elements.Data;
 
 [assembly: System.Reflection.AssemblyCompanyAttribute("Project-Obsidian")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]

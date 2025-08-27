@@ -13,7 +13,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Interaction
         protected override IGrabbable Compute(ExecutionContext context)
         {
             Slot slot = Slot.Evaluate(context);
-            return slot == null ? null : slot.GetComponentInParents<Grabbable>();
+            return slot == null ? null : slot.GetComponentInParents<IGrabbable>();
         }
     }
 }

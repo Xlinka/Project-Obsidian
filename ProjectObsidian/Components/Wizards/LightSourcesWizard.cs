@@ -4,6 +4,7 @@ using FrooxEngine;
 using FrooxEngine.Undo;
 using Elements.Core;
 using System.Collections.Generic;
+using Renderite.Shared;
 
 namespace Obsidian
 {

@@ -8,6 +8,7 @@ using FrooxEngine;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
 using Obsidian;
+using Renderite.Shared;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Devices;
 

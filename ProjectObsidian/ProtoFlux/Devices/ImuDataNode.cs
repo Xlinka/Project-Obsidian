@@ -7,6 +7,7 @@ using Valve.VR;
 using ProtoFlux.Runtimes.Execution;
 using Elements.Core;
 using System.Threading.Tasks;
+using Obsidian;
 
 
 
@@ -68,6 +69,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Devices
 
         private bool OpenBuffer(string path)
         {
+            if (!OpenVR_Helper.TryInitialize()) return false;
             unsafe
             {
                 ulong buffer = default;

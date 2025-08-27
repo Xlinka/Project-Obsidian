@@ -1,11 +1,15 @@
 using System;
 using System.Runtime.InteropServices;
 using Elements.Core;
+using Elements.Data;
+using Obsidian;
 using Valve.VR;
+using FrooxEngine;
 
-namespace FrooxEngine;
+namespace Obsidian.Devices;
 
 [Category("Obsidian/Devices")]
+[OldTypeName("FrooxEngine.ImuInfo")]
 public class ImuInfo : Component
 {
     public readonly Sync<bool> Simulate;
@@ -39,6 +43,7 @@ public class ImuInfo : Component
 
         if (Simulate.Value && LocalUser == SimulatingUser.Target)
         {
+            if (!OpenVR_Helper.TryInitialize()) return;
             if (!LocalUser.VR_Active || OpenVR.IOBuffer is null || string.IsNullOrEmpty(Path.Value)) CloseBuffer();
             else if (_buffer == 0 || _previousPath != Path.Value)
             {

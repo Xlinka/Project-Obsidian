@@ -10,6 +10,7 @@ using FrooxEngine;
 using FrooxEngine.ProtoFlux;
 using ProtoFlux.Core;
 using ProtoFlux.Runtimes.Execution;
+using Elements.Data;
 
 namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Network
 {

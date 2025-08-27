@@ -1,4 +1,5 @@
-﻿using Elements.Assets;
+﻿using System.Reflection;
+using Elements.Assets;
 using Elements.Core;
 using FrooxEngine;
 
@@ -17,7 +18,8 @@ public static class SettingsLocaleHelper
     }
     private static void UpdateDelayed(LocaleData _localeData)
     {
-        Userspace.UserspaceWorld.RunInUpdates(15, () => UpdateIntern(_localeData));
+        // I hate having to do an arbitrary delay, but it doesn't work otherwise
+        Userspace.UserspaceWorld.RunInUpdates(7, () => UpdateIntern(_localeData));
     }
     private static void UpdateIntern(LocaleData _localeData)
     {
@@ -44,7 +46,7 @@ public static class SettingsLocaleHelper
             if (localeProvider.OverrideLocale.Value != null && localeProvider.OverrideLocale.Value != overrideLocaleString)
                 lastOverrideLocale = localeProvider.OverrideLocale.Value;
             localeProvider.OverrideLocale.Value = overrideLocaleString;
-            Userspace.UserspaceWorld.RunInUpdates(1, () => 
+            Userspace.UserspaceWorld.RunInUpdates(1, () =>
             {
                 localeProvider.OverrideLocale.Value = lastOverrideLocale;
             });

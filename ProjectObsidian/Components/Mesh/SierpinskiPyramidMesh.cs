@@ -2,6 +2,7 @@
 using Elements.Core;
 using FrooxEngine;
 using System;
+using Renderite.Shared;
 
 namespace Obsidian
 {

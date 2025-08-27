@@ -5,6 +5,7 @@ using FrooxEngine;
 using FrooxEngine.UIX;
 using Elements.Core;
 using FrooxEngine.Undo;
+using Elements.Data;
 
 namespace Obsidian
 {
