@@ -41,10 +41,25 @@ public class PluginSettings : SettingComponent<PluginSettings>
         _localeData.LocaleCode = "en";
         _localeData.Authors = new List<string>() { "Nytra" };
         _localeData.Messages = new Dictionary<string, string>();
+
         _localeData.Messages.Add("Settings.Category.Obsidian", "Obsidian");
+
         _localeData.Messages.Add("Settings.PluginSettings", "Plugin Settings");
         _localeData.Messages.Add("Settings.PluginSettings.PluginLoaded", "Plugin Loaded");
         _localeData.Messages.Add("Settings.PluginSettings.TogglePluginLoaded", "Toggle loading the plugin for new sessions");
+        _localeData.Messages.Add("Settings.PluginSettings.RefreshLocale", "Refresh Locale");
+
+        _localeData.Messages.Add("Settings.MIDI_Settings", "MIDI Settings");
+        _localeData.Messages.Add("Settings.MIDI_Settings.RefreshDeviceLists", "Refresh Devices");
+        _localeData.Messages.Add("Settings.MIDI_Settings.InputDevices", "Input Devices");
+        _localeData.Messages.Add("Settings.MIDI_Settings.OutputDevices", "Output Devices");
+
+        _localeData.Messages.Add("Settings.MIDI_Settings.DeviceName", "Device Name");
+        _localeData.Messages.Add("Settings.MIDI_Settings.OutputDevices.Breadcrumb", "MIDI Output Devices");
+        _localeData.Messages.Add("Settings.MIDI_Settings.InputDevices.Breadcrumb", "MIDI Input Devices");
+        _localeData.Messages.Add("Settings.MIDI_Settings.AllowConnections", "Allow Connections");
+        _localeData.Messages.Add("Settings.MIDI_Settings.DeviceFound", "Device Found");
+        _localeData.Messages.Add("Settings.MIDI_Settings.Remove", "Remove");
 
         SettingsLocaleHelper.Update(_localeData);
     }
@@ -102,5 +117,14 @@ public class PluginSettings : SettingComponent<PluginSettings>
                 UniLog.Error($"Could not update local plugin settings! {ex}");
             }
         }
+    }
+
+    [SettingProperty(null, null, null, false, 0L, null, null)]
+    [SyncMethod(typeof(Action), new string[] { })]
+    public void RefreshLocale()
+    {
+        UniLog.Log("Refresh locale pressed");
+
+        SettingsLocaleHelper.Update(_localeData);
     }
 }

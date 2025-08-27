@@ -73,18 +73,18 @@ public class MToonMaterial : SingleShaderMaterialProvider
     private static MaterialProperty _UVAnimationScrollX = new MaterialProperty("_UvAnimScrollX");
     private static MaterialProperty _UVAnimationScrollY = new MaterialProperty("_UvAnimScrollY");
     private static MaterialProperty _UVAnimationRotation = new MaterialProperty("_UvAnimRotation");
-
+    
     [DefaultValue(-1)]
     public readonly Sync<int> RenderQueue;
-    private static PropertyState _propertyInitializationState;
+    private static bool _propertiesInitialized;
 
-    public override PropertyState PropertyInitializationState
+    public override bool PropertiesInitialized
     {
-        get => _propertyInitializationState;
-        protected set => _propertyInitializationState = value;
+        get => _propertiesInitialized;
+        protected set => _propertiesInitialized = value;
     }
 
-    protected override void UpdateMaterial(Material material)
+    protected override void UpdateMaterial(ref MaterialUpdateWriter material)
     {
         material.UpdateFloat(_AlphaCutoff, AlphaCutoff);
         material.UpdateColor(_LitColorAlpha, LitColorAlpha);

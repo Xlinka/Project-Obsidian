@@ -2,10 +2,13 @@
 using System.Linq;
 using Elements.Assets;
 using Elements.Core;
+using Elements.Data;
+using FrooxEngine;
 
-namespace FrooxEngine
+namespace Obsidian.Utility
 {
     [Category("Obsidian/Utility")]
+    [OldTypeName("FrooxEngine.BoundingBoxUserTracker")]
     public class BoundingBoxUserTracker : Component
     {
         public readonly Sync<UserRoot.UserNode> PositionSource;

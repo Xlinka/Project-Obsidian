@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Commons.Music.Midi;
-using Components.Devices.MIDI;
+using Obsidian.Components.Devices.MIDI;
 using Elements.Core;
 using FrooxEngine;
+using Elements.Data;
 
 namespace Obsidian.Elements;
 

@@ -11,12 +11,12 @@ public class TestMaterial : SingleShaderMaterialProvider
     [DefaultValue(-1)]
     public readonly Sync<int> RenderQueue;
 
-    private static PropertyState _propertyInitializationState;
+    private static bool _propertiesInitialized;
 
-    public override PropertyState PropertyInitializationState
+    public override bool PropertiesInitialized
     {
-        get => _propertyInitializationState;
-        protected set => _propertyInitializationState = value;
+        get => _propertiesInitialized;
+        protected set => _propertiesInitialized = value;
     }
 
     protected override void UpdateKeywords(ShaderKeywords keywords)
@@ -24,7 +24,7 @@ public class TestMaterial : SingleShaderMaterialProvider
         // No keywords to update for this simple shader
     }
 
-    protected override void UpdateMaterial(Material material)
+    protected override void UpdateMaterial(ref MaterialUpdateWriter material)
     {
         if (!RenderQueue.GetWasChangedAndClear()) return;
 
