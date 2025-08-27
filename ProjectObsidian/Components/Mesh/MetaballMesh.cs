@@ -63,7 +63,6 @@ namespace Obsidian
             }
             _scheduleRecompute = true;
             MarkChangeDirty();
-
         }
 
         private void OnPointChange(IChangeable change)
