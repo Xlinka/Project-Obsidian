@@ -54,11 +54,6 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
                     {
                         coeffs = Coefficients.ToArray();
                     }
-                    if (coeffs == null)
-                    {
-                        _controller.Clear();
-                        return;
-                    }
                     _controller.Coefficients = coeffs;
                     foreach (var filter in _controller.filters.Values)
                     {
