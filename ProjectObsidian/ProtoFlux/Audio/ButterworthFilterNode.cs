@@ -29,23 +29,23 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
-            if (!IsActive || AudioInput == null)
+            lock (_controller)
             {
-                buffer.Fill(default(S));
-                // clear filters here?
-                lock (_controller)
+                if (AudioInput == null)
                 {
                     _controller.Clear();
                 }
-                return;
-            }
+                if (!IsActive || AudioInput == null)
+                {
+                    buffer.Fill(default(S));
+                    return;
+                }
 
-            AudioInput.Read(buffer, simulator);
+                AudioInput.Read(buffer, simulator);
 
-            lock (_controller)
-            {
                 _controller.Process(buffer, simulator.SampleRate, LowPass, Frequency, Resonance);
             }
+            
         }
     }
     [NodeCategory("Obsidian/Audio/Filters")]

@@ -31,19 +31,25 @@ namespace Obsidian.Components.Audio
 
         public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
-            if (!IsActive)
+            lock (_controller)
             {
-                buffer.Fill(default(S));
-                _controller.Clear();
-                return;
+                if (Source.Target == null)
+                {
+                    _controller.Clear();
+                }
+                if (!IsActive || Source.Target == null)
+                {
+                    buffer.Fill(default(S));
+                    return;
+                }
+
+                Span<S> tempBuffer = stackalloc S[buffer.Length];
+                tempBuffer = buffer;
+
+                Source.Target.Read(tempBuffer, simulator);
+
+                _controller.Process(tempBuffer, simulator.SampleRate, LowFrequency, HighFrequency, Resonance);
             }
-
-            Span<S> tempBuffer = stackalloc S[buffer.Length];
-            tempBuffer = buffer;
-
-            Source.Target.Read(tempBuffer, simulator);
-
-            _controller.Process(tempBuffer, simulator.SampleRate, LowFrequency, HighFrequency, Resonance);
         }
 
         protected override void OnAwake()
@@ -59,7 +65,8 @@ namespace Obsidian.Components.Audio
             base.OnChanges();
             if (Source.GetWasChangedAndClear())
             {
-                _controller.Clear();
+                lock (_controller)
+                    _controller.Clear();
             }
         }
     }

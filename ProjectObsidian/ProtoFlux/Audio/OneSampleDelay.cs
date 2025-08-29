@@ -30,20 +30,20 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Read<S>(Span<S> buffer,  AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
-            if (!IsActive || AudioInput == null || !AudioInput.IsActive)
+            lock (_controller)
             {
-                buffer.Fill(default(S));
-                lock (_controller)
+                if (AudioInput == null)
                 {
                     _controller.Clear();
                 }
-                return;
-            }
+                if (!IsActive || AudioInput == null || !AudioInput.IsActive)
+                {
+                    buffer.Fill(default(S));
+                    return;
+                }
 
-            AudioInput.Read(buffer, simulator);
+                AudioInput.Read(buffer, simulator);
 
-            lock (_controller)
-            {
                 _controller.Process(buffer, 0, feedback, DryWet);
             }
         }
@@ -54,7 +54,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             {
                 lock (_controller)
                 {
-                    foreach (var key in _controller.updateBools.Keys.ToArray())
+                    foreach (var key in _controller.delayTypes)
                     {
                         _controller.updateBools[key] = true;
                     }

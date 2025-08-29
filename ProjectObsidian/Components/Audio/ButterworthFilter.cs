@@ -41,7 +41,8 @@ public class ButterworthFilter : Component, Awwdio.IAudioDataSource, IWorldAudio
         base.OnChanges();
         if (Source.GetWasChangedAndClear())
         {
-            _controller.Clear();
+            lock (_controller)
+                _controller.Clear();
         }
     }
 
@@ -49,19 +50,25 @@ public class ButterworthFilter : Component, Awwdio.IAudioDataSource, IWorldAudio
 
     public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
     {
-        if (!IsActive)
+        lock (_controller)
         {
-            buffer.Fill(default(S));
-            _controller.Clear();
-            return;
+            if (Source.Target == null)
+            {
+                _controller.Clear();
+            }
+            if (!IsActive || Source.Target == null)
+            {
+                buffer.Fill(default(S));
+                return;
+            }
+
+            Span<S> span = stackalloc S[buffer.Length];
+
+            span = buffer;
+
+            Source.Target.Read(span, simulator);
+
+            _controller.Process(span, simulator.SampleRate, LowPass, Frequency, Resonance);
         }
-
-        Span<S> span = stackalloc S[buffer.Length];
-
-        span = buffer;
-
-        Source.Target.Read(span, simulator);
-
-        _controller.Process(span, simulator.SampleRate, LowPass, Frequency, Resonance);
     }
 }
