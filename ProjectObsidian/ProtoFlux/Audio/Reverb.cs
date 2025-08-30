@@ -31,20 +31,41 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
 
         public void Read<S>(Span<S> buffer, AudioSimulator simulator) where S : unmanaged, IAudioSample<S>
         {
-            if (!IsActive || AudioInput == null || !AudioInput.IsActive || parameters.Equals(defaultParameters))
-            {
-                buffer.Fill(default(S));
-                lock (_controller)
-                    _controller.Clear();
-                return;
-            }
-
-            AudioInput.Read(buffer, simulator);
-
             lock (_controller)
             {
+                if (AudioInput == null)
+                {
+                    _controller.Clear();
+                }
+                if (!IsActive || AudioInput == null || !AudioInput.IsActive)
+                {
+                    buffer.Fill(default(S));
+                    return;
+                }
+
+                if (parameters.Equals(defaultParameters)) // if nothing is plugged into parameters, use the default output of the ConstructZitaParameters node
+                {
+                    parameters = new ZitaParameters
+                    {
+                        InDelay = 0,
+                        Crossover = 200,
+                        RT60Low = 1.49f,
+                        RT60Mid = 1.2f,
+                        HighFrequencyDamping = 6000,
+                        EQ1Frequency = 250,
+                        EQ1Level = 0,
+                        EQ2Frequency = 5000,
+                        EQ2Level = 0,
+                        Mix = 0.7f,
+                        Level = 8
+                    };
+                }
+
+                AudioInput.Read(buffer, simulator);
+
                 _controller.Process(buffer, parameters);
             }
+            
         }
 
         protected override void OnStart()
@@ -53,7 +74,7 @@ namespace ProtoFlux.Runtimes.Execution.Nodes.Obsidian.Audio
             {
                 lock (_controller)
                 {
-                    foreach (var key in _controller.updateBools.Keys.ToArray())
+                    foreach (var key in _controller.reverbTypes)
                     {
                         _controller.updateBools[key] = true;
                     }
